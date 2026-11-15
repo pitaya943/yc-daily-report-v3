@@ -1,0 +1,12 @@
+$ python -m pytest tests/integration/test_smoke.py -v
+tests/integration/test_smoke.py::test_http_request_reaches_the_database PASSED [ 20%]
+tests/integration/test_smoke.py::test_every_scenario_starts_from_a_clean_database PASSED [ 40%]
+tests/integration/test_smoke.py::test_previous_test_writes_are_gone PASSED [ 60%]
+tests/integration/test_smoke.py::test_router_autodiscovery_registers_module_routers PASSED [ 80%]
+tests/integration/test_smoke.py::test_autodiscovery_picks_up_a_new_feature_without_editing_main PASSED [100%]
+============================== 5 passed in 0.37s ===============================
+
+$ scripts/dev/run &  &&  curl -s localhost:8000/health
+HTTP/1.1 200 OK
+{"status":"ok","accounts":9,"now":"2026-11-16T03:00:15.048217+08:00"}
+routes: ['/health']

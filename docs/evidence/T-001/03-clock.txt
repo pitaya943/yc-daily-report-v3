@@ -1,0 +1,20 @@
+$ python -m pytest tests/unit/test_clock.py -v
+tests/unit/test_clock.py::test_set_and_read PASSED                       [ 16%]
+tests/unit/test_clock.py::test_frozen_clock_does_not_move PASSED         [ 33%]
+tests/unit/test_clock.py::test_advance PASSED                            [ 50%]
+tests/unit/test_clock.py::test_naive_datetime_is_rejected PASSED         [ 66%]
+tests/unit/test_clock.py::test_unset_clock_follows_real_time_in_taipei PASSED [ 83%]
+tests/unit/test_clock.py::test_product_code_never_reads_system_time PASSED [100%]
+============================== 6 passed in 0.02s ===============================
+
+# 反向驗證：在產品程式放進 datetime.now()，掃描測試必須失敗
+E       AssertionError: assert ['app/core/bad_time.py:3'] == []
+E         
+E         Left contains one more item: 'app/core/bad_time.py:3'
+E         Use -v to get more diff
+# 反向驗證：SQL now()
+E       AssertionError: assert ['app/core/ba...ime function'] == []
+E         
+E         Left contains one more item: 'app/core/bad_sql.py: SQL time function'
+E         Use -v to get more diff
+10
