@@ -1,0 +1,41 @@
+$ python3 -m pytest tests/unit/test_spec_collection.py tests/unit/test_local_only.py -q   # 先紅（修正第 1 輪）
+E       AssertionError: collected 483 but spec expands to 489: some scenario was dropped
+E       assert 483 == 489
+E        +  where 483 = int('483')
+E        +    where '483' = <built-in method group of re.Match object at 0x7fb22e532830>(1)
+E        +      where <built-in method group of re.Match object at 0x7fb22e532830> = <re.Match object; span=(0, 19), match='483 tests collected'>.group
+E        +  and   489 = expected_total()
+        m = re.search(r"(\d+) failed", r.stdout)
+E       AssertionError:               raise ex.with_traceback(None)
+E                     else:
+E                         logger.debug("connection succeeded: %s", descr)
+E                         break
+E             
+E                 if not rv:
+E                     last_ex = conn_errors[-1][0]
+E                     if len(conn_errors) == 1:
+E         >               raise last_ex.with_traceback(None)
+E         E               psycopg.OperationalError: connection failed: connection to server at "127.0.0.1", port 5433 failed: Connection refused
+E         E               	Is the server running on that host and accepting TCP/IP connections?
+E         
+E         /usr/local/lib/python3.13/site-packages/psycopg/connection.py:126: OperationalError
+E         =========================== short test summary info ============================
+E         ERROR tests/test_spec.py::test_zones_are_independent - psycopg.OperationalErr...
+E         482 skipped, 1 error in 0.40s
+E         
+E       assert (<re.Match object; span=(3428, 3439), match='5433 failed'> and 5433 == 7)
+E        +  where 5433 = int('5433')
+E        +    where '5433' = <built-in method group of re.Match object at 0x7fb22e532e60>(1)
+E        +      where <built-in method group of re.Match object at 0x7fb22e532e60> = <re.Match object; span=(3428, 3439), match='5433 failed'>.group
+E       Failed: DID NOT RAISE UnsafeDatabaseUrl
+E       Failed: DID NOT RAISE UnsafeDatabaseUrl
+E       Failed: DID NOT RAISE UnsafeDatabaseUrl
+E       Failed: DID NOT RAISE UnsafeDatabaseUrl
+E       Failed: DID NOT RAISE UnsafeDatabaseUrl
+E       Failed: DID NOT RAISE UnsafeDatabaseUrl
+E       Failed: DID NOT RAISE UnsafeDatabaseUrl
+FAILED tests/unit/test_spec_collection.py::test_every_scenario_is_collected
+FAILED tests/unit/test_spec_collection.py::test_same_named_scenarios_in_one_feature_are_all_collected
+FAILED tests/unit/test_local_only.py::test_libpq_bypasses_are_refused[postgresql://u@localhost/yc?hostaddr=203.0.113.5]
+FAILED tests/unit/test_local_only.py::test_libpq_bypasses_are_refused[postgresql://u@127.0.0.1/yc?hostaddr=203.0.113.5]
+FAILED tests/unit/test_local_only.py::test_libpq_bypasses_are_refused[postgresql:///yc?hostaddr=203.0.113.5]

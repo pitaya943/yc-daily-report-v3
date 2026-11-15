@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# 啟動專案專用的 PostgreSQL 17（獨立資料目錄與連接埠，不碰 apt 建立的預設叢集）。可重複執行。
+source "$(dirname "$0")/_common.sh"
+assert_local_database_url
+require_pg_binaries
+
+if [ ! -s "$PG_DATA/PG_VERSION" ]; then
+  echo "初始化資料目錄 $PG_DATA"
+  mkdir -p "$PG_DATA"
+  [ "$(id -u)" = "0" ] && chown postgres:postgres "$PG_DATA" && chmod 700 "$PG_DATA"
+  # trust 驗證 + 只聽 127.0.0.1：本機開發用，資料庫裡沒有真實資料
+  as_pg "$PG_BIN/initdb" -D "$PG_DATA" -U postgres --auth=trust --encoding=UTF8 --locale=C.UTF-8 >/dev/null
+fi
+
+if as_pg "$PG_BIN/pg_ctl" -D "$PG_DATA" status >/dev/null 2>&1; then
+  echo "PostgreSQL 已在執行（port $PG_PORT）"
+else
+  as_pg "$PG_BIN/pg_ctl" -D "$PG_DATA" -l "$PG_LOG" -w \
+    -o "-p $PG_PORT -c listen_addresses=127.0.0.1 -c unix_socket_directories=/tmp -c fsync=off -c synchronous_commit=off -c full_page_writes=off -c timezone=Asia/Taipei" \
+    start >/dev/null
+  echo "PostgreSQL 已啟動（port $PG_PORT）"
+fi
+
+# 建立資料庫（已存在就略過）
+if ! "$PG_BIN/psql" -h 127.0.0.1 -p "$PG_PORT" -U postgres -X -tAc "select 1 from pg_database where datname='$PG_DB'" | grep -q 1; then
+  "$PG_BIN/createdb" -h 127.0.0.1 -p "$PG_PORT" -U postgres "$PG_DB"
+  echo "已建立資料庫 $PG_DB"
+fi
+echo "DATABASE_URL=$DATABASE_URL"

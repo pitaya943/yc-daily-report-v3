@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# 依編號套用 migrations/NNNN_*.sql 到 DATABASE_URL 指向的（本機）資料庫。可重複執行。
+#   - 只碰 yc_v3：紀錄表是 yc_v3.schema_migrations。
+#   - 每個檔案在單一 transaction 內套用；失敗就整個檔案不生效，並停止。
+#   - 已套用的檔案若內容被改過（sha256 不同），拒絕繼續，因為已合併的 migration 不可修改。
+source "$(dirname "$0")/_common.sh"
+assert_local_database_url
+require_pg_binaries
+
+psql_app <<'SQL'
+create schema if not exists yc_v3;
+create table if not exists yc_v3.schema_migrations (
+  version    text primary key,
+  filename   text not null,
+  sha256     text not null,
+  applied_at timestamptz not null default clock_timestamp()
+);
+SQL
+
+shopt -s nullglob
+prev=""
+for f in "$REPO_ROOT"/migrations/*.sql; do
+  name="$(basename "$f")"
+  if ! [[ "$name" =~ ^([0-9]{4})_[a-z0-9_]+\.sql$ ]]; then
+    echo "檔名不合規則 NNNN_name.sql：$name" >&2; exit 1
+  fi
+  version="${BASH_REMATCH[1]}"
+  if [ "$version" = "$prev" ]; then echo "編號重複：$version" >&2; exit 1; fi
+  prev="$version"
+  sum="$(sha256sum "$f" | cut -d' ' -f1)"
+  applied="$(psql_app -tA -c "select sha256 from yc_v3.schema_migrations where version='$version'")"
+  if [ -n "$applied" ]; then
+    if [ "$applied" != "$sum" ]; then
+      echo "migration $version 已套用過，但檔案內容已被修改：$name" >&2; exit 1
+    fi
+    echo "略過 $name（已套用）"
+    continue
+  fi
+  echo "套用 $name"
+  psql_app --single-transaction -f "$f" \
+    -c "insert into yc_v3.schema_migrations(version, filename, sha256) values ('$version', '$name', '$sum')"
+done
+echo "migration 完成"

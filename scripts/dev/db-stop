@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# 停止專案專用的 PostgreSQL（資料保留）。
+source "$(dirname "$0")/_common.sh"
+require_pg_binaries
+as_pg "$PG_BIN/pg_ctl" -D "$PG_DATA" -m fast stop 2>&1 || echo "（沒有在執行）"

@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# 從 PGDG（apt.postgresql.org, noble-pgdg）安裝 PostgreSQL 17。容器沒有 Docker daemon，所以用 apt。
+# 需要 root。已安裝時什麼都不做。只在 Ubuntu 24.04 (noble) 測過。
+source "$(dirname "$0")/_common.sh"
+if [ -x "$PG_BIN/postgres" ]; then echo "已安裝：$("$PG_BIN/postgres" --version)"; exit 0; fi
+[ "$(id -u)" = "0" ] || { echo "需要 root（或 sudo）" >&2; exit 1; }
+install -d /usr/share/postgresql-common/pgdg
+curl -fsS -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main" \
+  > /etc/apt/sources.list.d/pgdg.list
+apt-get update
+apt-get install -y "postgresql-${PG_VERSION}"
+"$PG_BIN/postgres" --version

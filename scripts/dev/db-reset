@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# 刪除並重建本機資料庫 $PG_DB，再重新套用所有 migration。只作用在本機容器內的資料庫。
+source "$(dirname "$0")/_common.sh"
+assert_local_database_url
+require_pg_binaries
+"$PG_BIN/dropdb"   -h 127.0.0.1 -p "$PG_PORT" -U postgres --if-exists "$PG_DB"
+"$PG_BIN/createdb" -h 127.0.0.1 -p "$PG_PORT" -U postgres "$PG_DB"
+"$(dirname "$0")/migrate"

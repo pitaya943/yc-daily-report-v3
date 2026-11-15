@@ -1,0 +1,13 @@
+# 注意：此檔是修正第 1 輪之前的輸出；現在的測試數量是 42 passed / 489 skipped（見 08-fix1-green.txt、06）
+$ python -m pytest --collect-only -q tests/test_spec.py | tail -1
+483 tests collected in 0.17s
+$ ls spec/features/*.feature | wc -l  → 31
+
+$ python -m pytest tests/integration/test_world_bdd.py -v
+tests/integration/test_world_bdd.py::test_a_scenario_can_write_to_the_database PASSED [ 50%]
+tests/integration/test_world_bdd.py::test_the_next_scenario_starts_from_the_background_again PASSED [100%]
+============================== 2 passed in 0.05s ===============================
+
+# background 載入：解析器直接讀 spec/background.md
+tests/unit/test_background_parser.py::test_background_matches_spec PASSED [100%]
+============================== 1 passed in 0.02s ===============================
