@@ -162,13 +162,17 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    # D-039：用 GitHub API 的 author.login 判斷，所以需要讀 PR 的 commit。權限只給最小的唯讀。
+    permissions:
+      contents: read
+      pull-requests: read
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CI_PR_NUMBER: ${{ github.event.pull_request.number }}
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: 取得目標分支的 commit
-        run: echo "CI_BASE_SHA=$(git rev-parse origin/${{ github.base_ref }})" >> "$GITHUB_ENV"
       - run: python3 scripts/ci/run.py commit-author
 
   done-when:

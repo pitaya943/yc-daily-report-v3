@@ -34,8 +34,23 @@ def sandbox_problems() -> list[str]:
     return migration_sandbox.run_sandbox(database_url(), migrations)
 
 
+def commit_author_problems(ctx, extra: list[str]) -> list[str]:
+    """CI：讀 PR 的 commit（GITHUB_TOKEN、GITHUB_REPOSITORY、CI_PR_NUMBER）。
+    本地：`commit-author --range origin/main..origin/milestone/M0 --logins-file <sha→login 的 JSON>`。"""
+    if extra[:1] == ["--range"] and len(extra) == 4 and extra[2] == "--logins-file":
+        logins = json.loads(Path(extra[3]).read_text(encoding="utf-8"))
+        return checks.check_commit_author_range(ctx, logins, extra[1])
+    if extra:
+        raise checks.CheckError("commit-author 的參數只能是 --range <A..B> --logins-file <檔案>")
+    token, repo, number = os.environ.get("GITHUB_TOKEN"), os.environ.get("GITHUB_REPOSITORY"), os.environ.get("CI_PR_NUMBER")
+    if not (token and repo and number):
+        raise checks.CheckError("缺少 GITHUB_TOKEN／GITHUB_REPOSITORY／CI_PR_NUMBER")
+    api = os.environ.get("GITHUB_API_URL", "https://api.github.com")
+    return checks.check_commit_author(checks.fetch_pr_commits(repo, int(number), token, api))
+
+
 def main(argv: list[str]) -> int:
-    if len(argv) != 2 or argv[1] not in NAMES:
+    if len(argv) < 2 or argv[1] not in NAMES or (len(argv) > 2 and argv[1] != "commit-author"):
         print(f"用法：run.py <{'|'.join(NAMES)}>", file=sys.stderr)
         return 2
     name = argv[1]
@@ -48,7 +63,9 @@ def main(argv: list[str]) -> int:
         pr_body=os.environ.get("CI_PR_BODY", ""),
     )
     try:
-        if name == "done-when":
+        if name == "commit-author":
+            problems = commit_author_problems(ctx, argv[2:])
+        elif name == "done-when":
             rp = Path(os.environ.get("YC_RULE_REPORT", "rule-report.json"))
             report = json.loads(rp.read_text(encoding="utf-8")) if rp.exists() else None
             problems = checks.check_done_when(ctx, report)

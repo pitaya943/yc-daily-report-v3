@@ -20,6 +20,7 @@ TICKET = textwrap.dedent("""\
     depends_on: []
     migration: {migration}
     migration_number: {number}
+    {screens_line}
     allowed_paths:
     {paths}
     status: todo
@@ -37,9 +38,10 @@ TICKET = textwrap.dedent("""\
 """)
 
 
-def make_ticket(tid="T-900", paths=("app/feature/**",), migration=False, number="null", done="1. 見規則。"):
+def make_ticket(tid="T-900", paths=("app/feature/**",), migration=False, number="null", done="1. 見規則。", screens="false"):
+    """screens=None 代表 front matter 沒有這個欄位（D-040：判為失敗）。"""
     return TICKET.format(
-        id=tid, migration="true" if migration else "false", number=number,
+        id=tid, screens_line="" if screens is None else f"screens: {screens}", migration="true" if migration else "false", number=number,
         paths="\n".join(f"  - {p}" for p in paths), done=done,
     )
 

@@ -215,21 +215,26 @@ def check_path_scope(ctx: Ctx) -> list[str]:
 
 
 # ---------------------------------------------------------------- evidence
+# D-040：「涉及畫面」看 ticket front matter 的 screens: true/false（沒有這個欄位判為失敗）。
+# D-041：「證據」一節至少要有一個 code block（CLI 輸出）或一個指向 docs/evidence/<ticket>/ 的連結；內容品質由 Verifier 判斷。
 
-_PLACEHOLDERS = {"無", "n/a", "na", "-", "todo", "tbd", "待補"}
 _IMAGE = re.compile(r"\.(png|jpe?g|gif|webp)$", re.I)
+_FENCE = re.compile(r"(?ms)^[ \t]*(`{3,}|~{3,})[^\n]*\n(.*?)^[ \t]*\1[ \t]*$")
 
 
 def evidence_section(pr_body: str) -> str | None:
     m = re.search(r"^##[ \t]*證據[ \t]*\n(.*?)(?=^##[ \t]|\Z)", pr_body, re.S | re.M)
     if m is None:
         return None
-    text = re.sub(r"<!--.*?-->", "", m.group(1), flags=re.S)
-    return text.strip()
+    return re.sub(r"<!--.*?-->", "", m.group(1), flags=re.S).strip()
 
 
-def _ticket_has_screens(meta: dict) -> bool:
-    return any("templates" in p or "static" in p for p in meta["allowed_paths"])
+def evidence_has_proof(section: str, ticket_id: str) -> bool:
+    """至少一個有內容的 code block，或一個指向 docs/evidence/<ticket>/ 的連結（Markdown 連結或網址）。"""
+    if any(m.group(2).strip() for m in _FENCE.finditer(section)):
+        return True
+    link = rf"(?:\]\(|https?://)[^)\s]*docs/evidence/{re.escape(ticket_id)}/"
+    return re.search(link, section) is not None
 
 
 def check_evidence(ctx: Ctx) -> list[str]:
@@ -241,12 +246,15 @@ def check_evidence(ctx: Ctx) -> list[str]:
     section = evidence_section(ctx.pr_body)
     if section is None:
         bad.append("PR 說明沒有「## 證據」一節")
-    elif not section or section.lower() in _PLACEHOLDERS:
-        bad.append("PR 說明的「證據」一節是空的")
-    if _ticket_has_screens(meta):
+    elif not evidence_has_proof(section, tid):
+        bad.append(f"PR 說明的「證據」一節沒有 code block（CLI 輸出），也沒有指向 docs/evidence/{tid}/ 的連結")
+    screens = meta.get("screens")
+    if screens not in ("true", "false"):
+        bad.append(f"{tid} 的 front matter 沒有 screens: true/false（D-040），無法判定是否涉及畫面")
+    elif screens == "true":
         shots = [p for p in tree_files(ctx, ctx.head, f"docs/evidence/{tid}") if _IMAGE.search(p)]
         if not shots:
-            bad.append(f"{tid} 涉及畫面，但 docs/evidence/{tid}/ 沒有任何截圖")
+            bad.append(f"{tid} 涉及畫面（screens: true），但 docs/evidence/{tid}/ 沒有任何截圖")
     return bad
 
 
@@ -578,20 +586,75 @@ def check_tests(ctx: Ctx) -> list[str]:
     return bad
 
 
-# ---------------------------------------------------------------- commit-author
+# ---------------------------------------------------------------- commit-author（D-039）
+# 以 GitHub API 的 author.login 判斷，不比對 email：GitHub 網頁合併產生的 commit（例如 84852d9）用帳號的主要 email，
+# 但 GitHub 仍會把它對應到 bullet-bots。無法對應到帳號（author 是 null）一律失敗。
+
+BOT_LOGIN = "bullet-bots"
+API_PAGE = 100
+API_MAX_COMMITS = 250  # GitHub「列出 PR 的 commit」最多回傳 250 筆；超過就無法完整檢查，fail-closed
 
 
-def check_commit_author(ctx: Ctx) -> list[str]:
-    """PR 範圍內（head 有、目標分支沒有）的每個 commit，包含 merge commit，作者 email 都必須是機器帳號。
-    只看 author，不看 committer：GitHub 網頁操作（例如 Update branch）會把 committer 記成 GitHub。"""
-    out = git(ctx, "log", "--format=%H%x1f%ae%x1f%P", f"{ctx.head}", "--not", ctx.base).stdout
+def check_commit_author(commits: list[dict]) -> list[str]:
+    """commits 是 GitHub API（GET /repos/{repo}/pulls/{n}/commits）回傳的物件列表。"""
+    if not commits:
+        return ["PR 沒有任何 commit（API 回傳空），無法檢查"]
     bad = []
-    for line in out.splitlines():
-        sha, email, parents = line.split("\x1f")
-        if email.strip().lower() != BOT_EMAIL:
-            kind = "merge commit" if len(parents.split()) > 1 else "commit"
-            bad.append(f"{kind} {sha[:7]} 的作者是 {email}，必須是 {BOT_EMAIL}")
+    for c in commits:
+        sha = str(c.get("sha", "?"))[:7]
+        kind = "merge commit" if len(c.get("parents") or []) > 1 else "commit"
+        author = c.get("author")
+        if not author or not author.get("login"):
+            email = ((c.get("commit") or {}).get("author") or {}).get("email", "?")
+            bad.append(f"{kind} {sha} 的作者無法對應到 GitHub 帳號（author 是 null，commit 上的 email：{email}）")
+        elif author["login"].lower() != BOT_LOGIN:
+            bad.append(f"{kind} {sha} 的作者帳號是 {author['login']}，必須是 {BOT_LOGIN}")
+    if len(commits) >= API_MAX_COMMITS:
+        bad.append(f"PR 有 {len(commits)} 個以上的 commit，超過 API 能列出的上限，無法完整檢查")
     return bad
+
+
+def fetch_pr_commits(repo: str, number: int, token: str, api: str = "https://api.github.com", urlopen=None) -> list[dict]:
+    """逐頁讀 PR 的 commit。token 只放在 Authorization 標頭，不出現在任何輸出。urlopen 可注入，測試用。"""
+    import json
+    import urllib.request
+
+    urlopen = urlopen or urllib.request.urlopen
+    commits: list[dict] = []
+    for page in range(1, API_MAX_COMMITS // API_PAGE + 2):
+        req = urllib.request.Request(
+            f"{api.rstrip('/')}/repos/{repo}/pulls/{number}/commits?per_page={API_PAGE}&page={page}",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/vnd.github+json",
+                "X-GitHub-Api-Version": "2022-11-28",
+            },
+        )
+        try:
+            with urlopen(req, timeout=30) as resp:
+                batch = json.loads(resp.read().decode("utf-8"))
+        except Exception as e:  # noqa: BLE001  網路或權限問題：fail-closed，且不印出請求內容
+            raise CheckError(f"讀取 PR #{number} 的 commit 失敗：{type(e).__name__}") from None
+        if not isinstance(batch, list):
+            raise CheckError("GitHub API 的回應不是 commit 列表")
+        commits += batch
+        if len(batch) < API_PAGE:
+            return commits
+    return commits
+
+
+def check_commit_author_range(ctx: Ctx, logins: dict[str, str | None], range_spec: str) -> list[str]:
+    """本地的檢查方式：git 範圍（例如 origin/main..origin/milestone/M0）內的每個 commit，都要在 logins
+    （sha → API 的 author.login，null 用 None）裡有紀錄且是 bullet-bots。用來在沒有 PR 的情況下確認 milestone PR 會通過。"""
+    shas = git(ctx, "rev-list", range_spec).stdout.split()
+    commits = []
+    for sha in shas:
+        parents = git(ctx, "rev-list", "--parents", "-n", "1", sha).stdout.split()[1:]
+        if sha not in logins:
+            return [f"commit {sha[:7]} 沒有 API 的作者紀錄，無法判定（fail-closed）"]
+        login = logins[sha]
+        commits.append({"sha": sha, "parents": parents, "author": {"login": login} if login else None})
+    return check_commit_author(commits)
 
 
 # ---------------------------------------------------------------- lint

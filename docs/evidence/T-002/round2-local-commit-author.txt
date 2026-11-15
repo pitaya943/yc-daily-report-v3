@@ -1,0 +1,6 @@
+--- 本地確認 origin/main..origin/milestone/M0（含 84852d9）：
+[commit-author] 通過
+--- 對照：把 84852d9 的帳號改成 None（模擬 author 是 null）會失敗：
+[commit-author] merge commit 84852d9 的作者無法對應到 GitHub 帳號（author 是 null，commit 上的 email：?）
+[commit-author] 失敗：1 項
+exit code: 1
