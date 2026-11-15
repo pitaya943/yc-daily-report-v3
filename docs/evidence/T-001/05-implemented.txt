@@ -1,3 +1,4 @@
+# 注意：此檔是修正第 1 輪之前的輸出；現在的測試數量是 42 passed / 489 skipped（見 08-fix1-green.txt、06）
 $ python -m pytest tests/unit/test_implemented_mechanism.py -v
 tests/unit/test_implemented_mechanism.py::test_rule_id_of PASSED         [ 25%]
 tests/unit/test_implemented_mechanism.py::test_load_implemented_ignores_comments_and_blank_lines PASSED [ 50%]

@@ -1,3 +1,4 @@
+# 注意：此檔是修正第 1 輪之前的輸出；現在的測試數量是 42 passed / 489 skipped（見 08-fix1-green.txt、06）
 $ python -m pytest tests/unit/test_clock.py -v
 tests/unit/test_clock.py::test_set_and_read PASSED                       [ 16%]
 tests/unit/test_clock.py::test_frozen_clock_does_not_move PASSED         [ 33%]

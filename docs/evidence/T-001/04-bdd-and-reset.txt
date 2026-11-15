@@ -1,3 +1,4 @@
+# 注意：此檔是修正第 1 輪之前的輸出；現在的測試數量是 42 passed / 489 skipped（見 08-fix1-green.txt、06）
 $ python -m pytest --collect-only -q tests/test_spec.py | tail -1
 483 tests collected in 0.17s
 $ ls spec/features/*.feature | wc -l  → 31

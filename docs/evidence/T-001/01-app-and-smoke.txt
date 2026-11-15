@@ -1,3 +1,4 @@
+# 注意：此檔是修正第 1 輪之前的輸出；現在的測試數量是 42 passed / 489 skipped（見 08-fix1-green.txt、06）
 $ python -m pytest tests/integration/test_smoke.py -v
 tests/integration/test_smoke.py::test_http_request_reaches_the_database PASSED [ 20%]
 tests/integration/test_smoke.py::test_every_scenario_starts_from_a_clean_database PASSED [ 40%]
