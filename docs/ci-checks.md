@@ -4,8 +4,8 @@
 
 | 檢查 | 內容 | 失敗時 |
 | --- | --- | --- |
-| `tests` | 在乾淨的 PostgreSQL 上執行單元測試與 `tests/implemented.txt` 列出的所有規則的 scenario。 | 任何一個失敗 |
-| `spec-readonly` | 來源分支是 `ticket/*` 的 PR 不得修改 `spec/**`、`AGENTS.md`、`.claude/**`、`.github/**`、`docs/decisions.md`、`docs/board.md`。 | 有任何一個被修改 |
+| `tests` | 在乾淨的 PostgreSQL 17（D-033）上執行單元測試與 `tests/implemented.txt` 列出的所有規則的 scenario。 | 任何一個失敗 |
+| `spec-readonly` | 來源分支是 `ticket/*` 的 PR 不得修改 `spec/**`、`AGENTS.md`、`.claude/**`、`.github/**`、`docs/decisions.md`、`docs/board.md`；例外是該 ticket 的 `allowed_paths` 明確列出的路徑（D-031）。 | 有任何一個被修改 |
 | `path-scope` | 從分支名稱找到 `docs/tickets/T-xxx.md`，PR 修改的每個檔案都要符合它的 `allowed_paths`。 | 有範圍外的檔案 |
 | `evidence` | PR 說明的「證據」一節不是空的；ticket 涉及畫面時，`docs/evidence/<ticket 編號>/` 至少有一張截圖。 | 缺少證據 |
 | `migration-scope` | `migrations/*.sql` 只能操作 `yc_v3`；不得出現對其他 schema 的 `CREATE`、`ALTER`、`DROP`、`TRUNCATE`。只有 `migration: true` 的 ticket 能新增 migration，且檔名編號等於 `migration_number`。已合併的 migration 不得被修改。 | 任一條不符 |

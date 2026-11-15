@@ -22,7 +22,7 @@
 ## 不可違反
 
 1. **只有 Kuei 合併 `main`。** Chief 只在 CI 全綠且 Verifier 判定 PASS 時，把 ticket PR 合併進 `milestone/Mx`。不 force-push，不改寫別人的分支歷史。
-2. **Builder 不得修改** `spec/**`、`AGENTS.md`、`.claude/**`、`.github/**`、`docs/decisions.md`、`docs/board.md`，也不得修改 ticket 的 `allowed_paths` 以外的檔案。
+2. **Builder 不得修改** `spec/**`、`AGENTS.md`、`.claude/**`、`.github/**`、`docs/decisions.md`、`docs/board.md`，也不得修改 ticket 的 `allowed_paths` 以外的檔案。唯一的例外：ticket 的 `allowed_paths` 明確列出的 `.github/workflows/**` 可以修改（D-031）。
 3. **不得為了通過而弱化測試**：不跳過、不標記預期失敗、不刪除 scenario、不放寬斷言。
 4. **先寫會失敗的測試，再寫實作。**
 5. **每個拒絕案例斷言三件事**：結果類別、完整錯誤字串、資料沒有任何變動。

@@ -32,6 +32,13 @@
 | D-026 | Agent 用什麼身分操作 GitHub？ | 機器帳號 `bullet-bots`，只有寫入權限。做法是把 Claude 帳號的 GitHub 連結換成這個帳號。 | 讓 GitHub 能區分 Kuei 與 agent：分支規則才擋得住 agent，agent 開的 issue 才會通知 Kuei | 2026-11-15 | |
 | D-027 | Commit 的作者？ | 也用 `bullet-bots`。 | Kuei 指定 | 2026-11-15 | |
 | D-028 | 誰能更新 `main`？ | 只有 repo 管理員（Kuei），以規則集強制。 | `bullet-bots` 不是管理員，無法合併進 `main` | 2026-11-15 | |
+| D-029 | M0 的 ticket 計畫？ | 照 issue #1 核准：T-001 先做，T-002 與 T-003 同時進行，合併時先 T-002、後 T-003。 | Kuei 核准 | 2026-11-15 | issue #1 |
+| D-030 | T-001 要寫 `AGENTS.md` 的「指令」一節，但 Builder 不能改 `AGENTS.md`，怎麼辦？ | Builder 寫在 `README.md`；T-001 合併後由 Chief 搬進 `AGENTS.md`。 | 維持「Builder 不改規則檔」 | 2026-11-15 | issue #1 選項 1A |
+| D-031 | T-002 要寫 `.github/workflows/**`，怎麼處理？ | ticket 的 `allowed_paths` 明確列出的 `.github/workflows/**` 可以修改；`spec-readonly` 的禁止清單減去 `allowed_paths` 明確列出的路徑。 | 讓 CI 能在 T-002 的 PR 上實際執行 | 2026-11-15 | issue #1 選項 2A；`AGENTS.md` 第 2 條同步修改 |
+| D-032 | T-001 合併前沒有 CI，「CI 全綠」怎麼判定？ | 改由 Verifier 在乾淨的 checkout 上照 `README.md` 的指令重跑完整測試並附 CLI 輸出。T-003 照原條件，等 T-002 合併後在真的 CI 上全綠。 | CI 由 T-002 才建立 | 2026-11-15 | issue #1 選項 3A |
+| D-033 | 本地與 CI 用哪一版 PostgreSQL？ | 17，與共用 Supabase 專案（17.6.1.127）同一主版本。容器沒有 Docker daemon，從 `apt.postgresql.org` 安裝；CI 用 `postgres:17` service。 | Kuei 套用 migration 時不會因版本不同而出現差異 | 2026-11-15 | issue #1 選項 5A；環境 `yc-daily-report-v3` 已允許 `apt.postgresql.org`、`www.postgresql.org` |
+| D-034 | T-003 可以改哪些檔案？ | `allowed_paths` 加上 `migrations/0002_*.sql`（原本漏列）與 `app/main.py`（只註冊 exception handler 與稽核 middleware）。 | migration ticket 必須能新增 migration；HTTP 對應需要在 app 註冊 | 2026-11-15 | issue #1 選項 4A |
+| D-035 | Chief 與 Builder 可以推送哪些分支？ | Chief 建立並推送 `milestone/M0`；Builder 推送 `ticket/T-001`、`ticket/T-002`、`ticket/T-003`。 | 符合 `docs/workflow.md` 的分支模型 | 2026-11-15 | issue #1 選項 6A |
 
 ## 待決定
 

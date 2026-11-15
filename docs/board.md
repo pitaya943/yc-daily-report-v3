@@ -4,11 +4,16 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 
 狀態：`todo` → `building` → `verifying` → `fixing` → `passed` → `merged`，或 `escalated`（已開 issue 等 Kuei）、`blocked`（依賴的 ticket 尚未完成或被擋住）。
 
+## M0（計畫：issue #1，D-029）
+
+- 同時進行上限：2 張（T-002 ‖ T-003）。
+- 模型：Chief claude-opus-5-5；Builder claude-sonnet-5-5；Verifier claude-opus-5-5；修正第二輪 Builder claude-opus-5-5。
+
 | Ticket | Milestone | 標題 | 狀態 | PR | 修正輪數 | 備註 |
 | --- | --- | --- | --- | --- | --- | --- |
-| T-001 | M0 | 專案骨架與測試框架 | todo | — | — | — |
-| T-002 | M0 | CI 檢查 | todo | — | — | — |
-| T-003 | M0 | 共用基礎：結果類別、稽核寫入、權限檢查 | todo | — | — | — |
+| T-001 | M0 | 專案骨架與測試框架 | building | — | 0 | Builder 第一輪：claude-sonnet-5-5 |
+| T-002 | M0 | CI 檢查 | blocked | — | — | 等 T-001 合併 |
+| T-003 | M0 | 共用基礎：結果類別、稽核寫入、權限檢查 | blocked | — | — | 等 T-001 合併；合併順序在 T-002 之後 |
 | T-101 | M1 | 登入 | todo | — | — | — |
 | T-102 | M1 | 登入鎖定與頻率限制 | todo | — | — | — |
 | T-103 | M1 | Session 與登出 | todo | — | — | — |
