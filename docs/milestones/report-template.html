@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mx 報告 — 員工日報系統</title>
+<style>
+  :root { --bg:#f7f9f9; --card:#fff; --ink:#18282b; --muted:#5a6c6f; --line:#d6dfe0; --accent:#0d6b74; --warn:#b5560b; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111b1d; --card:#182628; --ink:#e5eced; --muted:#9db1b4; --line:#2d4144; --accent:#6cc7cf; --warn:#f0a45c; } }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.75 "Noto Sans TC", system-ui, sans-serif; }
+  main { max-width:860px; margin:0 auto; padding:40px 16px 80px; }
+  h1 { font-size:1.8rem; margin:0 0 4px; }
+  h2 { font-size:1.25rem; color:var(--accent); margin:44px 0 12px; border-bottom:1px solid var(--line); padding-bottom:6px; }
+  p, li { max-width:68ch; }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .verdict { background:var(--card); border:1px solid var(--line); border-left:5px solid var(--accent); padding:16px 20px; margin-top:20px; }
+  .todo { color:var(--warn); }
+  .scroll { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; font-size:.92rem; background:var(--card); }
+  th, td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { white-space:nowrap; }
+  code, pre { font-family:ui-monospace, Menlo, monospace; font-size:.88em; }
+  pre { background:var(--card); border:1px solid var(--line); padding:12px 14px; overflow-x:auto; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Mx 報告：（milestone 名稱）</h1>
+  <p class="meta">分支 <code>milestone/Mx</code> · 報告日期 YYYY-MM-DD · 撰寫者 Chief</p>
+
+  <div class="verdict">
+    <p><strong>結論。</strong>（三到五句：這個 milestone 完成了什麼、沒完成什麼、Kuei 最該注意的一件事。）</p>
+  </div>
+
+  <h2>1. 達成的 feature</h2>
+  <p>（一句話說明這個 milestone 讓使用者能做到什麼。）</p>
+  <div class="scroll"><table>
+    <tr><th>Feature</th><th>規則</th><th>Scenario 通過／總數</th><th>Ticket</th><th>PR</th><th>證據</th><th>Builder／Verifier 的模型</th></tr>
+    <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  </table></div>
+  <p>重算這些數字的指令：</p>
+  <pre>（指令）</pre>
+
+  <h2>2. 為何這樣設計</h2>
+  <p>（每個重要的設計決定一小段：問題是什麼、比較過哪些做法、選了哪個、放棄其他的理由、在什麼情況下這個選擇會出問題。）</p>
+
+  <h2>3. 如何審查</h2>
+  <p>（建議的閱讀順序。先看哪幾個檔案、每個檔案要看什麼、哪些地方最值得花時間。）</p>
+  <div class="scroll"><table>
+    <tr><th>順序</th><th>檔案</th><th>要看什麼</th></tr>
+    <tr><td></td><td></td><td></td></tr>
+  </table></div>
+
+  <h2>4. 如何驗證</h2>
+  <p>（Kuei 可以照做的步驟，不假設使用這個 repo 的 agent。）</p>
+  <h3>4.1 自動測試</h3>
+  <pre>（安裝、啟動資料庫、套用 migration、執行測試的指令與預期輸出）</pre>
+  <h3>4.2 手動操作流程</h3>
+  <div class="scroll"><table>
+    <tr><th>步驟</th><th>操作</th><th>預期結果</th><th>對應規則</th></tr>
+    <tr><td></td><td></td><td></td><td></td></tr>
+  </table></div>
+  <h3>4.3 建議的獨立驗證</h3>
+  <p>（適合用別的模型或環境重新檢查的地方，例如：用試算表重算薪資的例子、請另一個模型只讀規格寫測試再來跑。）</p>
+
+  <h2>5. Migration 套用步驟</h2>
+  <p>（這個 milestone 新增的 migration 檔、套用到共用資料庫的指令、每個檔案套用後的檢查查詢與預期結果、回滾方式。沒有 migration 就寫「無」。）</p>
+
+  <h2>6. Agent 自行做的判斷</h2>
+  <p>（規格沒有明說、由 agent 決定的每一件事。沒有就寫「無」。）</p>
+  <div class="scroll"><table>
+    <tr><th>判斷</th><th>誰做的</th><th>理由</th><th>位置</th></tr>
+    <tr><td></td><td></td><td></td><td></td></tr>
+  </table></div>
+
+  <h2>7. 問過 Kuei 的問題與決定</h2>
+  <div class="scroll"><table>
+    <tr><th>Issue</th><th>問題</th><th>決定</th><th>影響</th></tr>
+    <tr><td></td><td></td><td></td><td></td></tr>
+  </table></div>
+
+  <h2>8. 已知風險與沒做到的事</h2>
+  <p class="todo">（沒做到的事直接寫沒做到。每一項寫出後果與建議的處理方式。）</p>
+
+  <h2>9. 過程紀錄</h2>
+  <div class="scroll"><table>
+    <tr><th>Ticket</th><th>修正輪數</th><th>Verifier 找到的問題</th><th>備註</th></tr>
+    <tr><td></td><td></td><td></td><td></td></tr>
+  </table></div>
+
+  <h2>10. 這個 milestone 的學習重點</h2>
+  <p>（三到五個值得 Kuei 理解的概念，各用一小段說明：是什麼、這個專案在哪裡用到、為什麼重要。然後列出四個問題讓 Kuei 自己回答：做了什麼與為什麼、為什麼選這個做法、什麼情況下會失效、學到什麼。）</p>
+</main>
+</body>
+</html>
