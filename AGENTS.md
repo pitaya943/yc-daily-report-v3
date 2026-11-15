@@ -94,7 +94,19 @@ docs/                             流程、決定、看板、ticket、milestone 
 
 ## 指令
 
-（T-001 完成後由該 ticket 填入：安裝、啟動資料庫、套用 migration、執行測試、啟動應用程式。）
+在 repo 根目錄執行。完整說明見 `README.md`（D-030：由 T-001 寫入 README，Chief 搬到這裡）。
+
+```bash
+scripts/dev/install-postgres   # 安裝 PostgreSQL 17（PGDG apt，需要 root；D-033）
+pip install -e '.[dev]'        # 安裝 Python 套件
+scripts/dev/db-start           # 啟動本機資料庫：127.0.0.1:5433，資料庫 yc
+scripts/dev/migrate            # 依編號套用 migrations/NNNN_*.sql 到 yc_v3
+python3 -m pytest              # 全部測試；會清空本機 yc_v3 的資料
+scripts/dev/run                # 啟動應用程式：http://127.0.0.1:8000，GET /health
+```
+
+- 其他：`scripts/dev/db-stop`、`scripts/dev/db-reset`。
+- 本機防線是 fail-closed：`DATABASE_URL` 只接受本機位址；`PGSERVICE`、`PGSERVICEFILE`、`PGSYSCONFDIR` 或不認得的 `PG*` 環境變數只要有設就拒絕。訊息以 `refusing to connect:` 開頭時，先 `unset` 該變數。
 
 ## Skills
 
