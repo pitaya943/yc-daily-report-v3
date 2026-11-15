@@ -8,13 +8,32 @@
 """
 from __future__ import annotations
 
+from collections import OrderedDict
 from pathlib import Path
 
 import pytest
-
+import pytest_bdd.parser as bdd_parser
 from pytest_bdd.scenario import scenario_wrapper_template_registry
 
 from tests.support.implemented import load_implemented, rule_id_of
+
+
+class _UniqueKeyDict(OrderedDict):
+    """pytest-bdd 以 scenario 名稱當 key 存進 feature.scenarios，同一個 .feature 內重名的 scenario
+    會被後者默默覆蓋（CFG-F02 有兩個 `Validation`，CFG-R10 的 6 個例子因此從不執行）。
+    這裡遇到重名就把 key 改成「名稱 (line N)」，所有 scenario 都保留；ScenarioTemplate.name 不變。
+    受 pyproject 的 pytest-bdd>=9,<10 限制；若 pytest-bdd 改了內部結構，
+    tests/unit/test_spec_collection.py 會因為收集數量不符而失敗，不會默默少測。
+    """
+
+    def __setitem__(self, key, value):
+        if key in self:
+            key = f"{key} (line {value.line_number})"
+        super().__setitem__(key, value)
+
+
+# FeatureParser 用 `OrderedDict()` 建立 feature.scenarios；換成會處理重名的版本
+bdd_parser.OrderedDict = _UniqueKeyDict
 
 DEFAULT_LIST = Path(__file__).resolve().parents[1] / "implemented.txt"
 DEFAULT_SPEC_DIR = Path(__file__).resolve().parents[2] / "spec" / "features"

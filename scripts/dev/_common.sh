@@ -22,14 +22,14 @@ PG_LOG="${YC_PG_LOG:-/tmp/yc-pg17.log}"
 # 預設連線字串：只聽 127.0.0.1，trust 驗證（不存在任何密碼）
 export DATABASE_URL="${DATABASE_URL:-postgresql://postgres@127.0.0.1:${PG_PORT}/${PG_DB}}"
 
-# 防線：非本機位址一律拒絕（與 app/core/db.py 的 assert_local_url 同一規則）
+# 防線：非本機位址一律拒絕
 assert_local_database_url() {
-  local host
-  host="$(printf '%s' "$DATABASE_URL" | sed -E 's#^[a-z]+://([^@/]*@)?(\[[^]]*\]|[^:/?]*).*#\2#')"
-  case "$host" in
-    localhost|127.0.0.1|'[::1]'|'') ;;
-    *) echo "拒絕連線：DATABASE_URL 的主機不是本機（$host）。本專案只使用容器內的 PostgreSQL。" >&2; exit 1 ;;
-  esac
+  # 與 app/core/db.py 同一份檢查（app/core/local_url.py，不依賴第三方套件）；URL 走環境變數，不出現在 ps
+  local msg
+  if ! msg="$(cd "$REPO_ROOT" && DATABASE_URL="$DATABASE_URL" python3 -m app.core.local_url)"; then
+    echo "$msg。本專案只使用容器內的 PostgreSQL。" >&2
+    exit 1
+  fi
 }
 
 require_pg_binaries() {

@@ -1,0 +1,31 @@
+$ python3 -m pytest --collect-only -q tests/test_spec.py | tail -1
+489 tests collected in 0.17s
+
+$ echo CFG-R10 > impl.txt; python3 -m pytest tests/test_spec.py --implemented impl.txt -q   # 列入 CFG-R10 → 7 個被執行
+7 failed, 482 skipped in 0.69s
+
+$ python3 -m pytest tests/unit/test_spec_collection.py tests/unit/test_local_only.py -q
+24 passed in 1.97s
+
+# 反向驗證：拿掉重名處理（把 bdd_parser.OrderedDict 還原），收集數量測試必須失敗
+E       AssertionError: collected 483 but spec expands to 489: some scenario was dropped
+        m = re.search(r"(\d+) failed", r.stdout.strip().splitlines()[-1])
+E       AssertionError: ss [ 89%]
+ 1 file changed, 20 insertions(+), 1 deletion(-)
+
+# scripts/dev 的防線（hostaddr / PGHOST / service）
+$ DATABASE_URL=postgresql://u:***@localhost/yc?hostaddr=203.0.113.5 scripts/dev/migrate
+refusing to connect: non-loopback hostaddr '203.0.113.5'。本專案只使用容器內的 PostgreSQL。
+exit=1
+$ DATABASE_URL=postgresql:///yc?host=db.example.supabase.co scripts/dev/migrate
+refusing to connect: non-local database host 'db.example.supabase.co'。本專案只使用容器內的 PostgreSQL。
+exit=1
+$ PGHOST=db.example.supabase.co DATABASE_URL=postgresql:///yc scripts/dev/migrate
+refusing to connect: PGHOST points to a non-local host 'db.example.supabase.co'。本專案只使用容器內的 PostgreSQL。
+exit=1
+$ scripts/dev/migrate   # 預設 URL 仍可用
+略過 0001_init_accounts.sql（已套用）
+migration 完成
+
+$ python3 -m pytest   # 全部
+42 passed, 489 skipped in 2.76s

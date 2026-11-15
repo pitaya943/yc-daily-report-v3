@@ -37,7 +37,7 @@
   其他一律 skip，原因顯示「尚未實作」，不算失敗。實作一條規則的 ticket 要在同一個 PR 把它的 ID 加進清單。
 - 步驟實作放在 `tests/steps/<feature ID>/`；框架自己的測試在 `tests/unit/`、`tests/integration/`。
 - 時間一律經過 `app/core/clock.py`：測試用 `clock.set(...)`、`clock.advance(...)`；`tests/unit/test_clock.py` 會掃描 `app/` 確認沒有直接讀系統時間（包含 SQL 的 `now()`）。
-- 目前 `tests/implemented.txt` 是空的，所以 spec 的 scenario 全部顯示為「尚未實作」；`27 passed, 483 skipped` 是 T-001 完成時的正常結果。
+- 目前 `tests/implemented.txt` 是空的，所以 spec 的 scenario 全部顯示為「尚未實作」；`42 passed, 489 skipped` 是 T-001 完成時的正常結果（489 = spec 的 245 個 scenario 依 Examples 展開；`tests/unit/test_spec_collection.py` 會確認一個都沒少）。
 
 ### 目錄
 
