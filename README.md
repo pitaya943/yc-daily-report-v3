@@ -30,6 +30,8 @@
 
 ### 測試怎麼運作
 
+> **注意：** 測試會清空 `DATABASE_URL` 指向的資料庫裡 `yc_v3` 的所有資料表（`schema_migrations` 除外）。開發用的資料和測試共用同一個本機資料庫，跑完測試後開發資料就沒了；要手動試用請在測試之後重新匯入。
+
 - `tests/test_spec.py` 把 `spec/features/*.feature` 的每個 scenario 變成 pytest 測試。
 - **`tests/implemented.txt`** 列出已實作的規則 ID（例如 `IAM-R01`，一行一個）。只有列在其中的 Rule 底下的 scenario 會被執行；
   其他一律 skip，原因顯示「尚未實作」，不算失敗。實作一條規則的 ticket 要在同一個 PR 把它的 ID 加進清單。
