@@ -1,0 +1,84 @@
+# 修正第 2 輪：修正後
+
+$ python3 -m pytest tests/unit/test_local_only.py -q
+60 passed in 0.16s
+$ python3 -m pytest -q
+81 passed, 489 skipped in 1.98s
+
+# CLI：腳本與 connect() 在 libpq 之前拒絕（只用 .invalid 與 TEST-NET 位址，沒有任何連線送出）
+$ cat svc.conf
+[evil]
+host=remote-db.invalid
+[evil2]
+hostaddr=192.0.2.1
+
+# Verifier 第 2 輪的重現：PGSERVICE + 不帶主機的 URL
+$ PGSERVICEFILE=$PWD/svc.conf PGSERVICE=evil DATABASE_URL=postgresql:///yc scripts/dev/migrate
+refusing to connect: environment variable PGSERVICE is set (a service file can point to any host)。本專案只使用容器內的 PostgreSQL。
+exit=1
+$ HOME=$TMP PGSERVICE=evil DATABASE_URL=postgresql:///yc scripts/dev/migrate   # 只設 PGSERVICE，讀預設的 ~/.pg_service.conf
+refusing to connect: environment variable PGSERVICE is set (a service file can point to any host)。本專案只使用容器內的 PostgreSQL。
+exit=1
+$ PGSERVICEFILE=$PWD/svc.conf PGSERVICE=evil2 scripts/dev/migrate             # 預設 URL（有 host）也拒絕
+refusing to connect: environment variable PGSERVICE is set (a service file can point to any host)。本專案只使用容器內的 PostgreSQL。
+exit=1
+$ PGSYSCONFDIR=/etc/postgresql-common scripts/dev/migrate
+refusing to connect: environment variable PGSYSCONFDIR is set (a service file can point to any host)。本專案只使用容器內的 PostgreSQL。
+exit=1
+$ PGFUTURETARGET=remote-db.invalid scripts/dev/migrate                         # 不認得的 PG* 變數
+refusing to connect: unrecognised libpq environment variable PGFUTURETARGET (cannot prove it keeps the target local)。本專案只使用容器內的 PostgreSQL。
+exit=1
+$ DATABASE_URL='postgresql://localhost?@remote-db.invalid/yc' scripts/dev/migrate  # libpq 讀成 host=remote-db.invalid
+refusing to connect: DATABASE_URL names a non-local database host 'remote-db.invalid'。本專案只使用容器內的 PostgreSQL。
+exit=1
+$ DATABASE_URL='postgresql://postgres@127.0.0.1:5433/yc?oauth_issuer=https://remote-db.invalid' scripts/dev/migrate
+refusing to connect: query parameter 'oauth_issuer' is not allowed。本專案只使用容器內的 PostgreSQL。
+exit=1
+# 同一情境走 app.core.db.connect()
+$ PGSERVICEFILE=$PWD/svc.conf PGSERVICE=evil DATABASE_URL=postgresql:///yc python3 -c "import app.core.db as d; d.connect()"
+app.core.local_url.UnsafeDatabaseUrl: refusing to connect: environment variable PGSERVICE is set (a service file can point to any host)
+exit=1
+
+# 正常路徑不受影響
+$ scripts/dev/migrate
+略過 0001_init_accounts.sql（已套用）
+migration 完成
+exit=0
+$ PGPORT=5433 PGUSER=postgres PGOPTIONS="-c client_min_messages=warning" DATABASE_URL=postgresql://postgres@127.0.0.1:5433/yc scripts/dev/migrate
+略過 0001_init_accounts.sql（已套用）
+migration 完成
+exit=0
+
+# 差分模糊測試：parse_libpq_uri vs libpq 18.6 的 PQconninfoParse（psycopg.conninfo.conninfo_to_dict），只解析不連線
+# DISAGREE = 我們接受、但 host/hostaddr 與 libpq 不同；accepted_by_us_but_libpq_error = 我們接受、libpq 無法解析
+$ for seed in 1 2 3; do python3 fuzz.py $seed 200000; done
+N=200000 agree=107065 refused_by_us=92935 accepted_by_us_but_libpq_error=0 DISAGREE=0
+N=200000 agree=106905 refused_by_us=93095 accepted_by_us_but_libpq_error=0 DISAGREE=0
+N=200000 agree=106858 refused_by_us=93142 accepted_by_us_but_libpq_error=0 DISAGREE=0
+# 第一次跑（尚未拒絕空白字元）時 DISAGREE≈6000/200000，全部是空白造成（libpq 會修剪，例：'postgresql:// ' → libpq host=''、我們 host=' '），因此改為含空白或控制字元即拒絕。
+
+# 變異測試（每個變異只改本地，跑完立即還原）
+MA 拿掉 PGSERVICE/PGSERVICEFILE/PGSYSCONFDIR 檢查        → 5 failed, 76 passed
+MA+MB 同時拿掉 service 檢查與未知 PG* 檢查（＝Verifier 的漏洞） → 8 failed（含 test_db_connect_refuses_PGSERVICE…、test_migrate_script_refuses_PGSERVICE…）
+MB 不拒絕未知 PG* 變數                                   → 1 failed
+MC 不拒絕空白字元                                         → 1 failed（固定 seed 的差分模糊測試）
+MD 把 service/servicefile/oauth_issuer 放進 query 白名單   → 4 failed
+ME 拿掉 connect() 的 libpq 交叉比對                       → 1 failed
+MF PGHOST 不檢查                                           → 2 failed
+MG 改回用 urlsplit 取 host（第 1 輪的做法）                  → 2 failed
+
+# libpq 實際認得的環境變數（清單來源之一）
+$ python3 -c "from psycopg import pq; print(pq.version()); [print(d.keyword.decode(), (d.envvar or b\"\").decode()) for d in pq.Conninfo.get_defaults()]"
+180006 service PGSERVICE user PGUSER password PGPASSWORD passfile PGPASSFILE channel_binding PGCHANNELBINDING connect_timeout PGCONNECT_TIMEOUT dbname PGDATABAS
+E host PGHOST hostaddr PGHOSTADDR port PGPORT client_encoding PGCLIENTENCODING options PGOPTIONS application_name PGAPPNAME fallback_application_name  keepalive
+s  keepalives_idle  keepalives_interval  keepalives_count  tcp_user_timeout  sslmode PGSSLMODE sslnegotiation PGSSLNEGOTIATION sslcompression PGSSLCOMPRESSION s
+slcert PGSSLCERT sslkey PGSSLKEY sslcertmode PGSSLCERTMODE sslpassword  sslrootcert PGSSLROOTCERT sslcrl PGSSLCRL sslcrldir PGSSLCRLDIR sslsni PGSSLSNI requirep
+eer PGREQUIREPEER require_auth PGREQUIREAUTH min_protocol_version PGMINPROTOCOLVERSION max_protocol_version PGMAXPROTOCOLVERSION ssl_min_protocol_version PGSSLM
+INPROTOCOLVERSION ssl_max_protocol_version PGSSLMAXPROTOCOLVERSION gssencmode PGGSSENCMODE krbsrvname PGKRBSRVNAME gsslib PGGSSLIB gssdelegation PGGSSDELEGATION
+ replication  target_session_attrs PGTARGETSESSIONATTRS load_balance_hosts PGLOADBALANCEHOSTS scram_client_key  scram_server_key  oauth_issuer  oauth_client_id 
+ oauth_client_secret  oauth_scope  sslkeylogfile 
+$ strings /usr/lib/x86_64-linux-gnu/libpq.so.5.18 | grep -E "^PG[A-Z_]+$" | grep -v ^PGRES_ | sort -u   # psql 17 實際載入的 libpq
+PGAPPNAME PGCHANNELBINDING PGCLIENTENCODING PGCONNECT_TIMEOUT PGDATABASE PGDATESTYLE PGGEQO PGGSSDELEGATION PGGSSENCMODE PGGSSLIB PGHOST PGHOSTADDR PGKRBSRVNAME
+ PGLOADBALANCEHOSTS PGLOCALEDIR PGMAXPROTOCOLVERSION PGMINPROTOCOLVERSION PGOAUTHDEBUG PGOPTIONS PGPASSFILE PGPASSWORD PGPORT PGREQUIREAUTH PGREQUIREPEER PGREQU
+IRESSL PGSERVICE PGSERVICEFILE PGSSLCERT PGSSLCERTMODE PGSSLCOMPRESSION PGSSLCRL PGSSLCRLDIR PGSSLKEY PGSSLMAXPROTOCOLVERSION PGSSLMINPROTOCOLVERSION PGSSLMODE 
+PGSSLNEGOTIATION PGSSLROOTCERT PGSSLSNI PGSYSCONFDIR PGTARGETSESSIONATTRS PGTZ PGUSER

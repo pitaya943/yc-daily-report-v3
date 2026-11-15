@@ -27,6 +27,9 @@
 其他：`scripts/dev/db-stop` 停止資料庫（資料保留）；`scripts/dev/db-reset` 刪除並重建資料庫後重新套用 migration。
 
 預設連線字串 `postgresql://postgres@127.0.0.1:5433/yc`（可用環境變數 `DATABASE_URL` 覆寫，但只接受本機位址）。
+本機防線（`app/core/local_url.py`）是 fail-closed：`DATABASE_URL` 只接受 `postgresql://` URI 與少數不影響連線目標的 query 參數；
+環境變數 `PGSERVICE`、`PGSERVICEFILE`、`PGSYSCONFDIR` 只要有設就拒絕，`PGHOST`／`PGHOSTADDR` 必須是本機，
+其他不認得的 `PG*` 環境變數也會拒絕。被拒絕時訊息以 `refusing to connect:` 開頭，請先 `unset` 該變數再執行。
 
 ### 測試怎麼運作
 
@@ -37,7 +40,7 @@
   其他一律 skip，原因顯示「尚未實作」，不算失敗。實作一條規則的 ticket 要在同一個 PR 把它的 ID 加進清單。
 - 步驟實作放在 `tests/steps/<feature ID>/`；框架自己的測試在 `tests/unit/`、`tests/integration/`。
 - 時間一律經過 `app/core/clock.py`：測試用 `clock.set(...)`、`clock.advance(...)`；`tests/unit/test_clock.py` 會掃描 `app/` 確認沒有直接讀系統時間（包含 SQL 的 `now()`）。
-- 目前 `tests/implemented.txt` 是空的，所以 spec 的 scenario 全部顯示為「尚未實作」；`42 passed, 489 skipped` 是 T-001 完成時的正常結果（489 = spec 的 245 個 scenario 依 Examples 展開；`tests/unit/test_spec_collection.py` 會確認一個都沒少）。
+- 目前 `tests/implemented.txt` 是空的，所以 spec 的 scenario 全部顯示為「尚未實作」；`81 passed, 489 skipped` 是 T-001 完成時的正常結果（489 = spec 的 245 個 scenario 依 Examples 展開；`tests/unit/test_spec_collection.py` 會確認一個都沒少）。
 
 ### 目錄
 
