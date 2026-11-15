@@ -59,6 +59,8 @@ jobs:
       - name: 安裝 PostgreSQL 17 用戶端（migrate 腳本需要 psql 17）
         run: sudo scripts/dev/install-postgres && sudo systemctl stop postgresql || true
       - run: pip install -e '.[dev]'
+      - name: 安裝 ruff（tests/ci 的 lint 測試要實際執行它；版本與 lint job 相同）
+        run: pip install ruff==0.16.9
       - name: 套用 migration 到 yc_v3
         run: scripts/dev/migrate
       - name: 單元測試與 tests/implemented.txt 列出的規則
