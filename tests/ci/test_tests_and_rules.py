@@ -269,6 +269,5 @@ def test_every_check_in_ci_checks_md_has_a_job_a_cli_entry_and_a_failing_test_mo
     sources = "".join(p.read_text(encoding="utf-8") for p in (root / "tests" / "ci").glob("test_*.py"))
     for name in names:
         assert re.search(rf"^  {name}:$", workflow, re.M), f"workflow 缺少 job {name}"
-        if name != "tests":  # tests 這項本身就是跑測試
-            assert name in run.NAMES, f"run.py 不認得 {name}"
-            assert f"check_{name.replace('-', '_')}" in sources, f"tests/ci 沒有針對 {name} 的案例"
+        assert name in run.NAMES, f"run.py 不認得 {name}"
+        assert f"check_{name.replace('-', '_')}" in sources, f"tests/ci 沒有針對 {name} 的案例"
