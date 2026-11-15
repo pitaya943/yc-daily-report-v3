@@ -13,7 +13,7 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 | --- | --- | --- | --- | --- | --- | --- |
 | T-001 | M0 | 專案骨架與測試框架 | merged | [#2](https://github.com/pitaya943/yc-daily-report-v3/pull/2) | 2 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（FAIL）；修正第 1 輪：claude-sonnet-5-5；Verifier 第 2 輪：claude-opus-5-5（FAIL：PGSERVICE）；修正第 2 輪：claude-opus-5-5（新 session）；Verifier 第 3 輪：claude-opus-5-5（PASS） |
 | T-002 | M0 | CI 檢查 | building | — | 0 | Builder 第一輪：claude-sonnet-5-5 |
-| T-003 | M0 | 共用基礎：結果類別、稽核寫入、權限檢查 | building | — | 0 | Builder 第一輪：claude-sonnet-5-5；合併順序在 T-002 之後 |
+| T-003 | M0 | 共用基礎：結果類別、稽核寫入、權限檢查 | building | [#4](https://github.com/pitaya943/yc-daily-report-v3/pull/4) | 0 | Builder 第一輪：claude-sonnet-5-5；合併順序在 T-002 之後；PR 已開，等 T-002 合併後跑 CI |
 | T-101 | M1 | 登入 | todo | — | — | — |
 | T-102 | M1 | 登入鎖定與頻率限制 | todo | — | — | — |
 | T-103 | M1 | Session 與登出 | todo | — | — | — |
