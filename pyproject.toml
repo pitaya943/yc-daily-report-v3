@@ -1,0 +1,42 @@
+[project]
+name = "yc-daily-report"
+version = "0.1.0"
+description = "員工日報系統 (yc-daily-report v3)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "jinja2>=3.1",
+    "psycopg[binary]>=3.2",
+]
+
+[project.optional-dependencies]
+# 測試用：pytest-bdd 讀 spec/features，httpx 是 Starlette TestClient 的依賴
+dev = [
+    "pytest>=8.3",
+    "pytest-bdd>=9.0,<10",
+    "httpx>=0.27",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# 讓 `tests.support...` 與 `app...` 都能 import
+pythonpath = ["."]
+addopts = "-rfE"
+# spec 的標籤（@B-044、@Q-041…）會被 pytest-bdd 轉成 marker，名稱含連字號無法預先註冊
+filterwarnings = ["ignore::pytest.PytestUnknownMarkWarning"]
+bdd_features_base_dir = "spec/features"
+markers = [
+    "domain: 純函式測試",
+    "api: 服務邊界測試",
+    "ui: 端到端測試",
+    "money: 影響薪資金額",
+    "concurrency: 需要真的平行請求",
+]

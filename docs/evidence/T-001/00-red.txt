@@ -1,0 +1,41 @@
+$ python3 -m pytest -q   # 先紅：app/、tests/support/ 都還不存在
+tests/integration/test_smoke.py:6: in <module>
+    from app.main import create_app
+E   ModuleNotFoundError: No module named 'app.main'
+__________________ ERROR collecting tests/unit/test_clock.py ___________________
+ImportError while importing test module '/home/user/yc-daily-report-v3/tests/unit/test_clock.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/local/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/unit/test_clock.py:7: in <module>
+    from app.core.clock import Clock
+E   ModuleNotFoundError: No module named 'app.core.clock'
+__________ ERROR collecting tests/unit/test_implemented_mechanism.py ___________
+ImportError while importing test module '/home/user/yc-daily-report-v3/tests/unit/test_implemented_mechanism.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/local/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/unit/test_implemented_mechanism.py:9: in <module>
+    from tests.support.implemented import load_implemented, rule_id_of
+E   ModuleNotFoundError: No module named 'tests.support.implemented'
+________________ ERROR collecting tests/unit/test_local_only.py ________________
+ImportError while importing test module '/home/user/yc-daily-report-v3/tests/unit/test_local_only.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/local/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/unit/test_local_only.py:4: in <module>
+    from app.core.db import UnsafeDatabaseUrl, assert_local_url
+E   ModuleNotFoundError: No module named 'app.core.db'
+=========================== short test summary info ============================
+ERROR tests/integration/test_smoke.py
+ERROR tests/unit/test_clock.py
+ERROR tests/unit/test_implemented_mechanism.py
+ERROR tests/unit/test_local_only.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 4 errors during collection !!!!!!!!!!!!!!!!!!!!
+4 errors in 0.49s
