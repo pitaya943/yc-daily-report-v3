@@ -1,0 +1,39 @@
+$ python3 -m pytest tests/unit/core tests/steps/common -v   # 完成條件 1–5
+tests/unit/core/test_audit.py::test_allowed_types_are_exactly_appendix_c PASSED
+tests/unit/core/test_audit.py::test_removed_types_are_rejected_and_nothing_is_written PASSED
+tests/unit/core/test_audit.py::test_unknown_type_is_rejected PASSED
+tests/unit/core/test_audit.py::test_write_records_actor_type_description_and_taipei_time PASSED
+tests/unit/core/test_audit.py::test_system_actor_is_recorded_as_system PASSED
+tests/unit/core/test_audit.py::test_without_a_connection_the_row_is_committed_on_its_own PASSED
+tests/unit/core/test_audit.py::test_with_a_connection_the_row_follows_the_callers_transaction PASSED
+tests/unit/core/test_audit.py::test_the_database_itself_rejects_types_outside_appendix_c PASSED
+tests/unit/core/test_audit.py::test_the_database_accepts_every_type_of_appendix_c PASSED
+tests/unit/core/test_outcomes.py::test_there_are_exactly_the_seven_classes_of_the_spec PASSED
+tests/unit/core/test_outcomes.py::test_every_class_maps_to_the_http_status_of_the_spec_table PASSED
+tests/unit/core/test_outcomes.py::test_handler_returns_status_class_and_the_full_message_verbatim PASSED
+tests/unit/core/test_outcomes.py::test_a_message_is_never_invented_when_the_spec_gives_none PASSED
+tests/unit/core/test_outcomes.py::test_create_app_registers_the_handler PASSED
+tests/unit/core/test_permissions.py::test_allowed_request_returns_and_writes_nothing PASSED
+tests/unit/core/test_permissions.py::test_denied_raises_forbidden_and_writes_exactly_one_access_denied[Admin1-rule0-<lambda>-role] PASSED
+tests/unit/core/test_permissions.py::test_denied_raises_forbidden_and_writes_exactly_one_access_denied[Wen-rule1-<lambda>-ownership] PASSED
+tests/unit/core/test_permissions.py::test_denied_raises_forbidden_and_writes_exactly_one_access_denied[Wen-rule2-<lambda>-state] PASSED
+tests/unit/core/test_permissions.py::test_denied_raises_forbidden_and_writes_exactly_one_access_denied[Wen-rule3-<lambda>-state missing is not allowed] PASSED
+tests/unit/core/test_permissions.py::test_denied_raises_forbidden_and_writes_exactly_one_access_denied[Wen-rule4-<lambda>-role] PASSED
+tests/unit/core/test_permissions.py::test_denied_raises_forbidden_and_writes_exactly_one_access_denied[Admin1-rule5-<lambda>-role] PASSED
+tests/unit/core/test_permissions.py::test_owner_has_every_admin_permission PASSED
+tests/unit/core/test_permissions.py::test_admin_does_not_get_owner_only_permission PASSED
+tests/unit/core/test_permissions.py::test_any_matching_rule_is_enough PASSED
+tests/unit/core/test_permissions.py::test_no_actor_is_unauthenticated_and_not_audited PASSED
+tests/unit/core/test_permissions.py::test_denial_audit_survives_the_callers_rollback PASSED
+tests/steps/common/test_common_steps.py::test_a_rejection_with_a_full_message_changes_nothing PASSED
+tests/steps/common/test_common_steps.py::test_a_rejection_without_a_spec_message_carries_no_message PASSED
+tests/steps/common/test_common_steps.py::test_a_forbidden_request_writes_only_the_access_denied_row PASSED
+tests/steps/common/test_common_steps.py::test_an_accepted_request_writes_its_audit_row_with_the_actor PASSED
+tests/steps/common/test_common_steps.py::test_nothing_written_detects_an_insert_the_response_hides PASSED
+tests/steps/common/test_common_steps.py::test_nothing_written_detects_update_and_delete PASSED
+tests/steps/common/test_common_steps.py::test_nothing_written_passes_when_the_database_is_identical PASSED
+tests/steps/common/test_common_steps.py::test_nothing_written_ignores_a_write_that_was_rolled_back PASSED
+tests/steps/common/test_common_steps.py::test_nothing_written_requires_the_action_to_go_through_the_recorder PASSED
+tests/steps/common/test_common_steps.py::test_rejection_step_checks_class_status_and_the_full_message PASSED
+tests/steps/common/test_common_steps.py::test_snapshot_covers_every_table_except_the_migration_ledger PASSED
+============================== 37 passed in 0.49s ==============================
