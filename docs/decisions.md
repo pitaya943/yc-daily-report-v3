@@ -42,6 +42,10 @@
 | D-036 | 附錄 A 的預設值（單價、保留金費率、年度上限）由哪張 ticket 載入？ | 延到 T-401：建立設定表時一併擴充 fixture loader。T-001 只載入時鐘與帳戶。 | 不提前替 T-401 決定設定表的資料模型 | 2026-11-15 | issue #3 選項 1A；T-001 完成條件 4、T-401 完成條件 5 與 `allowed_paths` 已改 |
 | D-037 | `yc_v3.accounts` 的約束是否沿用？ | 沿用 `bigint identity` 主鍵、`unique(name)`、role 與 zone 的 check。密碼、session 等欄位由 T-101、T-303 新增。 | 對應附錄 B「顯示名稱全系統唯一」與 IAM-R13 | 2026-11-15 | issue #3 選項 2A |
 | D-038 | `.gitignore` 由誰新增？ | T-001 合併後由 Chief 在 `milestone/M0` 新增。 | 不是產品程式，不影響行為 | 2026-11-15 | issue #3 選項 3A |
+| D-039 | `commit-author` 如何處理 GitHub 產生的 merge commit？ | 以 GitHub API 讀 PR 每個 commit 的 `author.login`，必須是 `bullet-bots`；不再比對 email。Chief 繼續用 GitHub 合併 ticket PR。 | GitHub 合併產生的 commit 用帳號的主要 email（例如 `84852d9`），歷史不能改寫 | 2026-11-15 | issue #6 選項 1A |
+| D-040 | 如何判定 ticket「涉及畫面」？ | ticket front matter 加 `screens: true/false`，由 Chief 在規劃 milestone 時填寫；沒有這個欄位時 `evidence` 判為失敗。M0 的三張都是 `false`；其他 ticket 在各自 milestone 的 plan-approval 補上。 | 路徑字串判斷會讓 feature ticket 永遠不必附截圖 | 2026-11-15 | issue #6 選項 2A |
+| D-041 | PR「證據」一節的最低標準？ | 至少一個 code block（CLI 輸出）或一個指向 `docs/evidence/<ticket>/` 的連結。內容的品質仍由 Verifier 判斷。 | 擋下只寫一個字的敷衍寫法 | 2026-11-15 | issue #6 選項 3A |
+| D-042 | `migration-scope` 要不要加沙盒實際執行的第二層？ | 要。靜態分析加上在拋棄式 PostgreSQL 17 上用沒有 `public` 權限的角色實際執行 migration，比對前後差異。 | 靜態分析追不完所有寫法；這是防止 migration 碰到共用 Supabase 其他 schema 最強的自動防線 | 2026-11-15 | issue #6 選項 4A；擋不住函式日後被呼叫時才發生的事 |
 
 ## 待決定
 
