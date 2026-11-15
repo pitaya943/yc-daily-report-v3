@@ -6,6 +6,7 @@
   CI_BASE_REF／CI_HEAD_REF   目標分支與來源分支的名稱
   CI_PR_BODY                 PR 說明（透過環境變數傳入，不插進 shell 指令，避免注入）
   YC_RULE_REPORT             done-when 讀取的規則報告（預設 rule-report.json）
+migration-scope 另外需要本機 PostgreSQL（DATABASE_URL，只接受本機位址）。
 違規會逐行印出並以 exit 1 結束；檢查本身無法進行（CheckError）也是 exit 1。
 """
 from __future__ import annotations
@@ -20,8 +21,17 @@ sys.path.insert(0, str(ROOT))
 
 from scripts.ci import checks  # noqa: E402
 
-NAMES = ["spec-readonly", "path-scope", "evidence", "migration-scope", "no-weakened-tests",
+NAMES = ["tests", "spec-readonly", "path-scope", "evidence", "migration-scope", "no-weakened-tests",
          "done-when", "strings", "commit-author", "lint"]
+
+
+def sandbox_problems() -> list[str]:
+    """migration-scope 的第二層：在拋棄式資料庫上真的執行（見 scripts/ci/migration_sandbox.py）。"""
+    from app.core.db import database_url
+    from scripts.ci import migration_sandbox
+
+    migrations = [(p.name, p.read_text(encoding="utf-8")) for p in sorted((ROOT / "migrations").glob("*.sql"))]
+    return migration_sandbox.run_sandbox(database_url(), migrations)
 
 
 def main(argv: list[str]) -> int:
@@ -44,8 +54,13 @@ def main(argv: list[str]) -> int:
             problems = checks.check_done_when(ctx, report)
         else:
             problems = getattr(checks, "check_" + name.replace("-", "_"))(ctx)
+            if name == "migration-scope":
+                problems += sandbox_problems()
     except checks.CheckError as e:
         print(f"[{name}] 無法檢查：{e}")
+        return 1
+    except Exception as e:  # noqa: BLE001  資料庫連不上、URL 被防線拒絕…：fail-closed，只印類型與第一行（不含連線字串）
+        print(f"[{name}] 無法檢查：{type(e).__name__}：{str(e).splitlines()[0] if str(e) else ''}")
         return 1
     for p in problems:
         print(f"[{name}] {p}")

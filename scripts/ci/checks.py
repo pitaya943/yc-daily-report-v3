@@ -135,10 +135,13 @@ def load_ticket(ctx: Ctx, ticket_id: str) -> tuple[dict, str]:
 
 
 def ticket_context(ctx: Ctx) -> tuple[str, dict, str] | None:
-    """來源分支是 ticket/* 時回傳 (ticket 編號, front matter, 全文)，否則回傳 None。"""
+    """來源分支是 ticket/* 時回傳 (ticket 編號, front matter, 全文)，不是 ticket 分支回傳 None。
+    fail-closed：分支名稱是 ticket/ 開頭、卻不是 ticket/T-數字，或目標分支上沒有對應的 ticket 檔，一律拋 CheckError。"""
+    if not ctx.head_ref.startswith("ticket/"):
+        return None
     tid = ticket_id_of(ctx.head_ref)
     if tid is None:
-        return None
+        raise CheckError(f"分支 {ctx.head_ref} 的名稱不是 ticket/T-數字，找不到對應的 docs/tickets/T-xxx.md")
     meta, text = load_ticket(ctx, tid)
     return tid, meta, text
 
@@ -176,12 +179,17 @@ def _explicit_pattern(pattern: str) -> bool:
 
 
 def check_spec_readonly(ctx: Ctx) -> list[str]:
-    tc = ticket_context(ctx)
+    bad: list[str] = []
+    try:
+        tc = ticket_context(ctx)
+    except CheckError as e:
+        # 找不到 ticket：沒有任何例外可以套用，禁止清單照樣生效，而且本身就是失敗
+        bad.append(str(e))
+        tc = (ctx.head_ref, {"allowed_paths": []}, "")
     if tc is None:
         return []  # 只管 ticket/* 的 PR
     tid, meta, _ = tc
     exceptions = [p for p in meta["allowed_paths"] if _explicit_pattern(p)]
-    bad = []
     for status, path in changed_files(ctx):
         if any(path_matches(f, path) for f in FORBIDDEN) and not any(path_matches(p, path) for p in exceptions):
             bad.append(f"{tid} 不得修改 {path}（{status}）")
@@ -192,7 +200,10 @@ def check_spec_readonly(ctx: Ctx) -> list[str]:
 
 
 def check_path_scope(ctx: Ctx) -> list[str]:
-    tc = ticket_context(ctx)
+    try:
+        tc = ticket_context(ctx)
+    except CheckError as e:
+        return [str(e)]  # 找不到 ticket 就無從判斷範圍：失敗
     if tc is None:
         return []
     tid, meta, _ = tc
@@ -241,133 +252,7 @@ def check_evidence(ctx: Ctx) -> list[str]:
 
 # ---------------------------------------------------------------- migration-scope
 
-_STR_OR_COMMENT = re.compile(r"'(?:[^']|'')*'|--[^\n]*|/\*.*?\*/", re.S)
-_NAME = r'(?:"[^"]+"|[A-Za-z_][\w$]*)(?:\s*\.\s*(?:"[^"]+"|[A-Za-z_][\w$]*))*'
-_MODIFIERS = re.compile(
-    r"(?is)^(?:or\s+replace|unique|temporary|temp|unlogged|global|local|materialized|recursive|concurrently|"
-    r"if\s+not\s+exists|if\s+exists|only)\b\s*"
-)
-_QUALIFIED_KINDS = {"table", "view", "sequence", "type", "domain", "function", "procedure", "index"}
-_ON_KINDS = {"trigger", "policy", "rule"}
-_GLOBAL_KINDS = {
-    "database", "role", "user", "group", "tablespace", "publication", "subscription", "server", "system", "language",
-}
-SCHEMA = "yc_v3"
-
-
-def _split_name(name: str) -> list[str]:
-    return [p.strip().strip('"').lower() for p in re.findall(r'"[^"]+"|[A-Za-z_][\w$]*', name)]
-
-
-def _split_top(text: str) -> list[str]:
-    parts, depth, cur = [], 0, ""
-    for ch in text:
-        if ch == "(":
-            depth += 1
-        elif ch == ")":
-            depth -= 1
-        if ch == "," and depth == 0:
-            parts.append(cur)
-            cur = ""
-        else:
-            cur += ch
-    parts.append(cur)
-    return parts
-
-
-def _bad_name(name: str) -> str | None:
-    """名稱必須明確寫成 yc_v3.xxx。不寫 schema 會落在 search_path（可能是 public），一律不接受。"""
-    parts = _split_name(name)
-    if len(parts) < 2:
-        return f"{name} 沒有指定 schema（必須寫成 {SCHEMA}.名稱）"
-    if parts[-2] != SCHEMA:
-        return f"{name} 不在 {SCHEMA}"
-    return None
-
-
-def _check_statement(stmt: str) -> list[str]:
-    s = stmt.strip()
-    if not s:
-        return []
-    if re.match(r"(?i)do\b", s) or re.search(r"(?i)\bexecute\b(?!\s+(?:function|procedure)\b)", s):
-        return ["含有 DO 區塊或 EXECUTE，無法靜態檢查它碰了哪個 schema"]
-    m = re.match(r"(?is)(create|alter|drop|truncate)\b\s*(.*)", s)
-    if not m:
-        return []
-    verb, rest = m.group(1).lower(), m.group(2)
-    while True:
-        mm = _MODIFIERS.match(rest)
-        if not mm:
-            break
-        rest = rest[mm.end():]
-    if verb == "truncate":
-        kind = "table"
-        rest = re.sub(r"(?is)^table\b\s*", "", rest)
-    else:
-        km = re.match(r"(?is)([a-z]+)\b\s*(.*)", rest)
-        if not km:
-            return ["看不懂的語句"]
-        kind, rest = km.group(1).lower(), km.group(2)
-        while True:
-            mm = _MODIFIERS.match(rest)
-            if not mm:
-                break
-            rest = rest[mm.end():]
-    problems: list[str] = []
-    if kind in _GLOBAL_KINDS:
-        return [f"{verb} {kind} 不是 {SCHEMA} 內的物件"]
-    if kind == "schema":
-        nm = re.match(_NAME, rest)
-        if not nm or _split_name(nm.group(0))[-1:] != [SCHEMA]:
-            problems.append(f"{verb} schema 只能對 {SCHEMA}")
-        return problems
-    if kind == "extension":
-        if not re.search(rf"(?i)\bschema\s+\"?{SCHEMA}\"?\b", rest):
-            problems.append(f"{verb} extension 必須指定 schema {SCHEMA}")
-        return problems
-    if kind in _ON_KINDS:
-        om = re.search(rf"(?is)\bon\s+(?:only\s+)?({_NAME})", rest)
-        if not om:
-            return [f"{verb} {kind} 找不到 ON 的資料表"]
-        err = _bad_name(om.group(1))
-        return [err] if err else []
-    if kind == "index" and verb == "create":
-        om = re.search(rf"(?is)\bon\s+(?:only\s+)?({_NAME})", rest)
-        if not om:
-            return ["create index 找不到 ON 的資料表"]
-        err = _bad_name(om.group(1))
-        return [err] if err else []
-    if kind in _QUALIFIED_KINDS:
-        segments = _split_top(rest) if verb in ("drop", "truncate") else [rest]
-        for seg in segments:
-            seg = seg.strip()
-            while True:
-                mm = _MODIFIERS.match(seg)
-                if not mm:
-                    break
-                seg = seg[mm.end():]
-            nm = re.match(_NAME, seg)
-            if not nm:
-                problems.append(f"{verb} {kind} 找不到物件名稱")
-                continue
-            err = _bad_name(nm.group(0))
-            if err:
-                problems.append(err)
-        sm = re.search(rf"(?is)\bset\s+schema\s+({_NAME})", rest)
-        if sm and _split_name(sm.group(1))[-1:] != [SCHEMA]:
-            problems.append(f"set schema 把物件搬出 {SCHEMA}")
-        return problems
-    return [f"不認得的 {verb} {kind}，無法判定是否只碰 {SCHEMA}"]
-
-
-def sql_violations(sql: str) -> list[str]:
-    cleaned = _STR_OR_COMMENT.sub(lambda m: "''" if m.group(0).startswith("'") else " ", sql)
-    out = []
-    for stmt in cleaned.split(";"):
-        for v in _check_statement(stmt):
-            snippet = " ".join(stmt.split())[:70]
-            out.append(f"{v}：{snippet}")
-    return out
+from scripts.ci.sql_scope import sql_violations  # noqa: E402,F401  (re-export：測試與 CLI 都從 checks 取用)
 
 
 def check_migration_scope(ctx: Ctx) -> list[str]:
@@ -404,34 +289,98 @@ def check_migration_scope(ctx: Ctx) -> list[str]:
 # ---------------------------------------------------------------- no-weakened-tests
 
 _SKIP_NAMES = {
-    "skip", "skipif", "xfail", "importorskip", "skipIf", "skipUnless", "expectedFailure", "skipTest",
+    "skip", "skipif", "xfail", "importorskip", "skipIf", "skipUnless", "expectedFailure", "skipTest", "SkipTest", "Skipped",
 }
 _COLLECT_IGNORE = {"collect_ignore", "collect_ignore_glob"}
-# tests/implemented.txt 的機制（T-001）：不在清單內的 scenario 標成「尚未實作」。這是唯一允許出現 skip 的地方。
+# 會在收集或執行階段動手腳的 pytest hook：在測試程式裡定義它們，等於可以把任何測試反選掉
+_SELECTION_HOOKS = {
+    "pytest_collection_modifyitems", "pytest_ignore_collect", "pytest_runtest_protocol", "pytest_runtest_setup",
+    "pytest_runtest_call", "pytest_collection_finish", "pytest_pyfunc_call",
+}
+_DYNAMIC_CALLS = {"eval", "exec", "compile", "__import__"}
+# 唯一的豁免：T-001 的 tests/implemented.txt 機制（不在清單內的 scenario 標成「尚未實作」）。
+# 縮到最小：只有這一個檔案，而且必須與目標分支上的內容完全相同；改了哪怕一行，豁免就失效。
 SKIP_EXEMPT = {"tests/support/bdd_plugin.py"}
 _FEATURE_TAG = re.compile(r"^\s*@\S*(skip|xfail|wip|ignore)\b", re.I | re.M)
+_BAD_OPTION = re.compile(r"^(--deselect|--ignore|--ignore-glob|--co|--collect-only|--continue-on-collection-errors)(=|$)|^-[km]")
+_NARROWING_KEYS = {"norecursedirs", "collect_ignore"}
 
 
 def weakening_in_python(source: str, filename: str) -> list[str]:
-    """用 AST 找跳過／預期失敗的標記；字串與註解裡出現 skip 這個字不算。"""
+    """用 AST 找跳過／預期失敗的標記與等價物；字串與註解裡出現 skip 這個字不算。"""
     try:
         tree = ast.parse(source)
     except SyntaxError as e:
         return [f"{filename}:{e.lineno} 語法錯誤，無法檢查"]
     out = []
     for node in ast.walk(tree):
+        line = getattr(node, "lineno", 0)
         if isinstance(node, ast.Attribute) and node.attr in _SKIP_NAMES:
-            out.append(f"{filename}:{node.lineno} 出現 .{node.attr}")
+            out.append(f"{filename}:{line} 出現 .{node.attr}")
         elif isinstance(node, ast.Name) and node.id in _SKIP_NAMES | _COLLECT_IGNORE:
-            out.append(f"{filename}:{node.lineno} 出現 {node.id}")
+            out.append(f"{filename}:{line} 出現 {node.id}")
         elif isinstance(node, ast.ImportFrom):
-            for a in node.names:
-                if a.name in _SKIP_NAMES | _COLLECT_IGNORE:
-                    out.append(f"{filename}:{node.lineno} import {a.name}")
+            out += [f"{filename}:{line} import {a.name}" for a in node.names if a.name in _SKIP_NAMES | _COLLECT_IGNORE]
         elif isinstance(node, ast.Assign):
-            for t in node.targets:
-                if isinstance(t, ast.Name) and t.id in _COLLECT_IGNORE:
-                    out.append(f"{filename}:{node.lineno} 設定 {t.id}")
+            out += [f"{filename}:{line} 設定 {t.id}" for t in node.targets if isinstance(t, ast.Name) and t.id in _COLLECT_IGNORE]
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in _SELECTION_HOOKS:
+            out.append(f"{filename}:{line} 定義 {node.name}（可以把測試反選掉）")
+        elif isinstance(node, ast.Call):
+            fn = node.func
+            if isinstance(fn, ast.Name) and fn.id in _DYNAMIC_CALLS:
+                out.append(f"{filename}:{line} 動態執行 {fn.id}()，無法檢查")
+            elif isinstance(fn, ast.Attribute) and fn.attr in ("import_module", "__import__"):
+                out.append(f"{filename}:{line} 動態 import，無法檢查")
+            elif isinstance(fn, ast.Name) and fn.id in ("getattr", "setattr", "delattr") and len(node.args) >= 2:
+                name = node.args[1]
+                if not (isinstance(name, ast.Constant) and isinstance(name.value, str)):
+                    out.append(f"{filename}:{line} {fn.id}() 的屬性名稱不是字串常數，無法檢查")
+                elif name.value in _SKIP_NAMES | _COLLECT_IGNORE:
+                    out.append(f"{filename}:{line} {fn.id}() 取用 {name.value}")
+    return out
+
+
+def _bad_pytest_options(tokens: list[str]) -> list[str]:
+    return [t for t in tokens if _BAD_OPTION.match(t)]
+
+
+def pytest_option_problems(root: Path) -> list[str]:
+    """pytest 設定檔的 addopts（--deselect、-k、-m、--ignore…）與 workflow 的 pytest 指令。"""
+    import configparser
+    import shlex
+    import tomllib
+
+    out = []
+
+    def opts_from(value) -> list[str]:
+        return shlex.split(value) if isinstance(value, str) else [str(x) for x in (value or [])]
+
+    pyproject = root / "pyproject.toml"
+    if pyproject.exists():
+        try:
+            ini = tomllib.loads(pyproject.read_text(encoding="utf-8")).get("tool", {}).get("pytest", {}).get("ini_options", {})
+        except tomllib.TOMLDecodeError:
+            out.append("pyproject.toml 解析失敗，無法檢查 pytest 設定")
+            ini = {}
+        out += [f"pyproject.toml 的 addopts 含 {t}" for t in _bad_pytest_options(opts_from(ini.get("addopts")))]
+        out += [f"pyproject.toml 設定 {k}（會縮小收集範圍）" for k in _NARROWING_KEYS & ini.keys()]
+    for name, section in (("pytest.ini", "pytest"), ("tox.ini", "pytest"), ("setup.cfg", "tool:pytest")):
+        path = root / name
+        if path.exists():
+            cp = configparser.ConfigParser(interpolation=None)
+            cp.read(path, encoding="utf-8")
+            if cp.has_section(section):
+                out += [f"{name} 的 addopts 含 {t}" for t in _bad_pytest_options(opts_from(cp.get(section, "addopts", fallback="")))]
+                out += [f"{name} 設定 {k}（會縮小收集範圍）" for k in _NARROWING_KEYS if cp.has_option(section, k)]
+    for wf in sorted((root / ".github" / "workflows").glob("*.y*ml")) if (root / ".github" / "workflows").exists() else []:
+        for n, line in enumerate(wf.read_text(encoding="utf-8").splitlines(), 1):
+            if "pytest" in line and not line.lstrip().startswith("#"):
+                tail = line.split("pytest", 1)[1]
+                try:
+                    tokens = shlex.split(tail)
+                except ValueError:
+                    tokens = tail.split()
+                out += [f"{wf.relative_to(root).as_posix()}:{n} pytest 指令含 {t}" for t in _bad_pytest_options(tokens)]
     return out
 
 
@@ -444,17 +393,29 @@ def read_implemented(text: str | None) -> set[str]:
     return ids
 
 
+def _scan_targets(root: Path) -> list[Path]:
+    """tests/ 全部，加上 tests/ 以外任何位置的 conftest.py（根目錄、scripts/…）。"""
+    skip_dirs = {".git", ".venv", "node_modules", "__pycache__", "spec"}
+    found = {p for p in (root / "tests").rglob("*") if p.is_file()} if (root / "tests").exists() else set()
+    for p in root.rglob("conftest.py"):
+        if not skip_dirs & set(p.relative_to(root).parts):
+            found.add(p)
+    return sorted(found)
+
+
 def check_no_weakened_tests(ctx: Ctx) -> list[str]:
     bad = []
-    tests_dir = ctx.root / "tests"
-    for p in sorted(tests_dir.rglob("*")):
+    for p in _scan_targets(ctx.root):
         rel = p.relative_to(ctx.root).as_posix()
-        if "__pycache__" in rel or rel in SKIP_EXEMPT:
+        if "__pycache__" in rel:
             continue
+        if rel in SKIP_EXEMPT and (not ctx.base or show(ctx, ctx.base, rel) == p.read_text(encoding="utf-8")):
+            continue  # 目標分支上原樣不變的 implemented.txt 機制
         if p.suffix == ".py":
             bad += weakening_in_python(p.read_text(encoding="utf-8"), rel)
         elif p.suffix == ".feature" and _FEATURE_TAG.search(p.read_text(encoding="utf-8")):
             bad.append(f"{rel} 有 skip／xfail 類的標籤")
+    bad += pytest_option_problems(ctx.root)
     if ctx.base:
         before = read_implemented(show(ctx, ctx.base, "tests/implemented.txt"))
         now_file = ctx.root / "tests" / "implemented.txt"
@@ -509,7 +470,32 @@ _CJK = re.compile(r"[　-〿㐀-鿿＀-￯]")
 
 
 def allowed_messages(appendix_text: str) -> set[str]:
-    return {m.strip() for m in re.findall(r"「([^」]+)」", appendix_text)}
+    """附錄 B 允許出現在介面上的文字：「」裡的訊息，加上表格第一欄的欄位名稱。"""
+    allowed = {m.strip() for m in re.findall(r"「([^」]+)」", appendix_text)}
+    for line in appendix_text.splitlines():
+        if line.startswith("|") and not re.match(r"^\|[\s:|-]+\|?$", line):
+            first = line.strip().strip("|").split("|", 1)[0].strip().strip("`")
+            if first and _CJK.search(first):
+                allowed.add(first)
+    return allowed
+
+
+# 非 Python 的產品檔案：樣板（templates/）與前端靜態檔（static/）
+_FRONTEND_COMMENTS = {
+    ".html": [r"\{#.*?#\}", r"<!--.*?-->"], ".htm": [r"\{#.*?#\}", r"<!--.*?-->"], ".jinja": [r"\{#.*?#\}", r"<!--.*?-->"],
+    ".j2": [r"\{#.*?#\}", r"<!--.*?-->"], ".xml": [r"<!--.*?-->"], ".svg": [r"<!--.*?-->"],
+    ".js": [r"/\*.*?\*/", r"(?m)(?<![:\w/])//[^\n]*"], ".mjs": [r"/\*.*?\*/", r"(?m)(?<![:\w/])//[^\n]*"],
+    ".ts": [r"/\*.*?\*/", r"(?m)(?<![:\w/])//[^\n]*"], ".css": [r"/\*.*?\*/"],
+}
+# 一段「從中文字開始、到引號／標籤／樣板語法為止」的文字；`請輸入{{ name }}` 會只取到 `請輸入`，所以拼出來的訊息一定不符
+_CJK_RUN = re.compile(r"[\u3000-\u303f\u3400-\u9fff\uff00-\uffef][^<>\"'`\n\r{}]*")
+
+
+def _frontend_files(root: Path) -> list[Path]:
+    app = root / "app"
+    if not app.exists():
+        return []
+    return sorted(p for p in app.rglob("*") if p.is_file() and {"templates", "static"} & set(p.relative_to(app).parts))
 
 
 def check_strings(ctx: Ctx) -> list[str]:
@@ -539,6 +525,56 @@ def check_strings(ctx: Ctx) -> list[str]:
             elif isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in docstrings:
                 if _CJK.search(node.value) and node.value.strip() not in allowed:
                     bad.append(f"{rel}:{node.lineno} 字串「{node.value[:40]}」不在 spec/appendix-b-fields.md")
+    for p in _frontend_files(ctx.root):
+        rel = p.relative_to(ctx.root).as_posix()
+        try:
+            text = p.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue  # 圖片、字型等二進位檔
+        for pattern in _FRONTEND_COMMENTS.get(p.suffix.lower(), []):
+            # 註解不是使用者看得到的文字；換成同樣數量的換行，行號才不會跑掉
+            text = re.sub(pattern, lambda m: "\n" * m.group(0).count("\n"), text, flags=re.S)
+        for m in _CJK_RUN.finditer(text):
+            run = m.group(0).rstrip()
+            if run.strip("「」") not in allowed and run not in allowed:
+                bad.append(f"{rel}:{text.count(chr(10), 0, m.start()) + 1} 文字「{run[:40]}」不在 spec/appendix-b-fields.md")
+    return bad
+
+
+# ---------------------------------------------------------------- tests（workflow 的 tests job 本身）
+
+_SELECTION_TAIL = re.compile(r"(?s)\|\||;\s*(?:true|:|exit\s+0)\b|&&\s*true\b|\bset\s+\+e\b")
+
+
+def check_tests(ctx: Ctx) -> list[str]:
+    """`tests` 這一項本身的守衛：確認 workflow 的 tests job 真的會在測試失敗時失敗。
+    （規則 scenario 失敗時 pytest 回傳非零，由 tests/ci 用 pytester 實際跑一次來證明；
+    這裡負責另一半：job 裡沒有任何寫法能把非零吞掉、把測試縮小，或把資料庫換成別的版本。）"""
+    wf = ctx.root / ".github" / "workflows" / "ci.yml"
+    if not wf.exists():
+        return ["找不到 .github/workflows/ci.yml"]
+    text = wf.read_text(encoding="utf-8")
+    m = re.search(r"(?ms)^  tests:\n(.*?)(?=^  [A-Za-z0-9_-]+:\n|\Z)", text)
+    if not m:
+        return ["workflow 沒有 tests job"]
+    block = m.group(1)
+    bad = []
+    if not re.search(r"(?m)^\s*image:\s*postgres:17\s*$", block):
+        bad.append("tests job 沒有使用 postgres:17 service（D-033）")
+    if re.search(r"(?m)^\s*continue-on-error:", block):
+        bad.append("tests job 有 continue-on-error，失敗會被吞掉")
+    if re.search(r"(?m)^\s*if:\s*(?:\$\{\{\s*)?(?:false|0)\b", block):
+        bad.append("tests job 有永遠不執行的 if")
+    lines = [ln for ln in block.splitlines() if "pytest" in ln and not ln.lstrip().startswith("#")]
+    runs = [ln for ln in lines if re.search(r"\brun:|^\s*-?\s*python3?\s+-m\s+pytest|^\s*pytest\b", ln)]
+    if not runs:
+        bad.append("tests job 沒有執行 pytest")
+    for ln in runs:
+        tail = ln.split("pytest", 1)[1]
+        if _SELECTION_TAIL.search(tail):
+            bad.append(f"pytest 指令的結果可能被吞掉：{ln.strip()}")
+        for t in _bad_pytest_options(tail.split()):
+            bad.append(f"pytest 指令含 {t}：{ln.strip()}")
     return bad
 
 

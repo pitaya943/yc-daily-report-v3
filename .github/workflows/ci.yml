@@ -58,6 +58,8 @@ jobs:
           python3 -m app.core.local_url
       - name: 安裝 PostgreSQL 17 用戶端（migrate 腳本需要 psql 17）
         run: sudo scripts/dev/install-postgres && sudo systemctl stop postgresql || true
+      - name: 守衛：tests job 本身不能把失敗吞掉或縮小範圍（scripts/ci/checks.py 的 check_tests）
+        run: python3 scripts/ci/run.py tests
       - run: pip install -e '.[dev]'
       - name: 安裝 ruff（tests/ci 的 lint 測試要實際執行它；版本與 lint job 相同）
         run: pip install ruff==0.16.9
@@ -115,7 +117,21 @@ jobs:
   migration-scope:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
+    # 靜態檢查（scripts/ci/sql_scope.py）之外，還要把 migration 真的套用在拋棄式資料庫上讓 PostgreSQL 判定
+    # （scripts/ci/migration_sandbox.py）。這個 job 自己的 postgres:17 service，只有這個 job 用，用完即丟。
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: yc
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ["127.0.0.1:5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d yc"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      DATABASE_URL: postgresql://postgres@127.0.0.1:5433/yc
     steps:
       - uses: actions/checkout@v4
         with:
@@ -123,6 +139,10 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: 取得目標分支的 commit
         run: echo "CI_BASE_SHA=$(git rev-parse origin/${{ github.base_ref }})" >> "$GITHUB_ENV"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install 'psycopg[binary]>=3.2'
       - run: python3 scripts/ci/run.py migration-scope
 
   no-weakened-tests:

@@ -63,8 +63,9 @@ def test_spec_readonly_blocks_workflows_for_a_ticket_that_does_not_list_them(rep
 
 def test_spec_readonly_fails_closed_when_the_ticket_is_missing(repo):
     repo.branch("ticket/T-404")
-    with pytest.raises(checks.CheckError):
-        checks.check_spec_readonly(repo.ctx(head_ref="ticket/T-404"))
+    repo.commit({"spec/a.md": "x\n"})
+    problems = checks.check_spec_readonly(repo.ctx(head_ref="ticket/T-404"))
+    assert any("找不到" in p for p in problems) and any("spec/a.md" in p for p in problems)
 
 
 # ------------------------------------------------------------------ path-scope
