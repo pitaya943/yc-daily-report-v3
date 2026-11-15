@@ -39,6 +39,9 @@
 | D-033 | 本地與 CI 用哪一版 PostgreSQL？ | 17，與共用 Supabase 專案（17.6.1.127）同一主版本。容器沒有 Docker daemon，從 `apt.postgresql.org` 安裝；CI 用 `postgres:17` service。 | Kuei 套用 migration 時不會因版本不同而出現差異 | 2026-11-15 | issue #1 選項 5A；環境 `yc-daily-report-v3` 已允許 `apt.postgresql.org`、`www.postgresql.org` |
 | D-034 | T-003 可以改哪些檔案？ | `allowed_paths` 加上 `migrations/0002_*.sql`（原本漏列）與 `app/main.py`（只註冊 exception handler 與稽核 middleware）。 | migration ticket 必須能新增 migration；HTTP 對應需要在 app 註冊 | 2026-11-15 | issue #1 選項 4A |
 | D-035 | Chief 與 Builder 可以推送哪些分支？ | Chief 建立並推送 `milestone/M0`；Builder 推送 `ticket/T-001`、`ticket/T-002`、`ticket/T-003`。 | 符合 `docs/workflow.md` 的分支模型 | 2026-11-15 | issue #1 選項 6A |
+| D-036 | 附錄 A 的預設值（單價、保留金費率、年度上限）由哪張 ticket 載入？ | 延到 T-401：建立設定表時一併擴充 fixture loader。T-001 只載入時鐘與帳戶。 | 不提前替 T-401 決定設定表的資料模型 | 2026-11-15 | issue #3 選項 1A；T-001 完成條件 4、T-401 完成條件 5 與 `allowed_paths` 已改 |
+| D-037 | `yc_v3.accounts` 的約束是否沿用？ | 沿用 `bigint identity` 主鍵、`unique(name)`、role 與 zone 的 check。密碼、session 等欄位由 T-101、T-303 新增。 | 對應附錄 B「顯示名稱全系統唯一」與 IAM-R13 | 2026-11-15 | issue #3 選項 2A |
+| D-038 | `.gitignore` 由誰新增？ | T-001 合併後由 Chief 在 `milestone/M0` 新增。 | 不是產品程式，不影響行為 | 2026-11-15 | issue #3 選項 3A |
 
 ## 待決定
 
