@@ -46,6 +46,13 @@
 | D-040 | 如何判定 ticket「涉及畫面」？ | ticket front matter 加 `screens: true/false`，由 Chief 在規劃 milestone 時填寫；沒有這個欄位時 `evidence` 判為失敗。M0 的三張都是 `false`；其他 ticket 在各自 milestone 的 plan-approval 補上。 | 路徑字串判斷會讓 feature ticket 永遠不必附截圖 | 2026-11-15 | issue #6 選項 2A |
 | D-041 | PR「證據」一節的最低標準？ | 至少一個 code block（CLI 輸出）或一個指向 `docs/evidence/<ticket>/` 的連結。內容的品質仍由 Verifier 判斷。 | 擋下只寫一個字的敷衍寫法 | 2026-11-15 | issue #6 選項 3A |
 | D-042 | `migration-scope` 要不要加沙盒實際執行的第二層？ | 要。靜態分析加上在拋棄式 PostgreSQL 17 上用沒有 `public` 權限的角色實際執行 migration，比對前後差異。 | 靜態分析追不完所有寫法；這是防止 migration 碰到共用 Supabase 其他 schema 最強的自動防線 | 2026-11-15 | issue #6 選項 4A；擋不住函式日後被呼叫時才發生的事 |
+| D-043 | T-002 第 2 輪 FAIL 後怎麼做？ | 依 D-044～D-049 縮小並明確定義範圍，開修正第 2 輪（新 session，`claude-opus-5-5`）。issue #6 的修改算在修正第 1 輪。再 FAIL 就停止交給 Kuei。 | Kuei 同意 Chief 的輪數算法 | 2026-11-15 | issue #7 選項 1A |
+| D-044 | CI 檢查的防護目標？ | 防 agent 的疏忽與常見的偷懶寫法，不防刻意的攻擊；刻意的繞過由 Verifier 審查 diff、Kuei 審查 milestone 擋下。用允許清單、禁止整類寫法、比對結果的方式設計，不列舉語法。 | 列舉語法的方式永遠補不完 | 2026-11-15 | issue #7 選項 2A |
+| D-045 | `migration-scope` 怎麼處理函式等程序碼？ | 禁止定義函式、程序、trigger、`DO` 區塊、`lo_*`；ticket front matter 為 `allow_functions: true` 時例外，由 Kuei 親自閱讀 SQL。沙盒層保留。 | 函式本體只能靠靜態分析，而靜態分析不可靠 | 2026-11-15 | issue #7 選項 3A |
+| D-046 | `no-weakened-tests` 怎麼判斷？ | 比對結果：目標分支上通過的每個測試 ID，在 PR 上都必須被收集而且通過；沒有報告就失敗；conftest 的 hook 採允許清單。語法掃描保留。 | 讓測試消失的寫法列舉不完，看結果才可靠 | 2026-11-15 | issue #7 選項 4A |
+| D-047 | `strings` 的範圍？ | 只檢查傳給結果類別的錯誤訊息。稽核說明由附錄 C 管，逐字格式在 AUD-F02（M6）定義。 | 避免誤擋 T-003 的稽核說明 | 2026-11-15 | issue #7 選項 5A |
+| D-048 | 怎麼修改 `tests/support/**`？ | 只有 ticket 的 `allowed_paths` 明確列出該檔案時才能修改，由 Verifier 審查。 | 比照 D-031 | 2026-11-15 | issue #7 選項 6A |
+| D-049 | 不是 `ticket/*` 分支的 PR？ | 目標是 `milestone/*` 的 PR，來源分支必須是 `ticket/T-xxx` 且有對應的 ticket 檔，否則判為失敗。 | fail-closed | 2026-11-15 | issue #7 選項 7A |
 
 ## 待決定
 
