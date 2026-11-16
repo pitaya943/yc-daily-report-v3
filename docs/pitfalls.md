@@ -27,3 +27,10 @@
 | 21 | Verifier 若把刻意繞過也算進判定，會無謂地消耗修正輪數 | Verifier 的指示寫明 D-044：判 FAIL 只看疏忽與誤擋；刻意繞過另外列出，不影響判定 | M0 Chief | M1 |
 | 22 | 有會影響完成條件的 issue 還在等 Kuei 時就開 Verifier，答案一改就白費一輪 | 先等 Kuei 回覆、更新完成條件，再開 Verifier；修正輪數有上限（兩輪） | M0 Chief | M1 |
 | 23 | 推送到 `milestone/Mx` 的那次 CI run 有 7 項 skipped，看起來像沒跑完 | 判斷 milestone PR 能否合併，看 `pull_request` 事件那次 run；push 那次的 skipped 是正常的 | M0 Chief | M1 |
+| 24 | Verifier 寫在 PR 上的判定留言不會叫醒 Chief（PR 訂閱只送 CI、review 與合併事件）；M1 因此兩度空等 7～20 分鐘 | 開 Verifier 後，用 `send_later` 每 10 分鐘以內檢查一次 PR 留言與子 session 狀態，直到判定出現 | M1 Chief | M1 |
+| 25 | `done-when` 會把 ticket「完成條件」裡**加了反引號**的規則 ID 都當成必須在 `tests/implemented.txt` 且通過 | 規劃時，不在本 ticket 轉綠的規則 ID（純函式 ticket、延到後面的規則）不加反引號；改完用 `scripts/ci/checks.py` 的 `rule_ids_in()` 確認 | M1 Chief | M1 |
+| 26 | `tests/steps/<feature ID>/` 的步驟要在該目錄 `conftest.py` 用 `pytest_configure` 註冊成 plugin，`tests/test_spec.py` 才看得到；註冊是全域的，同文字的步驟會靜靜覆蓋 | 仿 `tests/steps/IAM-F01/conftest.py`；跑完整 `python3 -m pytest`；新增步驟前先 `grep` 同文字；多個 feature 共用的步驟放 `tests/steps/common/`（例如 `outcome.py`） | #14、#18、#22 | M1 |
+| 27 | FastAPI 的 `Form()` 需要 `python-multipart`，專案沒有宣告這個依賴（本機剛好裝著） | 用 `urllib.parse.parse_qs` 解析表單，或先請 Chief 授權修改 `pyproject.toml` | #14 | M1 |
+| 28 | `async def` 的路由直接呼叫 scrypt 或同步 DB，會阻塞整個 event loop（4 個同時登入時 `/health` 要 1.9 s） | 需要 session、DB 或 CPU 密集計算的端點用 `def`；讀請求主體放在 async dependency | #14、#18 | M1 |
+| 29 | Builder 自己加嚴、超出規格的斷言（例如「登入失敗時整個資料庫不變」）會擋住後續 ticket，而改它要找 Kuei（issue #20、#21） | 比規格更嚴的斷言要在 PR 說明列出；改變寫入行為前先 `grep "diff(\|check_nothing_written" tests/` | #22 | M1 |
+| 30 | 金額四捨五入用內建 `round()` 是銀行家捨入，AD-2 的例子會錯；變異抽查時 Python 可能沿用舊的 `.pyc`，判讀錯誤 | 金額用 `Fraction` 與 `(2x+1)//2`；變異抽查時設 `PYTHONDONTWRITEBYTECODE=1` 並清 `__pycache__` | #13、#16 | M1 |

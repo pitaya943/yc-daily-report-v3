@@ -1,0 +1,17 @@
+$ python3 -m pytest -q -p no:cacheprovider   # milestone/M1 @ cf071ad，本機 PostgreSQL 17（另以 -p scripts.ci.rule_report 重跑產生 rule-report.json，結果相同）
+769 passed, 473 skipped in 52.22s
+
+$ python3 - <<EOF  # 讀 rule-report.json，逐條統計
+IAM-R01 2/2 ['passed']
+IAM-R02 1/1 ['passed']
+IAM-R03 1/1 ['passed']
+IAM-R04 3/3 ['passed']
+IAM-R05 1/1 ['passed']
+IAM-R06 1/1 ['passed']
+IAM-R07 2/2 ['passed']
+IAM-R10 0/4 ['skipped']
+IAM-R11 2/2 ['passed']
+IAM-R12 2/2 ['passed']
+
+$ python3 -m pytest -q tests/unit/domain tests/unit/iam
+135 passed in 1.86s

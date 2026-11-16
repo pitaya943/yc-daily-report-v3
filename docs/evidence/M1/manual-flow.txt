@@ -1,0 +1,17 @@
+# M1 手動流程實測（Chief，milestone/M1 @ cf071ad，本機 PostgreSQL 17，scripts/dev/run）
+$ PYTHONPATH=. python3 seed.py   # 見 docs/milestones/M1.html 4.2
+(9, 9)
+$ curl -X POST -d "group=west&name=Wen&password=test-pass-1" /sign-in
+303 -> http://127.0.0.1:8000/reports
+$ curl -X POST -d "group=admin&name=Admin1&password=test-pass-1" /sign-in
+303 -> http://127.0.0.1:8000/review
+$ for i in 1..5: curl -X POST -d "group=west&name=Wei&password=wrong" /sign-in
+{"outcome":"UNAUTHENTICATED","message":"密碼錯誤，請重試"}
+{"outcome":"UNAUTHENTICATED","message":"密碼錯誤，請重試"}
+{"outcome":"UNAUTHENTICATED","message":"密碼錯誤，請重試"}
+{"outcome":"UNAUTHENTICATED","message":"密碼錯誤，請重試"}
+{"outcome":"LOCKED","message":"密碼錯誤次數過多，請在 15 分鐘後再試"}
+$ curl -X POST -d "group=west&name=Wei&password=test-pass-1" /sign-in
+{"outcome":"LOCKED","message":"密碼錯誤次數過多，請在 15 分鐘後再試"}
+$ psql -Atc "select type, actor_name from yc_v3.audit_log"
+ACCOUNT_LOCKOUT|SYSTEM
