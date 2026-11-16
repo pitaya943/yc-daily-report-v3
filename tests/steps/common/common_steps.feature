@@ -22,3 +22,15 @@ Feature: Common steps
   Scenario: An accepted request writes its audit row with the actor
     When "Admin1" confirms a report directly
     Then an audit row "REPORT_CONFIRM" is written with actor "Admin1"
+
+  # AUD-R03 的形狀（spec/features/AUD-F01-authorization-on-every-action.feature）：
+  # 「nothing else is written」指前面步驟已經斷言過的那一列 ACCESS_DENIED 以外沒有其他寫入。
+  Scenario: A blocked attempt writes only the ACCESS_DENIED row that was asserted
+    When "Wen" confirms a report directly
+    Then an audit row "ACCESS_DENIED" is written with actor "Wen"
+    And nothing else is written
+
+  Scenario: A rejection that writes nothing also satisfies nothing else is written
+    When a USER submits a fourth report on the same day
+    Then the request is rejected as CONFLICT with message "每日最多只能送出 3 筆回報"
+    And nothing else is written
