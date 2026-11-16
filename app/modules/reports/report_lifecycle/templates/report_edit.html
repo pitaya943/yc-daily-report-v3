@@ -97,14 +97,15 @@
   var result = document.getElementById("result");
   var saveButton = form.querySelector("button[type=submit]");
 
-  function showError(text) { errorBox.textContent = text; errorBox.hidden = false; }
+  function showError(text) { errorBox.textContent = text; errorBox.hidden = false; errorBox.scrollIntoView({ block: "center" }); }  // 表單很長：錯誤要捲到看得見的位置
   function clearError() { errorBox.textContent = ""; errorBox.hidden = true; }
   function isDelete(evt) { var c = evt.detail.requestConfig; return !!c && /\/delete$/.test(c.path || ""); }
 
-  document.getElementById("ask-delete").addEventListener("click", function () { delForm.hidden = false; this.hidden = true; });
+  document.getElementById("ask-delete").addEventListener("click", function () { delForm.hidden = false; this.hidden = true; delForm.scrollIntoView({ block: "center" }); });
   document.getElementById("cancel-delete").addEventListener("click", function () { delForm.hidden = true; document.getElementById("ask-delete").hidden = false; });
 
   document.body.addEventListener("htmx:beforeRequest", function () { clearError(); result.textContent = ""; saveButton.disabled = true; });
+  document.body.addEventListener("htmx:afterSwap", function () { result.scrollIntoView({ block: "center" }); });  // 成功訊息也要看得見
   document.body.addEventListener("htmx:afterRequest", function (evt) {
     saveButton.disabled = false;
     // 刪除成功：回報已不存在，收起表單與刪除區，只留成功訊息

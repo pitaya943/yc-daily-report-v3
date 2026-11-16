@@ -1,0 +1,12 @@
+edit success: 日報已更新（#1，2026-11-16），狀態：待確認（PENDING）。原本已駁回，現在重新待確認。
+confirmed report rejected: 無法儲存（FORBIDDEN）：這張回報已確認，或你沒有權限修改它
+invalid quantity: 工項數量須為 0 到 999.9，最小單位 0.1
+deleted: 日報 #3（2026-11-16）已永久刪除。
+Wen GET edit of a CONFIRMED report: status=403 body={"outcome":"FORBIDDEN","message":null}
+admin edit of a CONFIRMED report: 日報已更新（#4，2026-11-16），狀態：待確認（PENDING）。原本已確認，現在回到待確認，份額作廢。
+audit REPORT_UPDATE Wen 編輯日報 #1（2026-11-16，WEST）：direct_1 1.5→0.0；direct_13 2.0→5.0；狀態 REJECTED→PENDING
+audit ACCESS_DENIED Wen 嘗試執行但被拒絕：edit a report（日報 #2，狀態 CONFIRMED）
+audit REPORT_DELETE Wen 刪除日報 #3（2026-11-16，WEST，提交者 Wen，原狀態 PENDING）
+audit ACCESS_DENIED Wen 嘗試執行但被拒絕：open the report edit form（日報 #4，狀態 CONFIRMED）
+audit REPORT_UNCONFIRM Admin1 日報 #4 由 CONFIRMED 退回 PENDING：管理員編輯，已確認的結果作廢
+audit REPORT_UPDATE Admin1 編輯日報 #4（2026-11-16，WEST）：direct_13 4.0→6.0；狀態 CONFIRMED→PENDING
