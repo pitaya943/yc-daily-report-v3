@@ -1,0 +1,25 @@
+........................................................................ [ 98%]
+.......................                                                  [100%]
+1114 passed, 421 skipped in 197.25s (0:03:17)
+tests/steps/RPT-F03/test_history_details.py::test_a_user_cannot_use_the_administrator_filters[zone] PASSED
+tests/steps/RPT-F03/test_history_details.py::test_a_user_cannot_use_the_administrator_filters[account] PASSED
+tests/steps/RPT-F03/test_history_details.py::test_status_wording_matches_the_spec_for_every_status PASSED
+tests/steps/RPT-F03/test_history_details.py::test_a_user_export_has_the_users_own_catalogue_columns_and_only_visible_rows PASSED
+tests/steps/RPT-F03/test_history_details.py::test_a_user_export_keeps_items_of_an_older_catalogue PASSED
+tests/test_spec.py::test_own_and_collaborated_rows PASSED
+tests/test_spec.py::test_status_wording PASSED
+tests/test_spec.py::test_ordinary_history PASSED
+tests/test_spec.py::test_bigmeter_history PASSED
+tests/test_spec.py::test_administrator_filters[dates 2026-11-11 to 2026-11-13-R3, R2] PASSED
+tests/test_spec.py::test_administrator_filters[account Wen-R3, R1] PASSED
+tests/test_spec.py::test_administrator_filters[zone SOUTH-R2] PASSED
+tests/test_spec.py::test_administrator_filters[has custom item-R2] PASSED
+tests/test_spec.py::test_user_export PASSED
+tests/test_spec.py::test_export_columns[ordinary-date, account, the union of WEST and SOUTH items, custom item, confirmation] PASSED
+tests/test_spec.py::test_export_columns[big-meter-date, account, the BIG_METER items, custom item, confirmation] PASSED
+tests/test_spec.py::test_invalid_filters[date "2026-13-40"] PASSED
+tests/test_spec.py::test_invalid_filters[zone "EAST"] PASSED
+tests/test_spec.py::test_invalid_filters[account "Nobody"] PASSED
+tests/test_spec.py::test_catalogue_by_zone_and_bigmeter_flag[Wen-WEST-32] PASSED
+tests/test_spec.py::test_catalogue_by_zone_and_bigmeter_flag[Nan-SOUTH-37] PASSED
+tests/test_spec.py::test_catalogue_by_zone_and_bigmeter_flag[Big-BIG_METER-25] PASSED
