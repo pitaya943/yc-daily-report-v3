@@ -47,8 +47,11 @@ def test_write_records_actor_type_description_and_taipei_time(db):
     audit.write(wen, "REPORT_CREATE", "建立回報（共 3 人作業）")
     [(actor_id, name, type_, desc, at)] = _rows(db)
     assert (actor_id, name, type_, desc) == (wen.id, "Wen", "REPORT_CREATE", "建立回報（共 3 人作業）")
-    assert at == clock.now()  # 時間來自 app.core.clock，不是系統時間
-    assert at.utcoffset().total_seconds() == 8 * 3600
+    assert at == clock.now()  # 時間來自 app.core.clock，不是系統時間（同一個時間點）
+    # psycopg 依「資料庫 session 的時區」顯示 timestamptz（本機是 Asia/Taipei，CI 的 postgres:17 是 UTC），
+    # 所以不能斷言回傳值的 utcoffset。改讓資料庫換算成台北的牆上時間，與資料庫的時區設定無關。
+    wall = db.execute("select (occurred_at at time zone 'Asia/Taipei')::text from yc_v3.audit_log").fetchone()[0]
+    assert wall == "2026-11-15 10:00:00"  # background 的時鐘：2026-11-15 10:00 Asia/Taipei
 
 
 def test_system_actor_is_recorded_as_system(db):
