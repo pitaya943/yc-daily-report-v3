@@ -1,0 +1,3 @@
+# 資料庫時區 = UTC（模擬 CI）：全部測試（CI 指令）
+572 passed, 489 skipped in 12.72s
+All checks passed!

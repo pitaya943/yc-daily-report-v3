@@ -1,0 +1,11 @@
+$ python3 -m pytest tests/unit/core tests/steps/common -q
+E   ImportError: cannot import name 'audit' from 'app.core' (/home/user/yc-daily-report-v3/app/core/__init__.py)
+E   ModuleNotFoundError: No module named 'app.core.outcomes'
+E   ModuleNotFoundError: No module named 'app.core.outcomes'
+E   ImportError: cannot import name 'audit' from 'app.core' (/home/user/yc-daily-report-v3/app/core/__init__.py)
+ERROR tests/unit/core/test_audit.py
+ERROR tests/unit/core/test_outcomes.py
+ERROR tests/unit/core/test_permissions.py
+ERROR tests/steps/common/test_common_steps.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 4 errors during collection !!!!!!!!!!!!!!!!!!!!
+4 errors in 0.08s

@@ -11,6 +11,7 @@ import pkgutil
 from fastapi import APIRouter, FastAPI
 
 import app.modules as modules_pkg
+from app.core.outcomes import register_outcome_handlers
 
 
 def discover_routers() -> list[APIRouter]:
@@ -38,6 +39,8 @@ def discover_routers() -> list[APIRouter]:
 
 def create_app() -> FastAPI:
     app = FastAPI(title="yc-daily-report")
+    # 結果類別 → HTTP status 與完整錯誤字串（D-034：main.py 只為此與稽核 middleware 而改）
+    register_outcome_handlers(app)
     for router in discover_routers():
         app.include_router(router)
     return app

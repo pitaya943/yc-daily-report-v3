@@ -1,0 +1,13 @@
+# 變異 A：nothing else is written 退回「整個資料庫不得有變動」（舊行為）
+FAILED tests/steps/common/test_common_steps.py::test_a_blocked_attempt_writes_only_the_access_denied_row_that_was_asserted
+FAILED tests/steps/common/test_nothing_else_written.py::test_only_the_asserted_access_denied_row_is_allowed
+FAILED tests/steps/common/test_nothing_else_written.py::test_the_same_row_cannot_be_claimed_twice
+3 failed, 19 passed in 0.37s
+# 變異 B：nothing else is written 什麼都不檢查（永遠通過）
+FAILED tests/steps/common/test_nothing_else_written.py::test_a_second_write_besides_access_denied_fails
+FAILED tests/steps/common/test_nothing_else_written.py::test_a_second_audit_row_besides_the_asserted_one_fails
+FAILED tests/steps/common/test_nothing_else_written.py::test_an_access_denied_row_that_was_never_asserted_fails
+FAILED tests/steps/common/test_nothing_else_written.py::test_changing_or_deleting_existing_data_fails_even_with_an_asserted_row
+4 failed, 18 passed in 0.37s
+# 還原後
+48 passed in 0.62s
