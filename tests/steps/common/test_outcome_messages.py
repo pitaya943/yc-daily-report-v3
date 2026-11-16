@@ -14,7 +14,12 @@
 from __future__ import annotations
 
 import pytest
+from fastapi.testclient import TestClient
 
+from app.core import audit
+from app.core import session as session_core
+from app.core.actor import Actor, Role
+from app.main import create_app
 from app.core.outcomes import Outcome
 from tests.steps.common import outcome as step
 from tests.steps.common.spec_tables import outcome_http_table
@@ -38,6 +43,11 @@ def _reject(db, outcome: str, message: str | None, *, status: int | None = None)
     r = Recorder(db)
     r.perform(lambda: _Response(status if status is not None else outcome_http_table()[outcome], {"outcome": outcome, "message": message}))
     return r
+
+
+def _check(db, recorder: Recorder, outcome: str, client=None) -> None:
+    """呼叫 `the outcome is <OUTCOME>` 背後的函式。非 FORBIDDEN 不看 client；FORBIDDEN 要有已登入的 client（D-095）。"""
+    step._outcome_rejected(recorder, client if client is not None else TestClient(create_app()), db, outcome)
 
 
 # ───────── 附錄 B 字串清單是從 spec 解析出來的 ─────────
@@ -68,13 +78,12 @@ def test_appendix_b_messages_are_parsed_from_the_spec():
         ("INVALID", None),  # 規格沒有為該情況寫字串（例如 RPT-R01 的工項組以外）
         ("CONFLICT", "每日最多只能送出 3 筆回報"),
         ("CONFLICT", None),
-        ("FORBIDDEN", None),
         ("UNAUTHENTICATED", None),
         ("LOCKED", "密碼錯誤次數過多，請在 15 分鐘後再試"),
     ],
 )
 def test_accepts_an_appendix_b_message_or_null(db, outcome, message):
-    step._outcome_rejected(_reject(db, outcome, message), outcome)
+    _check(db, _reject(db, outcome, message), outcome)
 
 
 # ───────── 會失敗的（反向測試）─────────
@@ -97,7 +106,7 @@ def test_accepts_an_appendix_b_message_or_null(db, outcome, message):
 @pytest.mark.parametrize("outcome", ["INVALID", "CONFLICT", "FORBIDDEN"])
 def test_rejects_a_message_that_is_not_in_appendix_b(db, outcome, message):
     with pytest.raises(AssertionError):
-        step._outcome_rejected(_reject(db, outcome, message), outcome)
+        _check(db, _reject(db, outcome, message), outcome)
 
 
 @pytest.mark.parametrize(
@@ -112,22 +121,22 @@ def test_rejects_a_message_that_is_not_in_appendix_b(db, outcome, message):
 )
 def test_locked_accepts_only_its_own_sentence(db, message):
     with pytest.raises(AssertionError):
-        step._outcome_rejected(_reject(db, "LOCKED", message), "LOCKED")
+        _check(db, _reject(db, "LOCKED", message), "LOCKED")
 
 
 def test_wrong_http_status_or_outcome_still_fails(db):
     # 字串對，但結果類別對不上 HTTP status／回應裡的類別：仍然失敗
     with pytest.raises(AssertionError):
-        step._outcome_rejected(_reject(db, "INVALID", "每日最多只能送出 3 筆回報", status=409), "INVALID")
+        _check(db, _reject(db, "INVALID", "每日最多只能送出 3 筆回報", status=409), "INVALID")
     with pytest.raises(AssertionError):
-        step._outcome_rejected(_reject(db, "CONFLICT", "每日最多只能送出 3 筆回報"), "INVALID")
+        _check(db, _reject(db, "CONFLICT", "每日最多只能送出 3 筆回報"), "INVALID")
 
 
 def test_a_non_json_response_fails_instead_of_passing(db):
     r = Recorder(db)
     r.perform(lambda: _Response(422, None))
     with pytest.raises(Exception):
-        step._outcome_rejected(r, "INVALID")
+        _check(db, r, "INVALID")
 
 
 def test_data_changes_still_fail_the_step(db):
@@ -141,8 +150,124 @@ def test_data_changes_still_fail_the_step(db):
 
     r.perform(action)
     with pytest.raises(AssertionError):
-        step._outcome_rejected(r, "INVALID")
+        _check(db, r, "INVALID")
 
 
 def test_every_outcome_class_is_known():
     assert {o.value for o in Outcome} == set(outcome_http_table())
+
+
+# ───────── D-095：FORBIDDEN 的資料斷言 ─────────
+#
+# 規格規定每個 FORBIDDEN 都寫 ACCESS_DENIED（spec/README.md 結果類別表、AUD-R03），所以 `the outcome is FORBIDDEN`
+# 要求「恰好新增 1 列 ACCESS_DENIED、行為者是被拒絕的人，其他資料表完全不變」；其他類別仍是「完全沒有變動」。
+
+
+def _wen_client(db) -> tuple[TestClient, Actor]:
+    from tests.steps.common.session import SESSION_COOKIE, sign_in_with_correct_password
+
+    client = TestClient(create_app())
+    assert sign_in_with_correct_password(client, db, "Wen").status_code == 303
+    actor = session_core.actor_for_token(db, client.cookies.get(SESSION_COOKIE))
+    db.rollback()
+    return client, actor
+
+
+def _actor(db, name: str) -> Actor:
+    row = db.execute("select id, role from yc_v3.accounts where name = %s", (name,)).fetchone()
+    db.rollback()
+    return Actor(id=row[0], name=name, role=Role(row[1]))
+
+
+def _forbidden(db, client, *writes) -> Recorder:
+    """假裝動作回了 FORBIDDEN，並依 `writes`（每個是 callable(conn)）寫資料。"""
+    r = Recorder(db)
+
+    def action():
+        for write in writes:
+            write(db)
+        db.commit()
+        return _Response(403, {"outcome": "FORBIDDEN", "message": None})
+
+    r.perform(action)
+    return r
+
+
+def _denied(db, actor_name: str = "Wen", type_: str = "ACCESS_DENIED"):
+    actor = _actor(db, actor_name)  # 先查（_actor 會 rollback，不能夾在待提交的寫入中間）
+    return lambda conn: audit.write(actor, type_, "嘗試執行但被拒絕：edit a report", conn=conn)
+
+
+def test_forbidden_passes_with_exactly_one_access_denied_by_the_rejected_person(db):
+    client, _ = _wen_client(db)
+    _check(db, _forbidden(db, client, _denied(db)), "FORBIDDEN", client)
+
+
+def test_forbidden_claims_the_access_denied_row_for_nothing_else_is_written(db):
+    from tests.steps.common.steps import check_nothing_else_written
+
+    client, _ = _wen_client(db)
+    r = _forbidden(db, client, _denied(db))
+    _check(db, r, "FORBIDDEN", client)
+    check_nothing_else_written(r)  # ACCESS_DENIED 已被斷言過，不算「其他寫入」
+
+
+def test_forbidden_fails_when_no_access_denied_is_written(db):
+    client, _ = _wen_client(db)
+    with pytest.raises(AssertionError, match="恰好新增 1 列稽核"):
+        _check(db, _forbidden(db, client), "FORBIDDEN", client)
+
+
+def test_forbidden_fails_when_two_audit_rows_are_written(db):
+    client, _ = _wen_client(db)
+    with pytest.raises(AssertionError, match="恰好新增 1 列稽核"):
+        _check(db, _forbidden(db, client, _denied(db), _denied(db)), "FORBIDDEN", client)
+
+
+def test_forbidden_fails_when_the_actor_is_not_the_rejected_person(db):
+    client, _ = _wen_client(db)
+    with pytest.raises(AssertionError, match="ACCESS_DENIED"):
+        _check(db, _forbidden(db, client, _denied(db, "Wei")), "FORBIDDEN", client)
+
+
+def test_forbidden_fails_when_the_audit_row_is_not_access_denied(db):
+    client, _ = _wen_client(db)
+    with pytest.raises(AssertionError, match="ACCESS_DENIED"):
+        _check(db, _forbidden(db, client, _denied(db, type_="REPORT_UPDATE")), "FORBIDDEN", client)
+
+
+def test_forbidden_fails_when_another_table_changes(db):
+    client, _ = _wen_client(db)
+    extra = lambda conn: conn.execute("insert into yc_v3.accounts(name, role, zone) values ('Extra','USER','WEST')")  # noqa: E731
+    with pytest.raises(AssertionError, match="其他資料表"):
+        _check(db, _forbidden(db, client, _denied(db), extra), "FORBIDDEN", client)
+
+
+def test_forbidden_fails_when_the_request_had_no_session(db):
+    anonymous = TestClient(create_app())
+    with pytest.raises(AssertionError, match="已登入"):
+        _check(db, _forbidden(db, anonymous, _denied(db)), "FORBIDDEN", anonymous)
+
+
+def test_forbidden_with_a_message_outside_appendix_b_still_fails(db):
+    client, _ = _wen_client(db)
+    r = Recorder(db)
+    r.perform(lambda: (_denied(db)(db), db.commit(), _Response(403, {"outcome": "FORBIDDEN", "message": "日期錯誤"}))[2])
+    with pytest.raises(AssertionError):
+        _check(db, r, "FORBIDDEN", client)
+
+
+@pytest.mark.parametrize("outcome", ["INVALID", "CONFLICT", "UNAUTHENTICATED"])
+def test_other_outcomes_still_require_nothing_to_be_written(db, outcome):
+    """D-095 只放寬 FORBIDDEN：其他類別寫了 ACCESS_DENIED 一樣失敗。"""
+    client, _ = _wen_client(db)
+    r = Recorder(db)
+
+    def action():
+        _denied(db)(db)
+        db.commit()
+        return _Response(outcome_http_table()[outcome], {"outcome": outcome, "message": None})
+
+    r.perform(action)
+    with pytest.raises(AssertionError):
+        _check(db, r, outcome, client)

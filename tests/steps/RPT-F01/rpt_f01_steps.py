@@ -21,6 +21,7 @@ from fastapi.testclient import TestClient
 from pytest_bdd import given, parsers, then, when
 
 from app.core.clock import clock
+from tests.steps.common.audit_description import *  # noqa: F401,F403  (the audit description contains ... ，D-094)
 from tests.steps.common.outcome import *  # noqa: F401,F403  (the outcome is ...)
 from tests.steps.common.session import *  # noqa: F401,F403  ("<name>" is signed in)
 from tests.steps.common.session import SESSION_COOKIE, session_rows, sign_in_with_correct_password
@@ -370,18 +371,6 @@ def _saved_crew(recorder, db, crew, ordered):
     db.rollback()
     actual = [submitter, *collaborators]
     assert actual == crew.split(", "), f"存下的作業小組（提交者在前，其後依提交者選的順序）應為 {crew.split(', ')}，實際 {actual}"
-
-
-@then(parsers.parse('the audit description contains "{text}"'))
-def _audit_contains(recorder, db, text):
-    rows = [r for r in recorder.changes().get("audit_log", {}).get("added", [])]
-    assert len(rows) == 1, f"應該恰新增 1 列稽核，實際 {rows}"
-    with db.cursor() as cur:
-        cur.execute("select type, description from yc_v3.audit_log where type = 'REPORT_CREATE'")
-        found = cur.fetchall()
-    db.rollback()
-    assert len(found) == 1, f"應該恰有 1 列 REPORT_CREATE，實際 {found}"
-    assert text in found[0][1], f"稽核說明應含「{text}」，實際「{found[0][1]}」"
 
 
 @then(parsers.re(r'nothing is written except an audit row "(?P<type_>[A-Z_]+)"$'))

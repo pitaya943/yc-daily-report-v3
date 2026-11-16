@@ -17,6 +17,9 @@
   `the request is rejected as <OUTCOME> with message "..."` scenario 負責（例如 RPT-R02 的「The date error message」）。
   UNAUTHENTICATED 在登入時有字串，但閒置逾時沒有，所以登入用 `the request is rejected as UNAUTHENTICATED with message "..."`。
 - 拒絕時斷言資料沒有任何變動（AGENTS.md 不可違反 #5）：IAM-F03 原本的兩項斷言（null 與 nothing is written）不放寬。
+  例外只有 FORBIDDEN（D-095）：規格規定每個 FORBIDDEN 都寫 `ACCESS_DENIED`（spec/README.md 結果類別表、AUD-R03），
+  所以它的資料斷言是「恰好新增 1 列 `ACCESS_DENIED`、行為者是被拒絕的人（發出請求的 session 的主人），其他資料表完全不變」；
+  這一列同時被記為「已斷言」，之後的 `nothing else is written` 可以扣掉它。
 - `signed in` 與 `accepted` 是成功的結果：前者檢查登入的回應與 cookie，後者是 200。
 """
 from __future__ import annotations
@@ -27,7 +30,7 @@ from pytest_bdd import parsers, then
 
 from app.core import session as session_core
 from tests.steps.common.spec_tables import SPEC
-from tests.steps.common.steps import check_nothing_written, check_rejected
+from tests.steps.common.steps import check_nothing_written, check_rejected, claim_audit_row
 
 # 有規格字串的結果類別 → 完整錯誤字串。逐字出自 spec/appendix-b-fields.md。
 SPEC_MESSAGES: dict[str, str] = {
@@ -84,11 +87,33 @@ def _outcome_signed_in(recorder, client, db):
     assert actor is not None, "session cookie 在資料庫裡找不到對應的 session"
 
 
+def check_forbidden_writes_only_access_denied(recorder, client, db) -> None:
+    """D-095：FORBIDDEN 恰好新增 1 列 ACCESS_DENIED、行為者是被拒絕的人，其他資料表完全不變。
+
+    「被拒絕的人」是發出請求的 session 的主人（client 的 session cookie）：FORBIDDEN 是「已登入但不被允許」，
+    沒有有效 session 的請求不可能是 FORBIDDEN（那是 UNAUTHENTICATED）。
+    """
+    token = client.cookies.get(session_core.SESSION_COOKIE)
+    actor = session_core.actor_for_token(db, token) if token else None
+    db.rollback()
+    assert actor is not None, "FORBIDDEN 的請求必須由已登入者發出（沒有有效的 session）"
+    changes = recorder.changes()
+    others = {t: c for t, c in changes.items() if t != "audit_log"}
+    assert not others, f"FORBIDDEN 除了 ACCESS_DENIED 之外，其他資料表不能有變動：{others}"
+    audit = changes.get("audit_log", {"added": [], "removed": []})
+    assert audit["removed"] == [], "稽核紀錄不可被刪除或修改"
+    assert len(audit["added"]) == 1, f"FORBIDDEN 應恰好新增 1 列稽核（ACCESS_DENIED），實際 {len(audit['added'])} 列：{audit['added']}"
+    claim_audit_row(recorder, db, "ACCESS_DENIED", actor.name)  # 類型與行為者都要對；同時記為已斷言
+
+
 @then(parsers.re(r"the outcome is (?P<outcome>[A-Z_]+)"))
-def _outcome_rejected(recorder, outcome):
+def _outcome_rejected(recorder, client, db, outcome):
     try:
         actual = recorder.response.json().get("message")
     except Exception:  # 回應不是 JSON：交給 check_rejected 報出真正的問題
         actual = None
     check_rejected(recorder, outcome, expected_message(outcome, actual))
-    check_nothing_written(recorder)
+    if outcome == "FORBIDDEN":
+        check_forbidden_writes_only_access_denied(recorder, client, db)  # D-095
+    else:
+        check_nothing_written(recorder)

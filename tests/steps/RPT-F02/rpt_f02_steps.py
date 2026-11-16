@@ -9,8 +9,7 @@
   RPT-F01 的 `"<name>" has N own reports dated ..., one of them PENDING` 也直接沿用。
 - 本檔的輔助函式刻意不 import `rpt_f01_steps`：兩個步驟檔都是以「目錄在 sys.path 上」的方式載入，
   載入順序不是 T-202 能控制的；每個輔助函式都只有幾行。
-- 不定義 `the audit description contains "…"`：同文字的步驟已由 T-201 定義（只看 REPORT_CREATE），
-  RPT-R11「An edit with no change says so」要等 issue #30 的決定（pitfall #26、#29）。
+- `the audit description contains "…"` 不在這裡定義：D-094 把它搬到 tests/steps/common/audit_description.py（RPT-R11 用）。
 """
 from __future__ import annotations
 
@@ -20,6 +19,7 @@ import pytest
 from pytest_bdd import given, parsers, then, when
 
 from app.core.clock import clock
+from tests.steps.common.audit_description import *  # noqa: F401,F403  (the audit description contains ...)
 from tests.steps.common.outcome import *  # noqa: F401,F403  (the outcome is ...)
 from tests.steps.common.session import *  # noqa: F401,F403  ("<name>" is signed in)
 from tests.steps.common.session import session_rows, sign_in_with_correct_password
