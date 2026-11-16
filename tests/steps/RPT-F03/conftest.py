@@ -1,0 +1,9 @@
+"""把 RPT-F03 的步驟註冊成全域 plugin（理由與限制同 tests/steps/IAM-F01/conftest.py）。
+
+只跑 `tests/test_spec.py` 一個檔案時不會載入這個 conftest；請跑完整的 `python3 -m pytest`。
+"""
+import rpt_f03_steps
+
+
+def pytest_configure(config):
+    config.pluginmanager.register(rpt_f03_steps, "rpt_f03_steps")
