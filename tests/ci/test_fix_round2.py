@@ -201,3 +201,80 @@ def test_d045_the_allow_functions_field_is_read_from_the_target_branch(mig_ticke
 
 def test_d045_an_event_trigger_is_rejected_even_with_allow_functions():
     assert checks.sql_violations("create event trigger et on ddl_command_start execute function yc_v3.f();", allow_functions=True)
+
+
+# ------------------------------------------------------------------ D-047：strings 只檢查傳給結果類別的錯誤訊息
+
+APPENDIX_B = "| 欄位 | 錯誤訊息 |\n| --- | --- |\n| 顯示名稱 | 「請輸入顯示名稱」<br>「顯示名稱已被使用」 |\n"
+IMPORTS = "from app.core.outcomes import Outcome, OutcomeError\nfrom app.core import outcomes\n"
+
+# T-003（PR #4，ticket/T-003 的 app/core/permissions.py）實際的寫法：稽核說明是 f-string，FORBIDDEN 沒有訊息
+T003_PERMISSIONS = (
+    "from app.core import audit\n" + IMPORTS +
+    "def authorize(actor, action, *rules, resource=None):\n"
+    "    if actor is None:\n"
+    "        raise OutcomeError(Outcome.UNAUTHENTICATED)\n"
+    "    audit.write(actor, 'ACCESS_DENIED', f'嘗試執行但被拒絕：{action}')\n"
+    "    raise OutcomeError(Outcome.FORBIDDEN)\n"
+)
+
+
+def _strings(repo, code, path="app/core/x.py"):
+    repo.commit({"spec/appendix-b-fields.md": APPENDIX_B, path: code})
+    return checks.check_strings(repo.ctx())
+
+
+def test_d047_t003_audit_descriptions_are_not_checked(repo):
+    """Verifier 第 2 輪問題 3：T-003 的稽核說明被誤擋。D-047：稽核說明由附錄 C 管。"""
+    assert _strings(repo, T003_PERMISSIONS, "app/core/permissions.py") == []
+
+
+def test_d047_chinese_text_that_is_not_passed_to_a_result_class_is_not_checked(repo):
+    assert _strings(repo, 'LABEL = "某個介面文字"\ndef f():\n    return f"共 {1} 筆"\n') == []
+
+
+@pytest.mark.parametrize("call", [
+    'OutcomeError(Outcome.INVALID, "請輸入名字")',
+    'OutcomeError(Outcome.INVALID, message="請輸入名字")',
+    'outcomes.OutcomeError(outcomes.Outcome.CONFLICT, "請輸入名字")',
+    'OutcomeError(Outcome.INVALID, "請輸入顯示名稱 ")',                       # 逐字：多一個空白也不行
+    'OutcomeError(Outcome.INVALID, "請輸入顯示名稱" if a else "請輸入名字")',
+])
+def test_d047_a_message_that_is_not_in_appendix_b_fails(repo, call):
+    problems = _strings(repo, IMPORTS + f"def f(a):\n    raise {call}\n")
+    assert problems and "app/core/x.py:4" in problems[0], problems
+
+
+@pytest.mark.parametrize("call", [
+    'OutcomeError(Outcome.INVALID, f"請輸入{a}")',
+    'OutcomeError(Outcome.INVALID, "請輸入" + "顯示名稱")',
+    'OutcomeError(Outcome.INVALID, a)',
+    'OutcomeError(Outcome.INVALID, MESSAGES[a])',
+    'OutcomeError(Outcome.INVALID, "請輸入{}".format(a))',
+    'OutcomeError(Outcome.INVALID, *a)',
+    'OutcomeError(Outcome.INVALID, **a)',
+    'OutcomeError(Outcome.INVALID, message=a)',
+])
+def test_d047_a_message_that_cannot_be_read_as_a_literal_fails(repo, call):
+    """無法確定訊息內容（變數、拼接、格式化）一律失敗：訊息要逐字寫成字串常數。"""
+    code = IMPORTS + "MESSAGES = {}\n" + f"def f(a):\n    raise {call}\n"
+    assert _strings(repo, code), call
+
+
+@pytest.mark.parametrize("call", [
+    'OutcomeError(Outcome.FORBIDDEN)',
+    'OutcomeError(Outcome.FORBIDDEN, None)',
+    'OutcomeError(Outcome.INVALID, "請輸入顯示名稱")',
+    'OutcomeError(Outcome.CONFLICT, message="顯示名稱已被使用")',
+    'OutcomeError(Outcome.INVALID, "請輸入顯示名稱" if a else "顯示名稱已被使用")',
+    'OutcomeError(Outcome.INVALID, NAME_REQUIRED)',                          # 模組層級的字串常數
+])
+def test_d047_messages_copied_verbatim_or_absent_pass(repo, call):
+    code = IMPORTS + 'NAME_REQUIRED = "請輸入顯示名稱"\n' + f"def f(a):\n    raise {call}\n"
+    assert _strings(repo, code) == [], (call, _strings(repo, code))
+
+
+def test_d047_a_module_constant_that_is_not_in_appendix_b_fails(repo):
+    code = IMPORTS + 'BAD = "請輸入名字"\ndef f():\n    raise OutcomeError(Outcome.INVALID, BAD)\n'
+    assert _strings(repo, code)
+

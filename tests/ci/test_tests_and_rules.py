@@ -191,19 +191,24 @@ def _app(repo, code):
     repo.commit({"spec/appendix-b-fields.md": "| 欄位 | 「請輸入顯示名稱」<br>「密碼長度須為 6 至 30 個字」 |\n", "app/m.py": code})
 
 
+# D-047：只檢查傳給結果類別（T-003 的 app/core/outcomes.py：OutcomeError(outcome, message)）的錯誤訊息
+OE = "from app.core.outcomes import Outcome, OutcomeError\n"
+
+
 def test_strings_fails_for_a_message_that_is_not_in_the_spec(repo):
-    _app(repo, 'ERROR = "請輸入名字"\n')
+    _app(repo, OE + 'def f():\n    raise OutcomeError(Outcome.INVALID, "請輸入名字")\n')
     problems = checks.check_strings(repo.ctx())
     assert len(problems) == 1 and "請輸入名字" in problems[0]
 
 
 def test_strings_passes_for_a_message_copied_verbatim(repo):
-    _app(repo, 'ERROR = "請輸入顯示名稱"\nOTHER = "密碼長度須為 6 至 30 個字"\n')
+    _app(repo, OE + 'def f(a):\n    if a:\n        raise OutcomeError(Outcome.INVALID, "請輸入顯示名稱")\n'
+               '    raise OutcomeError(Outcome.INVALID, message="密碼長度須為 6 至 30 個字")\n')
     assert checks.check_strings(repo.ctx()) == []
 
 
 def test_strings_fails_for_a_message_built_at_runtime(repo):
-    _app(repo, 'def f(n):\n    return f"密碼長度須為 {n} 個字"\n')
+    _app(repo, OE + 'def f(n):\n    raise OutcomeError(Outcome.INVALID, f"密碼長度須為 {n} 個字")\n')
     assert checks.check_strings(repo.ctx())
 
 

@@ -99,39 +99,20 @@ def test_a_skip_in_another_support_file_is_not_exempt(repo):
     assert checks.check_no_weakened_tests(repo.ctx())
 
 
-# ------------------------------------------------------------------ 問題 4：strings 也掃樣板與前端檔案
+# ------------------------------------------------------------------ 問題 4（已由 D-047 改變範圍）
+# 第 1 輪依當時的文件（「產品程式中出現的錯誤訊息」）也掃樣板與前端檔案。D-047 把範圍縮成
+# 「傳給結果類別的錯誤訊息」，樣板與前端檔案不在範圍內；新範圍的測試在 test_fix_round2.py。
 
 APPENDIX = "| 欄位 | 錯誤訊息 |\n| --- | --- |\n| 顯示名稱 | 「請輸入顯示名稱」 |\n"
 
 
 @pytest.mark.parametrize("path,content", [
     ("app/modules/x/templates/form.html", "<p class=error>請輸入名字</p>\n"),
-    ("app/modules/x/templates/form.html", '<input placeholder="請輸入名字">\n'),
-    ("app/modules/x/templates/form.html", "<p>請輸入{{ field }}</p>\n"),
-    ("app/modules/x/templates/form.html", "{% if bad %}<span>格式不對</span>{% endif %}\n"),
-    ("app/templates/base.html", "<title>員工日報</title>\n"),
     ("app/static/app.js", "alert('請輸入名字');\n"),
-    ("app/static/app.js", 'const msg = "請輸入名字";\n'),
-    ("app/static/app.js", "const msg = `請輸入名字`;\n"),
-    ("app/modules/x/static/app.css", "a::after { content: '請輸入名字'; }\n"),
-    ("app/modules/x/templates/m.txt", "請輸入名字\n"),
 ])
-def test_strings_fails_for_unlisted_text_in_templates_and_static_files(repo, path, content):
+def test_strings_no_longer_scans_templates_and_static_files_d047(repo, path, content):
     repo.commit({"spec/appendix-b-fields.md": APPENDIX, path: content})
-    problems = checks.check_strings(repo.ctx())
-    assert problems and path in problems[0], problems
-
-
-@pytest.mark.parametrize("path,content", [
-    ("app/modules/x/templates/form.html", "<p class=error>請輸入顯示名稱</p>\n"),
-    ("app/modules/x/templates/form.html", "<label>顯示名稱</label>\n"),  # 欄位名稱（附錄 B 第一欄）
-    ("app/modules/x/templates/form.html", "{# 註解：中文 #}<!-- 註解：中文 --><p>{{ name }}</p>\n"),
-    ("app/static/app.js", "// 註解：中文\n/* 註解：中文 */\nalert('請輸入顯示名稱');\n"),
-    ("app/static/app.js", "const url = 'http://example.test/x'; fetch(url);\n"),
-])
-def test_strings_passes_for_listed_text_and_comments_in_templates(repo, path, content):
-    repo.commit({"spec/appendix-b-fields.md": APPENDIX, path: content})
-    assert checks.check_strings(repo.ctx()) == [], checks.check_strings(repo.ctx())
+    assert checks.check_strings(repo.ctx()) == []
 
 
 # ------------------------------------------------------------------ 問題 5：名稱不規範的 ticket/* 分支一律失敗
