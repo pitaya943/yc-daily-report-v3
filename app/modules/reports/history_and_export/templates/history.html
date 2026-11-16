@@ -3,7 +3,9 @@
     * 列：`<tr data-report-id>`，儲存格 class 是 account／label／status／custom，測試與截圖都靠這些。
     * HTMX 2 預設不把 4xx 換進畫面：下面的 htmx:beforeSwap 把拒絕的完整錯誤字串顯示在 #filter-error，
       不修改 base.html。伺服器的拒絕回應是 JSON：{"outcome": ..., "message": ...}（app/core/outcomes.py）。
-    * 匯出連結只由「已驗證的篩選值」組成（router.py），所以點下去不會得到錯誤。 -#}
+    * 匯出連結只由「已驗證的篩選值」組成（router.py），所以點下去不會得到錯誤。
+    * D-099：篩選無效時，清空清單並停用匯出連結（拿掉 href，避免使用者以為匯出的是表單上的新條件，或匯出舊篩選）；
+      之後送出有效的篩選，伺服器回傳新的 #results（含新的連結），整塊取代而恢復。 -#}
 {% extends "base.html" %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
@@ -20,6 +22,7 @@
   label.check { flex-direction: row; align-items: center; gap: .4rem; padding-bottom: .5rem; }
   button { background: #1d4ed8; color: #fff; border-color: #1d4ed8; font-weight: 600; cursor: pointer; }
   .btn { text-decoration: none; display: inline-block; }
+  .btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; pointer-events: none; background: transparent; }
   #filter-error { border: 1px solid #b91c1c; background: color-mix(in srgb, #b91c1c 12%, transparent); border-radius: 6px; padding: .6rem .75rem; margin: 0 0 1rem; }
   #filter-error[hidden] { display: none; }
   .scroll { overflow-x: auto; }
@@ -91,6 +94,26 @@
   function showError(text) { errorBox.textContent = text; errorBox.hidden = false; }
   function clearError() { errorBox.textContent = ""; errorBox.hidden = true; }
 
+  // D-099：清空清單、停用匯出連結。連結拿掉 href 與 download（不可點、沒有指向舊篩選的網址）；
+  // 下一次有效的篩選會整塊換掉 #results，連結與清單自然恢復，不需要另外「還原」的程式。
+  function clearResults() {
+    var results = document.getElementById("results");
+    if (!results) { return; }
+    var list = results.querySelector(".scroll");
+    if (list) { list.remove(); }
+    var empty = results.querySelector(".empty");
+    if (empty) { empty.remove(); }
+    var count = results.querySelector(".count");
+    if (count) { count.textContent = ""; }
+    var link = document.getElementById("export-link");
+    if (link) {
+      link.removeAttribute("href");
+      link.removeAttribute("download");
+      link.setAttribute("aria-disabled", "true");
+      link.setAttribute("tabindex", "-1");
+    }
+  }
+
   form.addEventListener("htmx:beforeRequest", clearError);
 
   // HTMX 2 預設不換進 4xx／5xx。篩選無效時使用者必須在畫面上看到完整的錯誤字串，所以在這裡處理（ticket 完成條件 5）。
@@ -104,6 +127,7 @@
     if (xhr.status === 401) { window.location.assign("/sign-in"); return; }   // 閒置逾時：回登入頁（IAM-R10）
     var body = {};
     try { body = JSON.parse(xhr.responseText); } catch (e) { /* 不是 JSON（例如 500）：用下面的備用文字 */ }
+    clearResults();
     showError(body.message ? body.message : "無法載入（" + (body.outcome || xhr.status) + "）");
   });
   form.addEventListener("htmx:sendError", function () { showError("無法連線，請稍後再試"); });
