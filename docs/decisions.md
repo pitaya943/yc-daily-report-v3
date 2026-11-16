@@ -58,6 +58,10 @@
 | D-052 | 測試可以改名嗎？ | 不可以。結果比對看測試 ID，改名會被判為原測試消失而失敗，CI 不提供例外。真的需要改名時，由 Chief 在 ticket 寫明舊名對新名的對應，並記錄在本檔。 | 改名很少見，而且正是讓測試悄悄消失的常見方式；PR 說明不能成為繞過的管道 | 2026-11-16 | issue #8 選項 2A；`docs/ci-checks.md` 的 `no-weakened-tests` 同步寫明 |
 | D-053 | 沒有有效 anti-forgery token 的請求被拒絕為 `FORBIDDEN` 時，要不要寫 `ACCESS_DENIED`？ | 要。與 `spec/README.md` 的結果類別表、AUD-R03 一致：所有 `FORBIDDEN` 都寫 `ACCESS_DENIED`，沒有例外。 | 規則保持一致，T-003 的自動寫入不必改；偽造請求也留下紀錄 | 2026-11-16 | issue #9 選項 A；`spec/features/IAM-F03-session-and-sign-out.feature` 該 scenario 改為斷言 `ACCESS_DENIED` 與 `nothing else is written`；T-103 完成條件同步更新 |
 | D-054 | Branch protection 的必要檢查放在哪些分支？ | 只在 `main` 要求 `docs/ci-checks.md` 的 10 個必要檢查；`milestone/*` 不要求。Ticket PR 合併進 `milestone/*` 的條件不變（D-003：CI 全綠且 Verifier PASS，由 Chief 確認）。 | Kuei 指定 | 2026-11-16 | 方案 A；Kuei 在 M1 的 Chief session 交接事項中指定 |
+| D-055 | M1 的 ticket 計畫？ | 照 issue #11 核准：IAM 依序 T-101 → T-103 → T-102；純函式 T-111～T-114 與 IAM 平行；同時進行上限 3 張；共用 session 程式在 `app/core/session.py`，共用登入步驟在 `tests/steps/common/session.py`。 | Kuei 核准 | 2026-11-16 | issue #11 |
+| D-056 | 密碼雜湊用什麼？ | Python 標準庫 `hashlib.scrypt`，N=2^17、r=8、p=1（OWASP 最低建議），每個帳戶獨立隨機 salt，以 `hmac.compare_digest` 比對；雜湊字串帶演算法與參數前綴。 | 不新增依賴；前綴讓日後可漸進換演算法 | 2026-11-16 | issue #11 選項 1A；寫入 T-101 完成條件 11 |
+| D-057 | 登入後落地頁的路徑？ | 登入頁 `/sign-in`；USER → `/reports`；ADMIN、OWNER → `/review`。M2、M3 的頁面掛在這兩個路徑。 | 規格沒有 URL；事先固定，之後的 ticket 才能沿用 | 2026-11-16 | issue #11 選項 2A；寫入 T-101 完成條件 12 |
+| D-058 | IAM-R10 的「Saved data survives a timeout」需要 M2 的回報，怎麼辦？ | T-103 實作閒置逾時、寫好其他 3 個 scenario 的步驟，並以單元測試涵蓋閒置邊界；`IAM-R10` 由 T-201 補上回報步驟後加入 `tests/implemented.txt`。 | `done-when` 以規則為單位；不改規格也讓 M1 的 CI 驗證到逾時 | 2026-11-16 | issue #11 選項 3A；T-103、T-201 的完成條件已改 |
 
 ## 待決定
 
