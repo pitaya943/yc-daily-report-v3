@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M0 報告 — 員工日報系統</title>
+<style>
+  :root { --bg:#f7f9f9; --card:#fff; --ink:#18282b; --muted:#5a6c6f; --line:#d6dfe0; --accent:#0d6b74; --warn:#b5560b; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111b1d; --card:#182628; --ink:#e5eced; --muted:#9db1b4; --line:#2d4144; --accent:#6cc7cf; --warn:#f0a45c; } }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.75 "Noto Sans TC", system-ui, sans-serif; }
+  main { max-width:860px; margin:0 auto; padding:40px 16px 80px; }
+  h1 { font-size:1.8rem; margin:0 0 4px; }
+  h2 { font-size:1.25rem; color:var(--accent); margin:44px 0 12px; border-bottom:1px solid var(--line); padding-bottom:6px; }
+  h3 { font-size:1.05rem; margin:28px 0 8px; }
+  p, li { max-width:68ch; }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .verdict { background:var(--card); border:1px solid var(--line); border-left:5px solid var(--accent); padding:16px 20px; margin-top:20px; }
+  .todo { color:var(--warn); }
+  .scroll { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; font-size:.92rem; background:var(--card); }
+  th, td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { white-space:nowrap; }
+  code, pre { font-family:ui-monospace, Menlo, monospace; font-size:.88em; }
+  pre { background:var(--card); border:1px solid var(--line); padding:12px 14px; overflow-x:auto; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>M0 報告：基礎建設</h1>
+  <p class="meta">分支 <code>milestone/M0</code> · 報告日期 2026-11-16 · 撰寫者 Chief（模型 <code>claude-opus-5-5</code>）</p>
+
+  <div class="verdict">
+    <p><strong>結論。</strong>M0 的三張 ticket（T-001 骨架與測試框架、T-002 CI 檢查、T-003 共用基礎）都已合併進 <code>milestone/M0</code>，分支上的 CI 全綠：<code>572 passed, 489 skipped</code>，489 個 skipped 是 spec 中還沒實作的 scenario。M0 沒有實作任何業務規則，<code>tests/implemented.txt</code> 是空的，交付的是之後每張 ticket 都要用的框架與防線。<strong>最該注意的一件事：</strong>CI 檢查依 D-044 只防 agent 的疏忽，不防刻意的繞過；而且這些 check 目前還不是 GitHub 上的「必要檢查」，要等 Kuei 在 repo 設定 branch protection 才會真的擋住合併（見第 8 節）。</p>
+  </div>
+
+  <h2>1. 達成的 feature</h2>
+  <p>M0 不提供使用者功能。它讓之後的 ticket 可以「先寫會失敗的 scenario，再實作到通過」，並由 CI 自動擋下範圍外修改、弱化測試、碰到 <code>yc_v3</code> 以外的 migration 等常見錯誤。</p>
+  <div class="scroll"><table>
+    <tr><th>Feature</th><th>規則</th><th>Scenario 通過／總數</th><th>Ticket</th><th>PR</th><th>證據</th><th>Builder／Verifier 的模型</th></tr>
+    <tr><td>專案骨架、測試框架、本機資料庫防線</td><td>無（檢查清單驗收）</td><td>不適用；完成條件 10／10</td><td>T-001</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/2">#2</a></td><td><code>docs/evidence/T-001/</code>；Verifier 第 3 輪 <a href="https://github.com/pitaya943/yc-daily-report-v3/pull/2#issuecomment-6900163024">PASS</a></td><td>Builder：claude-sonnet-5-5（第 1 輪、修正第 1 輪）、claude-opus-5-5（修正第 2 輪）／Verifier：claude-opus-5-5（3 輪）</td></tr>
+    <tr><td>CI 檢查 10 項</td><td>無（檢查清單驗收）</td><td>不適用；<code>docs/ci-checks.md</code> 10 項都有會讓它失敗的測試</td><td>T-002</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/5">#5</a></td><td><code>docs/evidence/T-002/</code>；Verifier 第 3 輪 <a href="https://github.com/pitaya943/yc-daily-report-v3/pull/5#issuecomment-6906876032">PASS</a></td><td>Builder：claude-sonnet-5-5（第 1 輪、修正第 1 輪）、claude-opus-5-5（修正第 2 輪）／Verifier：claude-opus-5-5（3 輪）</td></tr>
+    <tr><td>結果類別、稽核寫入、權限檢查、共用步驟</td><td>無（檢查清單驗收）</td><td>不適用；完成條件 8／8</td><td>T-003</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/4">#4</a></td><td><code>docs/evidence/T-003/</code>；Verifier 第 2 輪 <a href="https://github.com/pitaya943/yc-daily-report-v3/pull/4#issuecomment-6907236779">PASS</a></td><td>Builder：claude-sonnet-5-5（第 1 輪、修正第 1 輪）／Verifier：claude-opus-5-5（2 輪）</td></tr>
+  </table></div>
+  <p>模型名稱都是各 session 用 <code>get_session</code> 讀出的實際設定，寫在各 PR 的交付留言與判定留言中。重算測試數字的方式：<code>milestone/M0</code> 合併 T-003 後（<code>9a50fcd</code>），CI run <a href="https://github.com/pitaya943/yc-daily-report-v3/actions/runs/43803700195">43803700195</a> 的 <code>tests</code> job log：</p>
+  <pre>套用 0001_init_accounts.sql
+套用 0002_audit_log.sql
+====================== 572 passed, 489 skipped in 11.21s =======================
+starting PostgreSQL 17.12 (Debian 17.12-1.pgdg13+1) on x86_64-pc-linux-gnu</pre>
+  <p>在本機重算：照第 4.1 節的步驟執行 <code>python3 -m pytest</code>。489 等於 spec 的 245 個 scenario 依 Examples 展開後的總數，由 <code>tests/unit/test_spec_collection.py</code> 把關。</p>
+
+  <h2>2. 為何這樣設計</h2>
+  <h3>2.1 PostgreSQL 17，用 apt 安裝在容器內（D-033）</h3>
+  <p>agent 的容器沒有 Docker daemon，所以「用 docker 起資料庫」不可行。Ubuntu 本身的 apt 只有 16，但共用 Supabase 是 17.6，所以從 PGDG（<code>apt.postgresql.org</code>）安裝 17，讓 migration 在本機與 Kuei 套用時的行為一致。CI 用 <code>postgres:17</code> service。<strong>會出問題的情況：</strong>Supabase 升級主版本後，要同步更新 <code>scripts/dev/install-postgres</code> 與 workflow 的 image。</p>
+  <h3>2.2 本機資料庫防線用允許清單，不用黑名單（T-001）</h3>
+  <p>「不連到共用的 Supabase」（不可違反第 7 條）由 <code>app/core/local_url.py</code> 強制。第一版用黑名單，兩輪 Verifier 分別找到 <code>hostaddr=</code> 與 <code>PGSERVICE</code> 兩種繞過方式。最後改成 fail-closed：照 libpq 的規則解析 URI，query 參數用白名單，<code>PGSERVICE</code>、<code>PGSERVICEFILE</code>、<code>PGSYSCONFDIR</code> 只要有設就拒絕，不認得的 <code>PG*</code> 變數也拒絕，連線前再用 libpq 自己的 <code>PQconninfoParse</code> 交叉比對。<strong>代價：</strong>開發者 shell 有多餘的 <code>PG*</code> 變數時，測試會拒絕執行，要先 <code>unset</code>。</p>
+  <h3>2.3 CI 的防護目標：防疏忽，不防攻擊（D-044～D-046）</h3>
+  <p>T-002 前兩輪都用「列舉禁止的語法」來寫檢查，Verifier 每一輪都找得到新的繞過，例如把 SQL 藏在單引號字串的函式本體、<code>os._exit(0)</code>。比較過的兩種做法：(A) 防疏忽，用禁止整類寫法加上比對結果；(B) 防到刻意攻擊，需要完整的語意分析，可能永遠補不完。Kuei 選了 A（issue #7）。結果：</p>
+  <ul>
+    <li><strong>migration：</strong>直接禁止函式、程序、trigger、<code>DO</code>、<code>lo_*</code>（D-045），另外在拋棄式 PG 17 上，用沒有 <code>public</code> 權限的角色實際執行 migration，比對 <code>yc_v3</code> 以外有沒有變化（D-042）。</li>
+    <li><strong>測試弱化：</strong>不再掃語法，改成比對結果（D-046）：目標分支上通過的每個測試 ID，在 PR 上都必須被收集而且通過。目標分支的結果在同一個 CI job 裡實際跑出來，不信任 PR 提供的檔案。</li>
+  </ul>
+  <p><strong>會出問題的情況：</strong>斷言被放寬但測試 ID 不變時，CI 抓不到，只能靠 Verifier 審查 diff；刻意構造的繞過也一樣。</p>
+  <h3>2.4 <code>commit-author</code> 依帳號判斷，不依 email（D-039）</h3>
+  <p>Chief 用 GitHub API 合併 PR #2 時，產生的 merge commit <code>84852d9</code> 作者 email 是 <code>bullet-bots</code> 帳號的主要 email，不是 noreply。比 email 的話，<code>milestone/M0 → main</code> 會固定失敗，而且依規則不能改寫歷史。改成用 GitHub API 讀每個 commit 的 <code>author.login</code>。T-002 的 Builder 與 Verifier 都已確認 <code>origin/main..origin/milestone/M0</code> 會通過。</p>
+  <h3>2.5 「nothing is written」比對資料庫內容（T-003）</h3>
+  <p>共用步驟在動作前後各取一次 <code>yc_v3</code> 所有資料表的快照並比對，不只看回應。<code>nothing else is written</code> 只扣掉同一個 scenario 前面明確斷言過的寫入，例如 AUD-R03 的 <code>ACCESS_DENIED</code> 那一列；第 1 輪曾把兩者做成同一個步驟，被 Verifier 判 FAIL。快照不比對 identity sequence 的值，因為被回滾的 insert 也會讓序號前進。</p>
+  <h3>2.6 稽核類型用 CHECK 約束（T-003，migration 0002）</h3>
+  <p>附錄 C 的 37 種類型寫成 <code>audit_log.type</code> 的 CHECK 約束，而不是另建對照表或 PG enum。理由：類型由規格固定，CHECK 在 migration 裡最容易逐字對照附錄 C。<strong>代價：</strong>新增類型要寫 migration 修改約束。<code>actor_name</code> 另外存一份名字，讓稽核不隨帳戶改名而變。</p>
+
+  <h2>3. 如何審查</h2>
+  <div class="scroll"><table>
+    <tr><th>順序</th><th>檔案</th><th>要看什麼</th></tr>
+    <tr><td>1</td><td><code>docs/decisions.md</code> D-029～D-049</td><td>這個 milestone 中 Kuei 做的所有決定，以及 Chief 怎麼記錄它們。</td></tr>
+    <tr><td>2</td><td><code>migrations/0001_init_accounts.sql</code>、<code>migrations/0002_audit_log.sql</code></td><td>要套用到共用資料庫的 SQL。確認只碰 <code>yc_v3</code>，欄位與約束符合預期（第 5 節）。</td></tr>
+    <tr><td>3</td><td><code>app/core/local_url.py</code>、<code>app/core/db.py</code></td><td>防止連到共用 Supabase 的防線。這是不可違反第 7 條唯一的程式防線。</td></tr>
+    <tr><td>4</td><td><code>docs/ci-checks.md</code>、<code>.github/workflows/ci.yml</code></td><td>10 項檢查的實際規則；<code>commit-author</code> job 的 <code>permissions</code> 只有 read。</td></tr>
+    <tr><td>5</td><td><code>app/core/outcomes.py</code>、<code>app/core/permissions.py</code>、<code>app/core/audit.py</code></td><td>七個結果類別對應 HTTP status；<code>FORBIDDEN</code> 自動寫 <code>ACCESS_DENIED</code>；<code>FORBIDDEN</code>、<code>UNAUTHENTICATED</code> 的 message 為 null（第 6 節）。</td></tr>
+    <tr><td>6</td><td><code>tests/steps/common/steps.py</code></td><td>之後每張 ticket 都會用的三個共用步驟，特別是 <code>nothing is written</code> 與 <code>nothing else is written</code> 的差別。</td></tr>
+    <tr><td>7</td><td><code>docs/pitfalls.md</code></td><td>這個 milestone 新增的 18 條坑，是給下一個 agent 看的。</td></tr>
+  </table></div>
+
+  <h2>4. 如何驗證</h2>
+  <h3>4.1 自動測試</h3>
+  <p>在 Ubuntu 24.04（或相容的 Debian 系）上，從乾淨的 clone 開始。不需要使用這個 repo 的 agent。</p>
+  <pre>git clone https://github.com/pitaya943/yc-daily-report-v3 && cd yc-daily-report-v3
+git checkout milestone/M0
+sudo scripts/dev/install-postgres        # 從 apt.postgresql.org 安裝 postgresql-17
+python3 -m venv .venv && . .venv/bin/activate
+pip install -e '.[dev]'
+scripts/dev/db-start                     # 本機 127.0.0.1:5433，資料庫 yc
+scripts/dev/migrate                      # 預期：套用 0001_init_accounts.sql、套用 0002_audit_log.sql
+python3 -m pytest                        # 預期：572 passed, 489 skipped</pre>
+  <p>shell 若設了 <code>PGSERVICE</code> 或其他 <code>PG*</code> 變數，會看到 <code>refusing to connect:</code>，請先 <code>unset</code>。測試會清空本機 <code>yc_v3</code> 的資料。</p>
+  <h3>4.2 手動操作流程</h3>
+  <div class="scroll"><table>
+    <tr><th>步驟</th><th>操作</th><th>預期結果</th><th>對應</th></tr>
+    <tr><td>1</td><td><code>scripts/dev/run</code>，另一個終端機執行 <code>curl -s http://127.0.0.1:8000/health</code></td><td>回傳 <code>{"status":"ok","accounts":…,"now":"…+08:00"}</code>。<code>now</code> 是台北時間，來自 <code>app/core/clock.py</code>。</td><td>T-001 完成條件 1、3、6</td></tr>
+    <tr><td>2</td><td><code>DATABASE_URL=postgresql://u@db.example.invalid/yc scripts/dev/migrate</code></td><td>以 <code>refusing to connect:</code> 開頭的錯誤，exit code 非 0，沒有任何連線嘗試。</td><td>不可違反第 7 條</td></tr>
+    <tr><td>3</td><td><code>PGSERVICE=x scripts/dev/migrate</code></td><td>以 <code>refusing to connect:</code> 開頭的錯誤，exit code 非 0。</td><td>D-033、T-001 修正第 2 輪</td></tr>
+    <tr><td>4</td><td>在本機分支新增一個 <code>migrations/0003_x.sql</code>，內容 <code>create table public.t (id int);</code>，開一個指向 <code>milestone/M0</code> 的 PR（不要合併）</td><td><code>migration-scope</code> 失敗；分支名稱不是 <code>ticket/T-xxx</code>，所以其他檢查也會失敗（D-049）。</td><td>T-002</td></tr>
+  </table></div>
+  <h3>4.3 建議的獨立驗證</h3>
+  <ul>
+    <li>請另一個模型只讀 <code>docs/ci-checks.md</code> 與 D-044，不讀 <code>scripts/ci/</code>，列出它認為「agent 會不小心寫出」的弱化測試寫法，再實際對 <code>scripts/ci/run.py no-weakened-tests</code> 跑一次。</li>
+    <li>直接閱讀 <code>migrations/0001</code>、<code>0002</code> 的 SQL（D-012）。這兩個檔案合計不到 60 行。</li>
+    <li>在 Supabase 的 SQL editor 套用之前，先在自己的本機 PG 17 套用一次（第 4.1 節），確認沒有錯誤。</li>
+  </ul>
+
+  <h2>5. Migration 套用步驟</h2>
+  <p>兩個檔案都只碰 <code>yc_v3</code>，可以重複套用（<code>IF NOT EXISTS</code>）。請依序套用到共用資料庫。</p>
+  <div class="scroll"><table>
+    <tr><th>檔案</th><th>內容</th><th>套用後的檢查</th><th>回滾</th></tr>
+    <tr><td><code>migrations/0001_init_accounts.sql</code></td><td>建立 schema <code>yc_v3</code> 與 <code>yc_v3.accounts</code>（id、name 唯一、role、zone、big_meter、archived）</td><td><code>select to_regclass('yc_v3.accounts') is not null;</code> → 1 列，<code>t</code></td><td>只在沒有資料、且 Kuei 同意時：<code>drop table yc_v3.accounts;</code></td></tr>
+    <tr><td><code>migrations/0002_audit_log.sql</code></td><td>建立 <code>yc_v3.audit_log</code>，類型限附錄 C 的 37 種；兩個索引</td><td><code>select to_regclass('yc_v3.audit_log') is not null;</code> → 1 列，<code>t</code></td><td>只在沒有資料時：<code>drop table yc_v3.audit_log;</code>。稽核是永久紀錄，有資料就不要回滾。</td></tr>
+  </table></div>
+  <p>套用方式：用 <code>psql "&lt;共用專案的連線字串&gt;" -v ON_ERROR_STOP=1 -f migrations/0001_init_accounts.sql</code>，再套用 0002。或者把檔案內容貼進 Supabase 的 SQL editor。<code>scripts/dev/migrate</code> 只接受本機位址，不能拿來套用到共用專案，這是刻意的設計。<code>scripts/dev/migrate</code> 在本機會建立 <code>yc_v3.schema_migrations</code> 記錄已套用的檔案；在共用專案手動套用時，這張表不會自動建立。</p>
+
+  <h2>6. Agent 自行做的判斷</h2>
+  <div class="scroll"><table>
+    <tr><th>判斷</th><th>誰做的</th><th>理由</th><th>位置</th></tr>
+    <tr><td><code>FORBIDDEN</code> 與未登入的 <code>UNAUTHENTICATED</code> 回應的 message 為 null，不自己發明字串</td><td>T-003 Builder</td><td>spec 這兩類大多沒有字串（附錄 B 第 66 行為「—」）；只有登入密碼錯誤有「密碼錯誤，請重試」</td><td><code>app/core/outcomes.py</code></td></tr>
+    <tr><td><code>audit_log</code> 另存 <code>actor_name</code>；SYSTEM 行為者沒有帳戶 id</td><td>T-003 Builder</td><td>稽核是歷史紀錄，不隨帳戶改名而變</td><td><code>migrations/0002_audit_log.sql</code></td></tr>
+    <tr><td>稽核類型用 CHECK 約束，不用對照表或 enum</td><td>T-003 Builder</td><td>見 2.6</td><td>同上</td></tr>
+    <tr><td>沒有實作 AUD-R13（稽核不可修改）</td><td>T-003 Builder</td><td>需要 trigger；D-045 禁止 migration 定義 trigger，要另外授權 <code>allow_functions</code></td><td>PR #4 未解問題 2</td></tr>
+    <tr><td>快照比對不含 identity sequence 的值</td><td>T-003 Builder</td><td>被回滾的 insert 也會讓序號前進，比對會誤判</td><td><code>tests/steps/common/</code></td></tr>
+    <tr><td>本機資料庫用 5433 port，資料目錄 <code>/var/lib/yc-pg17</code></td><td>T-001 Builder</td><td>避免與系統預設的 5432 衝突</td><td><code>scripts/dev/db-start</code></td></tr>
+    <tr><td>測試與開發共用同一個本機資料庫，測試會清空 <code>yc_v3</code></td><td>T-001 Builder</td><td>簡單；README 已註明</td><td><code>README.md</code></td></tr>
+    <tr><td>同名 scenario 也要全部收集，並以 spec 文字計數把關</td><td>T-001 Builder（修正第 1 輪）</td><td>CFG-F02 有兩個同名的 <code>Scenario Outline: Validation</code>，原本少收 6 個</td><td><code>tests/support/bdd_plugin.py</code>、<code>tests/unit/test_spec_collection.py</code></td></tr>
+    <tr><td>本機防線的允許清單內容，以及不認得的 <code>PG*</code> 變數一律拒絕</td><td>T-001 Builder（修正第 2 輪，claude-opus-5-5）</td><td>依 libpq 文件與 <code>PQconndefaults</code>；fail-closed</td><td><code>app/core/local_url.py</code></td></tr>
+    <tr><td><code>lint</code> 只開 ruff 的 <code>E9</code>、<code>F</code> 規則</td><td>T-002 Builder</td><td>開預設規則要改其他 ticket 的檔案</td><td><code>scripts/ci/ruff.toml</code></td></tr>
+    <tr><td>新增 <code>tests/support/</code> 的檔案不算「修改」；測試改名判為失敗</td><td>T-002 Builder</td><td>D-046、D-048 的字面沒有寫清楚；已開 issue #8 請 Kuei 決定</td><td><code>scripts/ci/checks.py</code></td></tr>
+    <tr><td><code>strings</code> 的允許清單除了附錄 B 的「」訊息，也包含附錄 B 表格第一欄的欄位名稱</td><td>T-002 Builder</td><td>欄位名稱也會出現在錯誤訊息附近</td><td>同上</td></tr>
+    <tr><td>在 T-001 的修正範圍內，一併修正 <code>hostaddr=</code> 繞過</td><td>Chief</td><td>Verifier 判為不影響判定，但這和不可違反第 7 條直接相關，而且檔案在 T-001 範圍內</td><td>PR #2 修正第 1 輪</td></tr>
+    <tr><td>T-002 的修正輪數把 issue #6 的修改算在第 1 輪</td><td>Chief（Kuei 在 issue #7 同意，D-043）</td><td>當時 Chief 要求 Builder「收到回覆後一起修」</td><td><code>docs/board.md</code></td></tr>
+    <tr><td>等 Kuei 回覆 issue #3 才開 T-001 第 2 輪驗證</td><td>Chief</td><td>完成條件 4 取決於回覆；避免浪費有上限的修正輪數</td><td>—</td></tr>
+  </table></div>
+
+  <h2>7. 問過 Kuei 的問題與決定</h2>
+  <div class="scroll"><table>
+    <tr><th>Issue</th><th>問題</th><th>決定</th><th>影響</th></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/1">#1</a></td><td>M0 計畫，以及 ticket 與規則的六個矛盾</td><td>全部 A（D-029～D-035）</td><td>T-001 指令寫 README；T-002 可改 workflow；T-001 用 Verifier 重跑取代 CI；T-003 範圍補上 migration 與 <code>app/main.py</code>；PG 17；分支權限</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/3">#3</a></td><td>附錄 A 預設值、<code>accounts</code> 的約束、<code>.gitignore</code></td><td>全部 A（D-036～D-038）</td><td>附錄 A 延到 T-401；<code>accounts</code> 的約束保留</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/6">#6</a></td><td>merge commit 的作者、「涉及畫面」的判定、證據的最低標準、沙盒層</td><td>全部 A（D-039～D-042）</td><td>ticket front matter 新增 <code>screens</code> 欄位</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/7">#7</a></td><td>T-002 第 2 輪 FAIL 後怎麼辦；CI 的防護目標</td><td>全部 A（D-043～D-049）</td><td>CI 改為防疏忽；migration 禁止程序碼</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/8">#8</a></td><td>新增 <code>tests/support</code> 檔案、測試改名</td><td class="todo">尚未回覆</td><td>不擋 M0；M1 前決定</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/9">#9</a></td><td>CSRF 被拒絕時要不要寫 <code>ACCESS_DENIED</code>（IAM-F03 與 AUD-R03 矛盾）</td><td class="todo">尚未回覆</td><td>不擋 M0；T-103 開始前決定</td></tr>
+  </table></div>
+
+  <h2>8. 已知風險與沒做到的事</h2>
+  <ul class="todo">
+    <li><strong>CI 檢查還不是必要檢查。</strong>Workflow 會跑，但 repo 沒有設定 branch protection 的 required checks，紅燈的 PR 在技術上仍然可以合併。目前靠 Chief 遵守「CI 全綠才合併」。建議：Kuei 在 repo 設定中，把這 10 個 job 設為 <code>milestone/**</code> 與 <code>main</code> 的必要檢查。</li>
+    <li><strong>檢查腳本來自 PR 自己的分支。</strong><code>pull_request</code> 事件使用 PR 內的 <code>.github/workflows/</code> 與 <code>scripts/ci/</code>。其他 ticket 改這兩處會被 <code>path-scope</code> 擋，但 <code>path-scope</code> 本身也是 PR 裡的腳本。最終防線是 Verifier 審查 diff，以及上一項的 branch protection。</li>
+    <li><strong>CI 只防疏忽（D-044）。</strong>斷言被放寬但測試 ID 不變、刻意構造的繞過，都只能靠 Verifier 與 Kuei 審查。</li>
+    <li><strong>沒做到：AUD-R13（稽核紀錄不可修改）。</strong>現在資料庫允許 UPDATE、DELETE <code>audit_log</code>。要等 AUD-F02（M6，T-602），屆時需要 Kuei 授權 <code>allow_functions: true</code>。</li>
+    <li><strong>沒做到：附錄 A 的預設單價、費率、上限沒有載入測試資料</strong>（D-036）。由 T-401 補上；在那之前，依賴單價的 scenario 都不能實作。</li>
+    <li><strong>T-003 的 14 個變異中，有 1 個（M12）只在資料庫時區為 UTC 時抓得到。</strong>本機時區不是 UTC 時，那個變異不會讓測試失敗。CI 是 UTC，所以 CI 抓得到。</li>
+    <li><strong>未回覆的 issue：</strong>#8、#9（第 7 節）。</li>
+    <li><strong><code>bullet-bots</code> 帳號的主要 email 出現在 git 歷史中</strong>（<code>84852d9</code>、<code>a50bb68</code>、<code>9a50fcd</code> 三個 merge commit）。這是 GitHub 合併的預設行為，已經無法移除。如果不希望這個 email 公開，可以在 GitHub 帳號設定開啟「Keep my email addresses private」，之後的合併就會改用 noreply。</li>
+  </ul>
+
+  <h2>9. 過程紀錄</h2>
+  <div class="scroll"><table>
+    <tr><th>Ticket</th><th>修正輪數</th><th>Verifier 找到的問題</th><th>備註</th></tr>
+    <tr><td>T-001</td><td>2</td><td>第 1 輪：CFG-F02 兩個同名的 scenario 讓 6 個例子沒被收集；PR 說明沒有直接貼 CLI 輸出；本機防線會接受 <code>hostaddr=</code>。第 2 輪：<code>PGSERVICE</code> 繞過。第 3 輪：PASS。</td><td>修正第 2 輪改用 claude-opus-5-5，並另外找到 <code>localhost?@remote</code> 的 URI 解析差異</td></tr>
+    <tr><td>T-002</td><td>2</td><td>第 1 輪：<code>migration-scope</code> 可被引號大寫 schema、<code>$$</code> 本體、DML 繞過（實際刪掉了 <code>public</code> 的表）；<code>no-weakened-tests</code>、<code>strings</code>、<code>evidence</code> 範圍太窄；分支名稱不 fail-closed；<code>tests</code> 沒有失敗案例。第 2 輪：單引號函式本體、<code>os._exit</code> 等繞過；誤擋 T-003；先寫程式後補測試。第 3 輪：PASS。</td><td>根本原因是防護目標沒有定義，由 issue #7 解決</td></tr>
+    <tr><td>T-003</td><td>1</td><td>第 1 輪：<code>nothing else is written</code> 與 <code>nothing is written</code> 綁在一起，AUD-R03 會失敗。第 2 輪：PASS。</td><td>另外發現規格矛盾（issue #9）</td></tr>
+  </table></div>
+  <p>過程中三次碰到 usage 上限，T-002、T-003 的 Builder 中斷，額度恢復後由 Chief 通知它們繼續。子 session 不會被 CI 自動叫醒，有一次 Builder 停在「等 CI」，由 Chief 的備援檢查發現並提醒。這兩件事都已寫進 <code>docs/pitfalls.md</code> 或 Builder 的指示中。</p>
+
+  <h2>10. 這個 milestone 的學習重點</h2>
+  <h3>10.1 fail-closed 與允許清單</h3>
+  <p>安全檢查遇到「不確定」時，要判為拒絕，而不是放行。這個專案有三個地方用到：本機資料庫防線、CI 的分支名稱與 SQL 檢查、<code>evidence</code> 缺少 <code>screens</code> 欄位。T-001 兩輪的 FAIL 都是黑名單漏掉某一種寫法，改成允許清單後才收斂。</p>
+  <h3>10.2 檢查「結果」比檢查「語法」可靠</h3>
+  <p>「測試沒被弱化」用語法掃描永遠列舉不完；改成比對「目標分支上通過的測試在 PR 上是否仍然通過」後，不管用什麼寫法讓測試消失都會被抓到。同樣的想法也用在 migration 的沙盒：直接執行，再比較執行前後的差異。</p>
+  <h3>10.3 防護目標（threat model）要先定義</h3>
+  <p>T-002 花了三輪，原因不是能力不足，而是「要防到什麼程度」沒有定義，驗證者可以無限升級攻擊。定義「防疏忽、不防攻擊」之後，一輪就通過。這也說明了自動檢查和人工審查的分工：自動檢查擋常見的錯，人工審查擋刻意的繞過。</p>
+  <h3>10.4 規格矛盾只有實際跑過才會發現</h3>
+  <p>IAM-F03 與 AUD-R03 的矛盾（issue #9）、CFG-F02 的同名 scenario，都是在把 spec 交給程式執行時才浮現。測試全綠只代表符合規格，不代表規格本身是對的。</p>
+  <h3>請 Kuei 自己回答的四個問題</h3>
+  <ol>
+    <li>M0 做了什麼？為什麼要在任何業務功能之前先做？</li>
+    <li>為什麼 CI 選擇「防疏忽、比對結果」，而不是「防攻擊、列舉語法」？</li>
+    <li>在什麼情況下，M0 建立的防線會失效？（提示：第 8 節）</li>
+    <li>你從這個 milestone 學到了什麼？</li>
+  </ol>
+</main>
+</body>
+</html>
