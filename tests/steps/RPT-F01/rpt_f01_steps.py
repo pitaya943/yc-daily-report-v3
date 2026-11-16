@@ -14,6 +14,7 @@ from __future__ import annotations
 import re
 import threading
 from html.parser import HTMLParser
+from urllib.parse import urlencode
 
 import pytest
 from fastapi.testclient import TestClient
@@ -24,6 +25,7 @@ from tests.steps.common.outcome import *  # noqa: F401,F403  (the outcome is ...
 from tests.steps.common.session import *  # noqa: F401,F403  ("<name>" is signed in)
 from tests.steps.common.session import SESSION_COOKIE, session_rows, sign_in_with_correct_password
 from tests.steps.common.spec_tables import SPEC
+from tests.steps.common.steps import audit_rows_matching
 from tests.steps.common.steps import *  # noqa: F401,F403  (client、recorder、拒絕與資料變動的共用步驟)
 
 CSRF_HEADER = "X-CSRF-Token"
@@ -81,8 +83,18 @@ def ensure_signed_in(client, db, name: str) -> None:
         assert response.status_code == 303, f"登入應成功（303），實際 {response.status_code}"
 
 
+def form_request(fields: list[tuple[str, str]], token: str) -> dict:
+    """urlencoded 主體，欄位順序原樣保留（共同作業者的順序就是欄位出現的順序，RPT-R05）。
+    不用 `data=`：httpx 的 `data` 是 dict，同名欄位的順序不由我們控制。"""
+    return {
+        "content": urlencode(fields),
+        "headers": {"Content-Type": "application/x-www-form-urlencoded", CSRF_HEADER: token},
+        "follow_redirects": False,
+    }
+
+
 def post_report(client, db, name: str, fields: list[tuple[str, str]]):
-    return client.post(REPORTS, data=fields, headers={CSRF_HEADER: csrf_token(db, name)}, follow_redirects=False)
+    return client.post(REPORTS, **form_request(fields, csrf_token(db, name)))
 
 
 def report_rows(db) -> list[tuple]:
@@ -105,15 +117,18 @@ def newest_report(db) -> tuple:
 def insert_report(db, submitter: str, date: str, status: str, crew: tuple[str, ...] = ()) -> int:
     """Given 步驟用：直接寫一張回報（含共同作業者），不經過產品的送出端點。"""
     now = clock.now()
+    # 先查好 id：account_id／expected_catalogue 會 rollback，不能夾在待提交的寫入中間
+    submitter_id, catalogue = account_id(db, submitter), expected_catalogue(db, submitter)
+    crew_ids = [account_id(db, who) for who in crew]
     with db.cursor() as cur:
         cur.execute(
             "insert into yc_v3.reports(submitter_id, report_date, catalogue, status, created_at, updated_at) "
             "values (%s, %s, %s, %s, %s, %s) returning id",
-            (account_id(db, submitter), date, expected_catalogue(db, submitter), status, now, now),
+            (submitter_id, date, catalogue, status, now, now),
         )
         rid = cur.fetchone()[0]
-        for position, who in enumerate(crew, start=1):
-            cur.execute("insert into yc_v3.report_crew(report_id, position, account_id) values (%s, %s, %s)", (rid, position, account_id(db, who)))
+        for position, member_id in enumerate(crew_ids, start=1):
+            cur.execute("insert into yc_v3.report_crew(report_id, position, account_id) values (%s, %s, %s)", (rid, position, member_id))
     db.commit()
     return rid
 
@@ -272,7 +287,7 @@ def _submits_concurrently(recorder, client, db, last, concurrent, name, n, date)
         try:
             c = TestClient(client.app, raise_server_exceptions=False, cookies={SESSION_COOKIE: session_cookie})
             barrier.wait(timeout=30)  # 全部就緒後同時送出
-            responses[i] = c.post(REPORTS, data=fields, headers={CSRF_HEADER: token}, follow_redirects=False)
+            responses[i] = c.post(REPORTS, **form_request(fields, token))
         except Exception as e:  # noqa: BLE001  執行緒裡的例外要帶回測試，不能默默消失
             errors.append(e)
 
@@ -367,6 +382,18 @@ def _audit_contains(recorder, db, text):
     db.rollback()
     assert len(found) == 1, f"應該恰有 1 列 REPORT_CREATE，實際 {found}"
     assert text in found[0][1], f"稽核說明應含「{text}」，實際「{found[0][1]}」"
+
+
+@then(parsers.re(r'nothing is written except an audit row "(?P<type_>[A-Z_]+)"$'))
+def _nothing_except_audit_row(recorder, db, last, type_):
+    """R06 的拒絕：只多一列稽核。規格沒寫 actor，這裡斷言它是被拒絕的那個人（比規格嚴：見 PR 說明）。"""
+    changes = recorder.changes()
+    others = {t: c for t, c in changes.items() if t != "audit_log"}
+    assert not others, f"稽核以外的資料表有變動：{others}"
+    audit = changes.get("audit_log", {"added": [], "removed": []})
+    assert audit["removed"] == [], "稽核紀錄不可被刪除或修改"
+    assert len(audit["added"]) == 1, f"應該只新增 1 列稽核，實際 {len(audit['added'])} 列：{audit['added']}"
+    assert audit_rows_matching(recorder, db, type_, last["name"]), f'新增的稽核列不是 "{type_}" / "{last["name"]}"：{audit["added"]}'
 
 
 @then(parsers.parse("exactly {n:d} is saved"))

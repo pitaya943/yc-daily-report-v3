@@ -220,8 +220,8 @@ def _saved_then_idle(client, db, saved_report, name):
     sign_in_at(client, db, name, clock.now())
     saved = client.post(
         "/reports",
-        data=[("report_date", clock.now().date().isoformat()), ("direct_13", "2.0")],
-        headers={CSRF_HEADER: anti_forgery_token(db, name)},
+        content="report_date=" + clock.now().date().isoformat() + "&direct_13=2.0",
+        headers={"Content-Type": "application/x-www-form-urlencoded", CSRF_HEADER: anti_forgery_token(db, name)},
         follow_redirects=False,
     )
     assert saved.status_code == 200, f"回報應存成功（200），實際 {saved.status_code}：{saved.text[:200]}"
