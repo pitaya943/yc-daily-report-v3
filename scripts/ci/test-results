@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# 用法：scripts/ci/test-results <原始碼目錄> <輸出 JSON>
+#
+# 在指定的原始碼目錄（目標分支的 worktree，或 PR 的 checkout）跑全部測試，
+# 用 scripts/ci/test_report.py 把每個測試 ID 的結果寫到 <輸出 JSON>（D-046）。
+# * plugin 一律用「這支腳本旁邊」的版本，複製到暫存目錄再載入：目標分支上可能還沒有這個 plugin。
+# * 有 DATABASE_URL 而且該目錄有 scripts/dev/migrate 時：先清掉 yc_v3、再套用「該目錄自己的」migration，
+#   讓兩邊各自在乾淨的 schema 上跑。只連本機（app/core/local_url.py 的防線先檢查一次）。
+# * 測試失敗不讓這支腳本失敗：判斷交給 checks.compare_test_results（目標分支通過的 ID 在 PR 上必須通過）。
+#   沒有產生報告（例如 session 中途結束）時，比對會因為「沒有報告」而失敗。
+set -euo pipefail
+
+if [ $# -ne 2 ]; then
+  echo "用法：$0 <原始碼目錄> <輸出 JSON>" >&2
+  exit 2
+fi
+src="$(cd "$1" && pwd)"
+out="$(realpath -m "$2")"
+here="$(cd "$(dirname "$0")" && pwd)"
+repo="$(cd "$here/../.." && pwd)"
+
+plugdir="$(mktemp -d)"
+trap 'rm -rf "$plugdir"' EXIT
+cp "$here/test_report.py" "$plugdir/yc_ci_test_report.py"
+rm -f "$out"
+
+if [ -n "${DATABASE_URL:-}" ] && [ -x "$src/scripts/dev/migrate" ]; then
+  (cd "$repo" && python3 -m app.core.local_url)   # 只連本機
+  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -c 'drop schema if exists yc_v3 cascade'
+  "$src/scripts/dev/migrate"
+fi
+
+echo "在 $src 執行測試，結果寫到 $out"
+set +e
+(cd "$src" && PYTHONPATH="$plugdir${PYTHONPATH:+:$PYTHONPATH}" YC_TEST_REPORT="$out" \
+  python3 -m pytest -p yc_ci_test_report -p no:cacheprovider -q)
+status=$?
+set -e
+echo "pytest 結束碼：$status（不在這裡判斷；由 no-weakened-tests 比對結果）"
+if [ ! -f "$out" ]; then
+  echo "沒有產生結果報告：$out" >&2
+fi
+exit 0

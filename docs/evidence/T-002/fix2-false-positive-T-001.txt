@@ -1,0 +1,18 @@
+$ docs/evidence/T-002/fix2-false-positive-check.sh T-001 84852d9^1 84852d9^2
+== T-001：目標分支 ec9a4e7（+ 目前的 ticket 檔 → 98ef55c），PR head 3e6b764
+== PR 修改的檔案：53 個
+[tests] 通過
+[spec-readonly] 通過
+[path-scope] 通過
+[evidence] 通過
+[migration-scope] 通過
+[strings] 通過
+[lint] 通過
+pytest 結束碼：5（不在這裡判斷；由 no-weakened-tests 比對結果）
+pytest 結束碼：0（不在這裡判斷；由 no-weakened-tests 比對結果）
+[no-weakened-tests] 通過
+81 passed, 489 skipped in 4.31s
+[done-when] 通過
+[commit-author] 通過
+== 結果報告：目標分支 0 個 ID（0 passed），PR 570 個 ID（81 passed）
+== 結束碼：0

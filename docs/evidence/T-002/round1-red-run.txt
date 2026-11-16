@@ -1,0 +1,21 @@
+# 修正第 1 輪「先紅」：新的 tests/ci 測試對上修正前的 scripts/ci（commit f61af24）。
+# 指令：python3 -m pytest tests/ci -q -p no:cacheprovider --ignore=tests/ci/test_migration_sandbox.py
+# （test_migration_sandbox.py 要 import scripts.ci.migration_sandbox，修正前不存在：collection error，因此另外排除才看得到其他測試）
+# 失敗的測試依測試函式分組（括號內是參數化案例數）：
+     44 test_migration_scope.py::test_round1_sql_that_must_be_rejected
+     12 test_round1.py::test_more_ways_to_skip_are_rejected_inside_tests
+     10 test_round1.py::test_strings_fails_for_unlisted_text_in_templates_and_static_files
+      9 test_round1.py::test_the_tests_job_guard_rejects_a_workflow_that_cannot_fail
+      8 test_round1.py::test_pytest_options_that_deselect_tests_are_rejected
+      6 test_round1.py::test_spec_readonly_fails_closed_for_a_ticket_branch_with_a_bad_name
+      6 test_round1.py::test_path_scope_fails_closed_for_a_ticket_branch_with_a_bad_name
+      4 test_round1.py::test_skips_outside_the_tests_dir_are_rejected
+      1 test_tests_and_rules.py::test_every_check_in_ci_checks_md_has_a_job_a_cli_entry_and_a_failing_test_module
+      1 test_round1.py::test_the_tests_job_guard_accepts_a_sound_workflow
+      1 test_round1.py::test_the_real_workflow_passes_the_tests_job_guard
+      1 test_round1.py::test_the_exemption_covers_only_the_bdd_plugin_unchanged_on_the_base
+      1 test_round1.py::test_a_workflow_pytest_command_with_deselect_is_rejected
+      1 test_round1.py::test_a_ticket_branch_whose_ticket_file_is_missing_fails_closed
+      1 test_migration_scope.py::test_the_exact_script_from_the_verifier_is_rejected_line_by_line
+      1 test_git_checks.py::test_spec_readonly_fails_closed_when_the_ticket_is_missing
+107 failed, 134 passed in 7.15s

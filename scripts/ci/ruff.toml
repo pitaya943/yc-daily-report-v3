@@ -1,0 +1,9 @@
+# lint 檢查的設定（pyproject.toml 不在 T-002 的 allowed_paths，所以放在這裡）。
+# 只開「一定是錯」的規則：語法錯誤與 pyflakes（未使用的 import、未定義名稱…）。
+# 風格類規則（格式、命名）會逼 T-002 去改別張 ticket 的檔案，不放進來。
+line-length = 140
+target-version = "py312"
+extend-exclude = ["spec"]
+
+[lint]
+select = ["E9", "F"]
