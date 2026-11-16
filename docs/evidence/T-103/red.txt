@@ -1,0 +1,40 @@
+$ python3 -m pytest -q   # 實作前（先紅）
+     14 E        +  where 404 = <Response [404 Not Found]>.status_code
+      6 response = <Response [404 Not Found]>, status = 401, outcome = 'UNAUTHENTICATED'
+      6 E       assert 404 == 401
+      4 response = <Response [404 Not Found]>, status = 403, outcome = 'FORBIDDEN'
+      4 E       assert 404 == 403
+      3 E       AssertionError: assert 404 == 200
+      3 E            +  where 404 = <Response [404 Not Found]>.status_code
+      2 E           assert 404 == 200
+      1 FAILED tests/unit/iam/test_session_rules.py::test_use_restarts_the_idle_window
+      1 FAILED tests/unit/iam/test_session_rules.py::test_state_changing_request_needs_a_valid_anti_forgery_token[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx]
+      1 FAILED tests/unit/iam/test_session_rules.py::test_state_changing_request_needs_a_valid_anti_forgery_token[wrong]
+      1 FAILED tests/unit/iam/test_session_rules.py::test_state_changing_request_needs_a_valid_anti_forgery_token[]
+      1 FAILED tests/unit/iam/test_session_rules.py::test_state_changing_request_needs_a_valid_anti_forgery_token[None]
+      1 FAILED tests/unit/iam/test_session_rules.py::test_signed_in_person_opening_the_sign_in_page_is_redirected
+      1 FAILED tests/unit/iam/test_session_rules.py::test_sign_out_only_ends_that_session
+      1 FAILED tests/unit/iam/test_session_rules.py::test_sign_out_ends_the_session_immediately
+      1 FAILED tests/unit/iam/test_session_rules.py::test_read_requests_do_not_need_a_token
+      1 FAILED tests/unit/iam/test_session_rules.py::test_no_cookie_or_unknown_token_is_unauthenticated
+      1 FAILED tests/unit/iam/test_session_rules.py::test_idle_boundary[idle4-False]
+      1 FAILED tests/unit/iam/test_session_rules.py::test_idle_boundary[idle3-False]
+      1 FAILED tests/unit/iam/test_session_rules.py::test_idle_boundary[idle2-False]
+      1 FAILED tests/unit/iam/test_session_rules.py::test_idle_boundary[idle1-True]
+      1 FAILED tests/unit/iam/test_session_rules.py::test_idle_boundary[idle0-True]
+      1 FAILED tests/unit/iam/test_session_rules.py::test_archived_account_session_is_rejected
+      1 FAILED tests/unit/iam/test_session_rules.py::test_an_expired_session_is_unauthenticated_before_forbidden
+      1 FAILED tests/unit/iam/test_session_rules.py::test_a_session_is_not_capped_by_its_age
+      1 FAILED tests/test_spec.py::test_signout - AssertionError: 登出應轉址（303），...
+      1 FAILED tests/test_spec.py::test_a_statechanging_request_without_an_antiforgery_token_is_refused
+      1 FAILED tests/test_spec.py::test_a_signedin_person_who_opens_the_signin_page_goes_to_their_landing_page
+      1 E       assert (404 == 303)
+      1 E       assert (200 == 303)
+      1 E       AssertionError: 登出應轉址（303），實際 404
+      1 E       AssertionError: HTTP status 應為 403，實際 404
+      1 E        +    where <Response [404 Not Found]> = get('/session', headers={'Cookie': 'yc_session=xh2WFz0eOTs1aH5jl1_LqaRtQLSNV4UMUlGiSA0KngA'})
+      1 E        +    where <Response [404 Not Found]> = get('/session', headers={'Cookie': 'yc_session=rNlWkdx3bmjhTuEz7X_kOeU2gzrlhia0rPvS1Fs5LZ0'})
+      1 E        +    where <Response [404 Not Found]> = get('/session', headers={'Cookie': 'yc_session=a7oHFJD74wMjluGa8inDGnazS9kZIuk5-SmcEOXSQR8'})
+      1 E           AssertionError: assert 404 == 200
+      1 E            +    where <Response [404 Not Found]> = get('/session', headers={'Cookie': 'yc_session=CUJYqgcvS96_m_a2jjyutKg7jVneM7tfo2vMy2MGK8o'})
+      1 21 failed, 664 passed, 475 skipped in 45.96s
