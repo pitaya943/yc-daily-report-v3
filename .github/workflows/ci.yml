@@ -148,15 +148,48 @@ jobs:
   no-weakened-tests:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 20
+    # D-046：以結果判斷。目標分支的結果在這個 job 裡實際跑出來（不使用 PR 提供的檔案，也不用其他 job 的 artifact），
+    # 再跑 PR 的結果；目標分支上通過的每個測試 ID，在 PR 上都必須被收集而且通過。
+    # 兩次都在這個 job 自己的乾淨 postgres:17 上跑，每次先清掉 yc_v3、套用該版本自己的 migration。
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: yc
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ["127.0.0.1:5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d yc"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      DATABASE_URL: postgresql://postgres@127.0.0.1:5433/yc
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: 取得目標分支的 commit
-        run: echo "CI_BASE_SHA=$(git rev-parse origin/${{ github.base_ref }})" >> "$GITHUB_ENV"
-      - run: python3 scripts/ci/run.py no-weakened-tests
+      - name: 取得目標分支的 commit；兩份結果報告放在 runner 的暫存目錄（不在 checkout 裡，PR 放不進去）
+        run: |
+          echo "CI_BASE_SHA=$(git rev-parse origin/${{ github.base_ref }})" >> "$GITHUB_ENV"
+          echo "YC_BASE_TEST_REPORT=$RUNNER_TEMP/base-test-report.json" >> "$GITHUB_ENV"
+          echo "YC_HEAD_TEST_REPORT=$RUNNER_TEMP/head-test-report.json" >> "$GITHUB_ENV"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: 安裝 PostgreSQL 17 用戶端（migrate 腳本需要 psql 17）
+        run: sudo scripts/dev/install-postgres && sudo systemctl stop postgresql || true
+      - run: pip install -e '.[dev]'
+      - name: 在目標分支上實際跑出每個測試的結果（同一個 job）
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/base" "$CI_BASE_SHA"
+          scripts/ci/test-results "$RUNNER_TEMP/base" "$YC_BASE_TEST_REPORT"
+      - name: 在 PR 上跑出每個測試的結果
+        run: scripts/ci/test-results "$GITHUB_WORKSPACE" "$YC_HEAD_TEST_REPORT"
+      - name: 比對結果，並做語法與設定的檢查
+        run: python3 scripts/ci/run.py no-weakened-tests
 
   commit-author:
     if: github.event_name == 'pull_request'

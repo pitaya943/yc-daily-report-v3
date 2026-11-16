@@ -292,7 +292,10 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def _run_with_report(pytester, monkeypatch, out: Path, *args):
     """在子行程裡真的跑 pytest，載入 scripts.ci.test_report（子行程：os._exit 不會殺掉外層的測試）。"""
-    monkeypatch.setenv("PYTHONPATH", os.pathsep.join([str(ROOT), str(pytester.path)]))
+    # pytester 會把 HOME 換成暫存目錄，子行程因此看不到使用者層級的 site-packages；把目前的 sys.path 一併傳過去
+    import sys
+    paths = [str(ROOT), str(pytester.path)] + [p for p in sys.path if p and Path(p).is_dir()]
+    monkeypatch.setenv("PYTHONPATH", os.pathsep.join(paths))
     monkeypatch.setenv("YC_TEST_REPORT", str(out))
     return pytester.runpytest_subprocess("-p", "scripts.ci.test_report", "-p", "no:cacheprovider", *args)
 

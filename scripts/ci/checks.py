@@ -342,15 +342,17 @@ _SKIP_NAMES = {
     "skip", "skipif", "xfail", "importorskip", "skipIf", "skipUnless", "expectedFailure", "skipTest", "SkipTest", "Skipped",
 }
 _COLLECT_IGNORE = {"collect_ignore", "collect_ignore_glob"}
-# 會在收集或執行階段動手腳的 pytest hook：在測試程式裡定義它們，等於可以把任何測試反選掉
-_SELECTION_HOOKS = {
-    "pytest_collection_modifyitems", "pytest_ignore_collect", "pytest_runtest_protocol", "pytest_runtest_setup",
-    "pytest_runtest_call", "pytest_collection_finish", "pytest_pyfunc_call",
+# D-046：conftest（與 tests/ 裡任何檔案）只能定義允許清單內的 pytest hook。
+# 收集、選擇、執行、結束 session 的 hook 一律不行；新的需求請在 ticket 裡說明，由 Kuei 決定是否加進清單。
+ALLOWED_HOOKS = {
+    "pytest_addoption", "pytest_configure", "pytest_report_header", "pytest_generate_tests",
+    "pytest_bdd_before_scenario", "pytest_bdd_after_scenario", "pytest_bdd_before_step", "pytest_bdd_before_step_call",
+    "pytest_bdd_after_step", "pytest_bdd_step_error", "pytest_bdd_step_func_lookup_error",
 }
 _DYNAMIC_CALLS = {"eval", "exec", "compile", "__import__"}
-# 唯一的豁免：T-001 的 tests/implemented.txt 機制（不在清單內的 scenario 標成「尚未實作」）。
-# 縮到最小：只有這一個檔案，而且必須與目標分支上的內容完全相同；改了哪怕一行，豁免就失效。
-SKIP_EXEMPT = {"tests/support/bdd_plugin.py"}
+# D-048：tests/support/**（T-001 的 implemented.txt 機制等）不做語法掃描；目標分支上已有的檔案，
+# 只有 ticket 的 allowed_paths 明確列出該檔案時才能修改或刪除。不論如何，結果比對（D-046）都生效。
+SUPPORT_DIR = "tests/support/"
 _FEATURE_TAG = re.compile(r"^\s*@\S*(skip|xfail|wip|ignore)\b", re.I | re.M)
 _BAD_OPTION = re.compile(r"^(--deselect|--ignore|--ignore-glob|--co|--collect-only|--continue-on-collection-errors)(=|$)|^-[km]")
 _NARROWING_KEYS = {"norecursedirs", "collect_ignore"}
@@ -367,14 +369,18 @@ def weakening_in_python(source: str, filename: str) -> list[str]:
         line = getattr(node, "lineno", 0)
         if isinstance(node, ast.Attribute) and node.attr in _SKIP_NAMES:
             out.append(f"{filename}:{line} 出現 .{node.attr}")
+        elif isinstance(node, ast.Attribute) and (node.attr == "_exit" or (
+                node.attr == "exit" and isinstance(node.value, ast.Name) and node.value.id == "pytest")):
+            out.append(f"{filename}:{line} 出現 .{node.attr}（提前結束 session，測試會消失）")
         elif isinstance(node, ast.Name) and node.id in _SKIP_NAMES | _COLLECT_IGNORE:
             out.append(f"{filename}:{line} 出現 {node.id}")
         elif isinstance(node, ast.ImportFrom):
             out += [f"{filename}:{line} import {a.name}" for a in node.names if a.name in _SKIP_NAMES | _COLLECT_IGNORE]
         elif isinstance(node, ast.Assign):
             out += [f"{filename}:{line} 設定 {t.id}" for t in node.targets if isinstance(t, ast.Name) and t.id in _COLLECT_IGNORE]
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in _SELECTION_HOOKS:
-            out.append(f"{filename}:{line} 定義 {node.name}（可以把測試反選掉）")
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("pytest_") \
+                and node.name not in ALLOWED_HOOKS:
+            out.append(f"{filename}:{line} 定義 {node.name}：不在 pytest hook 的允許清單內（D-046）")
         elif isinstance(node, ast.Call):
             fn = node.func
             if isinstance(fn, ast.Name) and fn.id in _DYNAMIC_CALLS:
@@ -453,14 +459,30 @@ def _scan_targets(root: Path) -> list[Path]:
     return sorted(found)
 
 
+def _support_changes(ctx: Ctx) -> list[str]:
+    """D-048：目標分支上已有的 tests/support/** 檔案被修改或刪除，而 ticket 沒有明確列出該檔案。"""
+    try:
+        tc = ticket_context(ctx)
+    except CheckError:
+        return []  # D-049 的閘門已經回報
+    if tc is None:
+        return []  # milestone PR：每張 ticket 已各自檢查
+    tid, meta, _ = tc
+    explicit = {p for p in meta["allowed_paths"] if not re.search(r"[*?\[]", p)}
+    bad = []
+    for status, path in changed_files(ctx):
+        if path.startswith(SUPPORT_DIR) and blob(ctx, ctx.base, path) is not None and path not in explicit:
+            bad.append(f"D-048：{path}（{status}）已存在於目標分支；只有 {tid} 的 allowed_paths 明確列出這個檔案時才能修改或刪除")
+    return bad
+
+
 def check_no_weakened_tests(ctx: Ctx) -> list[str]:
+    """語法與設定的部分（給易懂的訊息）。結果比對另外由 compare_test_results 做（run.py 兩者都跑）。"""
     bad = branch_gate(ctx)  # D-049
     for p in _scan_targets(ctx.root):
         rel = p.relative_to(ctx.root).as_posix()
-        if "__pycache__" in rel:
+        if "__pycache__" in rel or rel.startswith(SUPPORT_DIR):
             continue
-        if rel in SKIP_EXEMPT and (not ctx.base or show(ctx, ctx.base, rel) == p.read_text(encoding="utf-8")):
-            continue  # 目標分支上原樣不變的 implemented.txt 機制
         if p.suffix == ".py":
             bad += weakening_in_python(p.read_text(encoding="utf-8"), rel)
         elif p.suffix == ".feature" and _FEATURE_TAG.search(p.read_text(encoding="utf-8")):
@@ -472,6 +494,44 @@ def check_no_weakened_tests(ctx: Ctx) -> list[str]:
         after = read_implemented(now_file.read_text(encoding="utf-8") if now_file.exists() else None)
         for rid in sorted(before - after):
             bad.append(f"tests/implemented.txt 少了 {rid}（只能增加，不能減少）")
+        bad += _support_changes(ctx)
+    return bad
+
+
+# D-046：以結果判斷。報告由 scripts/ci/test_report.py 產生（CI 用 scripts/ci/test-results 在同一個 job 裡跑出兩份）。
+MAX_LISTED = 30
+
+
+def load_test_report(path) -> dict | None:
+    """讀結果報告；不存在、讀不懂、格式不對都回傳 None（= 沒有報告）。"""
+    import json
+
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(data, dict) or not isinstance(data.get("tests"), dict):
+        return None
+    return data
+
+
+def compare_test_results(base: dict | None, head: dict | None) -> list[str]:
+    """目標分支上通過的每個測試 ID，在 PR 上都必須被收集而且通過。"""
+    bad = []
+    if base is None:
+        bad.append("沒有目標分支的測試結果報告，無法比對（D-046：沒有報告就判為失敗）")
+    if head is None:
+        bad.append("沒有 PR 的測試結果報告（session 可能中途結束），無法比對（D-046：沒有報告就判為失敗）")
+    if bad:
+        return bad
+    now = head["tests"]
+    for nodeid in sorted(k for k, v in base["tests"].items() if v == "passed"):
+        if nodeid not in now:
+            bad.append(f"{nodeid} 在目標分支上通過，PR 上沒有被收集")
+        elif now[nodeid] != "passed":
+            bad.append(f"{nodeid} 在目標分支上通過，PR 上的結果是 {now[nodeid]}")
+    if len(bad) > MAX_LISTED:
+        bad = bad[:MAX_LISTED] + [f"……共 {len(bad)} 個測試在目標分支通過、在 PR 上沒有通過"]
     return bad
 
 
@@ -611,7 +671,9 @@ _SELECTION_TAIL = re.compile(r"(?s)\|\||;\s*(?:true|:|exit\s+0)\b|&&\s*true\b|\b
 def check_tests(ctx: Ctx) -> list[str]:
     """`tests` 這一項本身的守衛：確認 workflow 的 tests job 真的會在測試失敗時失敗。
     （規則 scenario 失敗時 pytest 回傳非零，由 tests/ci 用 pytester 實際跑一次來證明；
-    這裡負責另一半：job 裡沒有任何寫法能把非零吞掉、把測試縮小，或把資料庫換成別的版本。）"""
+    這裡負責另一半：擋下常見的疏忽，例如把非零吞掉、把測試縮小、把資料庫換成別的版本。
+    依 D-044，這不是完整的防線：刻意的寫法（例如 set +e）由 Verifier 審查 workflow 的 diff；
+    而且只有 allowed_paths 明確列出 .github/workflows/** 的 ticket 能改 workflow（D-031）。）"""
     wf = ctx.root / ".github" / "workflows" / "ci.yml"
     if not wf.exists():
         return ["找不到 .github/workflows/ci.yml"]

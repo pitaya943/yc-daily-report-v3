@@ -6,6 +6,8 @@
   CI_BASE_REF／CI_HEAD_REF   目標分支與來源分支的名稱
   CI_PR_BODY                 PR 說明（透過環境變數傳入，不插進 shell 指令，避免注入）
   YC_RULE_REPORT             done-when 讀取的規則報告（預設 rule-report.json）
+  YC_BASE_TEST_REPORT／YC_HEAD_TEST_REPORT
+                             no-weakened-tests 比對的兩份結果報告（scripts/ci/test-results 產生；沒有就失敗）
 migration-scope 另外需要本機 PostgreSQL（DATABASE_URL，只接受本機位址）。
 違規會逐行印出並以 exit 1 結束；檢查本身無法進行（CheckError）也是 exit 1。
 """
@@ -72,6 +74,12 @@ def main(argv: list[str]) -> int:
     try:
         if name == "commit-author":
             problems = commit_author_problems(ctx, argv[2:])
+        elif name == "no-weakened-tests":
+            # D-046：語法與設定（易懂的訊息）＋結果比對。兩份報告由 scripts/ci/test-results 在同一個 job 裡跑出來。
+            problems = checks.check_no_weakened_tests(ctx)
+            reports = [os.environ.get(v, "") for v in ("YC_BASE_TEST_REPORT", "YC_HEAD_TEST_REPORT")]
+            base, head = (checks.load_test_report(r) if r else None for r in reports)
+            problems += checks.compare_test_results(base, head)
         elif name == "done-when":
             rp = Path(os.environ.get("YC_RULE_REPORT", "rule-report.json"))
             report = json.loads(rp.read_text(encoding="utf-8")) if rp.exists() else None
