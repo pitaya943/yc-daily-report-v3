@@ -1,0 +1,9 @@
+A. body hx-headers attr = {"X-CSRF-Token": "<redacted local test token>"}
+A. attr JSON equals session token: true
+A. htmx loaded from page: 2.0.11
+A. POST request X-CSRF-Token matches session token: true
+A. POST response status: 200 | swapped text: accepted for Wen
+B. body has hx-headers: false
+B. POST X-CSRF-Token header sent: null
+B. POST response status: 403 | body: {"outcome":"FORBIDDEN","message":null}
+B. #out stays empty (htmx does not swap 4xx): ""
