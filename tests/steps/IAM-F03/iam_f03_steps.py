@@ -20,6 +20,7 @@ from tests.steps.common.session import SESSION_COOKIE, TEST_PASSWORD, post_sign_
 from tests.steps.common.steps import *  # noqa: F401,F403  (client、recorder、共用的拒絕與資料變動步驟)
 from tests.steps.common.steps import check_nothing_written, check_rejected
 from tests.steps.common.session import *  # noqa: F401,F403  (is signed in)
+from tests.steps.common.outcome import *  # noqa: F401,F403  (the outcome is ...：T-102 起移到共用，見 outcome.py)
 
 PROTECTED = "/session"
 STATE_CHANGING = "/sign-out"
@@ -88,19 +89,6 @@ def _signed_in_ago_used_ago(client, db, name, signed, used):
 @when(parsers.parse('"{name}" requests a protected action'))
 def _protected(recorder, client, name):
     recorder.perform(lambda: client.get(PROTECTED))
-
-
-@then("the outcome is accepted")
-def _accepted(recorder):
-    r = recorder.response
-    assert r.status_code == 200, f"應被接受（200），實際 {r.status_code}：{r.text[:200]}"
-
-
-@then(parsers.re(r"the outcome is (?P<outcome>[A-Z_]+)"))
-def _outcome(recorder, outcome):
-    # spec 沒有為閒置逾時寫錯誤字串，所以斷言沒有字串；被拒絕的請求不可改動任何資料
-    check_rejected(recorder, outcome, None)
-    check_nothing_written(recorder)
 
 
 @when(parsers.parse('"{name}" signs in'))

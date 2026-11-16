@@ -11,11 +11,12 @@ from pytest_bdd import parsers, then, when
 
 from tests.steps.common.session import SESSION_COOKIE, post_sign_in, set_password
 from tests.steps.common.steps import *  # noqa: F401,F403  (client、recorder、拒絕結果與資料變動的共用步驟)
-from tests.steps.common.steps import check_nothing_written
 from tests.steps.common.session import *  # noqa: F401,F403  (is signed in、signs in with the correct password)
 
 # D-057：登入後的落地頁路徑。規格的頁名 → 路徑；頁面本身由 M2、M3 實作，這裡斷言轉址的目的地。
 LANDING_PATHS = {"daily report": "/reports", "confirmation": "/review"}
+# D-069：migration 0004 新增的表；登入失敗時一定會寫入，不屬於「資料沒有變動」的範圍
+LOCKOUT_TABLES = frozenset({"sign_in_failures", "sign_in_attempts"})
 
 
 class _Options(HTMLParser):
@@ -94,4 +95,7 @@ def _nobody(recorder, client, db):
         cur.execute("select count(*) from yc_v3.sessions")
         assert cur.fetchone()[0] == 0, "被拒絕的登入不應建立 session"
     db.rollback()
-    check_nothing_written(recorder)
+    # 第三項斷言：資料沒有變動。D-069：只有 migration 0004 新增的兩張表可以有變動（IAM-R05 的失敗次數、IAM-R07 的嘗試次數），
+    # 它們的寫入由 IAM-F02 明確斷言；其他所有表（accounts、sessions、audit_log…）仍須完全不變。
+    changed = {t: c for t, c in recorder.changes().items() if t not in LOCKOUT_TABLES}
+    assert not changed, f"資料庫在動作前後不一致（失敗次數與嘗試次數兩張表除外）：{changed}"
