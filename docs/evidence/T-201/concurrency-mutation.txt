@@ -1,0 +1,7 @@
+# RPT-R04 @concurrency：變異檢查（鎖有沒有用、測試抓不抓得到）
+# 指令：PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider -k "test_two_simultaneous_submits_cannot_exceed_the_cap"（各跑 12 次）
+#
+# 變異：把 service.py 的 `repo.lock_submitter(conn, submitter.id)` 換成 `pass`（先數、再寫，沒有鎖）
+mutated (no lock): passed=0 failed=12
+# 還原（真的程式碼，有鎖）
+real code: passed=12 failed=0

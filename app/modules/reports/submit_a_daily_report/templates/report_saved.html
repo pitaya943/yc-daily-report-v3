@@ -1,0 +1,2 @@
+{#- 送出成功後 HTMX 換進 #result 的片段（不 extends base.html）。autoescape 已開。 -#}
+<p class="saved" role="status">日報已送出（#{{ submitted.report_id }}，{{ submitted.report_date.isoformat() }}），狀態：待確認（PENDING）。{% if submitted.crew_size > 1 %}共 {{ submitted.crew_size }} 人作業。{% endif %}</p>
