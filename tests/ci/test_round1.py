@@ -163,8 +163,9 @@ def test_a_ticket_branch_whose_ticket_file_is_missing_fails_closed(repo):
 
 def test_branches_that_are_not_ticket_branches_are_still_not_checked(repo):
     repo.commit({"spec/a.md": "x\n"})
-    assert checks.check_spec_readonly(repo.ctx(head_ref="milestone/M9")) == []
-    assert checks.check_path_scope(repo.ctx(head_ref="milestone/M9")) == []
+    # D-049：目標是 milestone/* 的 PR 必須是 ticket 分支；這裡改用 milestone/Mx → main（milestone PR）
+    assert checks.check_spec_readonly(repo.ctx(head_ref="milestone/M9", base_ref="main")) == []
+    assert checks.check_path_scope(repo.ctx(head_ref="milestone/M9", base_ref="main")) == []
 
 
 # ------------------------------------------------------------------ 問題 6：tests 本身要有會失敗的案例

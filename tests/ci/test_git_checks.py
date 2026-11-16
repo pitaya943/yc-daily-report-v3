@@ -26,8 +26,9 @@ def test_spec_readonly_passes_for_a_clean_ticket_pr(repo):
 
 
 def test_spec_readonly_only_applies_to_ticket_branches(repo):
+    # D-049：目標是 milestone/* 的 PR 一定是 ticket PR；不受 ticket 範圍限制的只有 milestone/Mx → main
     repo.commit({"spec/README.md": "x\n"})
-    assert checks.check_spec_readonly(repo.ctx(head_ref="milestone/M9")) == []
+    assert checks.check_spec_readonly(repo.ctx(head_ref="milestone/M9", base_ref="main")) == []
 
 
 def test_spec_readonly_exception_is_exactly_the_paths_the_ticket_lists():
@@ -103,7 +104,8 @@ def test_path_scope_checks_both_sides_of_a_rename(repo):
 
 def test_path_scope_ignores_non_ticket_branches(repo):
     repo.commit({"anything.txt": "x\n"})
-    assert checks.check_path_scope(repo.ctx(head_ref="milestone/M9")) == []
+    # D-049：見 test_spec_readonly_only_applies_to_ticket_branches
+    assert checks.check_path_scope(repo.ctx(head_ref="milestone/M9", base_ref="main")) == []
 
 
 # ------------------------------------------------------------------ evidence（D-040、D-041）
