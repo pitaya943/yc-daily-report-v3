@@ -123,6 +123,8 @@ def parse_ticket(text: str) -> dict:
             if key != "allowed_paths":
                 meta[key] = kv.group(2).strip("\"'")
     meta["migration"] = meta.get("migration", "false") == "true"
+    # D-045：只有明確寫 true 才允許 migration 定義函式等程序碼；沒有欄位或其他值都是 false
+    meta["allow_functions"] = meta.get("allow_functions", "false") == "true"
     return meta
 
 
@@ -285,11 +287,30 @@ def check_evidence(ctx: Ctx) -> list[str]:
 from scripts.ci.sql_scope import sql_violations  # noqa: E402,F401  (re-export：測試與 CLI 都從 checks 取用)
 
 
+def _functions_allowed(ctx: Ctx, path: str, tc) -> bool:
+    """這個 migration 能不能定義函式等程序碼（D-045）。
+    * 目標分支上已有、而且內容沒變：已合併（當時已依它的 ticket 檢查過），不再套用。
+    * ticket PR：看這張 ticket（從目標分支讀）的 allow_functions。
+    * milestone PR（→ main）：看編號相同的 ticket 的 allow_functions。"""
+    base_blob = blob(ctx, ctx.base, path) if ctx.base else None
+    if base_blob is not None and base_blob == blob(ctx, ctx.head, path):
+        return True
+    if tc is not None:
+        return tc[1]["allow_functions"]
+    number = re.match(r"migrations/(\d{4})_", path)
+    for t in tree_files(ctx, ctx.head, "docs/tickets"):
+        meta = parse_ticket(show(ctx, ctx.head, t) or "")
+        if number and meta.get("migration_number") == number.group(1):
+            return meta["allow_functions"]
+    return False
+
+
 def check_migration_scope(ctx: Ctx) -> list[str]:
     bad = []
-    # 1. 所有 migration 只能操作 yc_v3
+    tc = ticket_context(ctx)  # D-049：不合規的分支在這裡就拋 CheckError
+    # 1. 所有 migration 只能操作 yc_v3；新增或修改的不得有程序碼（D-045）
     for path in sorted(p for p in tree_files(ctx, ctx.head, "migrations") if re.fullmatch(r"migrations/[^/]+\.sql", p)):
-        for v in sql_violations(show(ctx, ctx.head, path) or ""):
+        for v in sql_violations(show(ctx, ctx.head, path) or "", allow_functions=_functions_allowed(ctx, path, tc)):
             bad.append(f"{path}：{v}")
     # 2. 已合併（目標分支上已存在）的 migration 不得被修改
     for _status, path in changed_files(ctx):
@@ -299,7 +320,6 @@ def check_migration_scope(ctx: Ctx) -> list[str]:
         if base_blob is not None and base_blob != blob(ctx, ctx.head, path):
             bad.append(f"{path} 已存在於目標分支，不得修改或刪除")
     # 3. 只有 migration: true 的 ticket 能新增 migration，編號等於 migration_number
-    tc = ticket_context(ctx)
     if tc is not None:
         tid, meta, _ = tc
         for status, path in changed_files(ctx):

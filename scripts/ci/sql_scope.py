@@ -177,7 +177,7 @@ def bad_target(name: str) -> str | None:
 
 _MODIFIERS = re.compile(
     r"(?is)^(?:or\s+replace|unique|temporary|temp|unlogged|global|local|materialized|recursive|concurrently|"
-    r"if\s+not\s+exists|if\s+exists|only)\b\s*"
+    r"if\s+not\s+exists|if\s+exists|only|constraint(?=\s+trigger\b))\b\s*"
 )
 _QUALIFIED_KINDS = {"table", "view", "sequence", "type", "domain", "function", "procedure", "index"}
 _ON_KINDS = {"trigger", "policy", "rule"}
@@ -362,18 +362,44 @@ def _common(text: str) -> list[str]:
     return problems + _dml(text) + _dotted_names(text)
 
 
-def _statement(stmt: list[Tok], src: str) -> list[str]:
+# D-045：程序碼整類禁止（不再試著分析函式本體）。ticket front matter 為 allow_functions: true 時才例外，
+# 由 Kuei 依 D-012 親自閱讀 SQL。函式本體的語句要等日後被呼叫才執行，沙盒層看不到，靜態分析又追不完所有寫法
+# （單引號本體、別名遮蔽、字串參數裡的名稱…），所以直接不允許定義。
+_PROCEDURAL = re.compile(
+    r"(?is)^create\s+(?:or\s+replace\s+)?(?:constraint\s+|event\s+)?(function|procedure|trigger)\b"
+)
+_LARGE_OBJECT = re.compile(r"(?i)^(?:lo_\w*|pg_largeobject\w*)$")
+D045 = "D-045：migration 不得{what}（只有 ticket front matter 為 allow_functions: true 時例外，由 Kuei 親自閱讀 SQL）"
+
+
+def _procedural(stmt: list[Tok], text: str, first: str) -> list[str]:
+    problems = []
+    if first == "do":
+        problems.append(D045.format(what="使用 DO 區塊"))
+    m = _PROCEDURAL.match(text)
+    if m:
+        problems.append(D045.format(what=f"定義 {m.group(1).lower()}"))
+    # 只看「詞」：字串、註解、dollar 本體裡的 lo_ 不算呼叫
+    if any(t.kind in ("word", "qid") and _LARGE_OBJECT.match(t.val) for t in stmt):
+        problems.append(D045.format(what="呼叫大型物件函式 lo_*（large object 不屬於任何 schema）"))
+    return problems
+
+
+def _statement(stmt: list[Tok], src: str, allow_functions: bool = False) -> list[str]:
     """最上層的一個語句。"""
     text = render(stmt)
     first = stmt[0].val.lower() if stmt[0].kind == "word" else ""
     snippet = text[:70]
+    # 被禁止的整類寫法先報；其餘規則照樣檢查，讓訊息完整（例如本體裡碰了 public 也一併列出）
+    banned = [] if allow_functions else [f"{v}：{snippet}" for v in _procedural(stmt, text, first)]
     if first == "do":
-        return [f"DO 區塊無法靜態檢查它碰了哪個 schema：{snippet}"]
+        # allow_functions: true 時本體仍要只碰 yc_v3
+        return banned + [p for t in stmt if t.kind == "dollar" for p in _body(t, src)]
     if first not in _TOP_VERBS:
-        return [f"不在允許清單內的語句（只允許 create/alter/drop/truncate/comment/grant/revoke/insert/update/delete/select/with 與少數 set）：{snippet}"]
+        return banned + [f"不在允許清單內的語句（只允許 create/alter/drop/truncate/comment/grant/revoke/insert/update/delete/select/with 與少數 set）：{snippet}"]
     problems: list[str] = []
     if first == "set" and not _SAFE_SET.match(text):
-        return [f"set 只允許 lock_timeout、statement_timeout 等無害的參數（不得改 search_path 或角色）：{snippet}"]
+        return banned + [f"set 只允許 lock_timeout、statement_timeout 等無害的參數（不得改 search_path 或角色）：{snippet}"]
     if first in ("create", "alter", "drop", "truncate"):
         problems += _ddl(text)
     elif first == "comment":
@@ -382,7 +408,7 @@ def _statement(stmt: list[Tok], src: str) -> list[str]:
         problems += _grant(text)
     if first != "set":
         problems += _common(text)
-    problems = [f"{v}：{snippet}" for v in problems]
+    problems = banned + [f"{v}：{snippet}" for v in problems]
     for t in stmt:
         if t.kind == "dollar":
             problems += _body(t, src)
@@ -409,12 +435,13 @@ def _body(tok: Tok, src: str) -> list[str]:
     return problems
 
 
-def sql_violations(sql: str) -> list[str]:
+def sql_violations(sql: str, allow_functions: bool = False) -> list[str]:
+    """allow_functions：ticket front matter 為 allow_functions: true（D-045）時才傳 True。"""
     try:
         toks = lex(sql)
     except SqlError as e:
         return [f"解析失敗（fail-closed）：{e}"]
     out = []
     for stmt in split_statements(toks):
-        out += _statement(stmt, sql)
+        out += _statement(stmt, sql, allow_functions)
     return out

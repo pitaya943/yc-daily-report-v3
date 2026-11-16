@@ -117,7 +117,10 @@ def test_d045_procedural_code_is_rejected_as_a_class(sql):
     assert problems and all("D-045" in p for p in problems if "D-045" in p) and any("D-045" in p for p in problems), (sql, problems)
 
 
-@pytest.mark.parametrize("sql", [s for s in PROCEDURAL if "public" not in s and "lo_" not in s.lower()])
+# 即使 allow_functions 也維持 fail-closed 的兩種：BEGIN ATOMIC 的本體沒有引號，依分號切開後的片段無法判定（第 1 輪起就是如此）；
+# event trigger 是整個資料庫的物件，不在 yc_v3 之內。
+@pytest.mark.parametrize("sql", [s for s in PROCEDURAL
+                                 if "public" not in s and "lo_" not in s.lower() and "atomic" not in s and "event" not in s])
 def test_d045_allow_functions_lifts_the_class_ban_but_not_the_schema_rule(sql):
     assert checks.sql_violations(sql, allow_functions=True) == [], (sql, checks.sql_violations(sql, allow_functions=True))
 
@@ -194,3 +197,7 @@ def test_d045_the_allow_functions_field_is_read_from_the_target_branch(mig_ticke
         "migrations/0002_f.sql": "create function yc_v3.f() returns int language sql as $$ select 1 $$;\n",
     })
     assert any("D-045" in p for p in checks.check_migration_scope(repo.ctx(head_ref="ticket/T-930")))
+
+
+def test_d045_an_event_trigger_is_rejected_even_with_allow_functions():
+    assert checks.sql_violations("create event trigger et on ddl_command_start execute function yc_v3.f();", allow_functions=True)
