@@ -15,6 +15,12 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 - 同時進行上限：3 張。第一批 T-101、T-111、T-112；有一張合併就補 T-113、T-114。
 - 模型：Chief claude-opus-5-5；Builder claude-sonnet-5-5；Verifier claude-opus-5-5；修正第二輪 Builder claude-opus-5-5。
 
+## M2（計畫：待 plan-approval issue 核准）
+
+- 順序：T-200 → T-201 → T-202 ‖ T-203。
+- 同時進行上限：2 張（只有 T-202 ‖ T-203 平行）。
+- 模型：Chief claude-opus-5-5；Builder claude-sonnet-5-5；Verifier claude-opus-5-5；修正第二輪 Builder claude-opus-5-5。
+
 | Ticket | Milestone | 標題 | 狀態 | PR | 修正輪數 | 備註 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T-001 | M0 | 專案骨架與測試框架 | merged | [#2](https://github.com/pitaya943/yc-daily-report-v3/pull/2) | 2 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（FAIL）；修正第 1 輪：claude-sonnet-5-5；Verifier 第 2 輪：claude-opus-5-5（FAIL：PGSERVICE）；修正第 2 輪：claude-opus-5-5（新 session）；Verifier 第 3 輪：claude-opus-5-5（PASS） |
@@ -27,6 +33,7 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 | T-112 | M1 | 純函式：薪資公式 | merged | [#13](https://github.com/pitaya943/yc-daily-report-v3/pull/13) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS；變異 2 個存活，測試缺口記給 T-402）；規格問題 → issue #15（D-064～D-068） |
 | T-113 | M1 | 純函式：保留金 | merged | [#17](https://github.com/pitaya943/yc-daily-report-v3/pull/17) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS）；規格問題見 issue #19 |
 | T-114 | M1 | 純函式：庫存比對 | merged | [#16](https://github.com/pitaya943/yc-daily-report-v3/pull/16) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS）；規格問題見 issue #19 |
+| T-200 | M2 | 固定版本的 HTMX 與共用頁面版型 | todo | — | — | — |
 | T-201 | M2 | 送出日報 | todo | — | — | — |
 | T-202 | M2 | 回報生命週期 | todo | — | — | — |
 | T-203 | M2 | 歷史與匯出 | todo | — | — | — |
