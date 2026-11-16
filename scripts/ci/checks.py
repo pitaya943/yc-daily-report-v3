@@ -530,22 +530,54 @@ def allowed_messages(appendix_text: str) -> set[str]:
     return allowed
 
 
-# 非 Python 的產品檔案：樣板（templates/）與前端靜態檔（static/）
-_FRONTEND_COMMENTS = {
-    ".html": [r"\{#.*?#\}", r"<!--.*?-->"], ".htm": [r"\{#.*?#\}", r"<!--.*?-->"], ".jinja": [r"\{#.*?#\}", r"<!--.*?-->"],
-    ".j2": [r"\{#.*?#\}", r"<!--.*?-->"], ".xml": [r"<!--.*?-->"], ".svg": [r"<!--.*?-->"],
-    ".js": [r"/\*.*?\*/", r"(?m)(?<![:\w/])//[^\n]*"], ".mjs": [r"/\*.*?\*/", r"(?m)(?<![:\w/])//[^\n]*"],
-    ".ts": [r"/\*.*?\*/", r"(?m)(?<![:\w/])//[^\n]*"], ".css": [r"/\*.*?\*/"],
-}
-# 一段「從中文字開始、到引號／標籤／樣板語法為止」的文字；`請輸入{{ name }}` 會只取到 `請輸入`，所以拼出來的訊息一定不符
-_CJK_RUN = re.compile(r"[\u3000-\u303f\u3400-\u9fff\uff00-\uffef][^<>\"'`\n\r{}]*")
+# D-047：只檢查「傳給結果類別的錯誤訊息」。結果類別由 T-003 定義（app/core/outcomes.py）：
+#   raise OutcomeError(Outcome.X, "完整錯誤字串")   # message 是第二個位置參數或 message=；沒有規定字串時省略或傳 None
+# 稽核說明（audit.write 的 description）由附錄 C 管，不在這一項；樣板與前端檔案也不在範圍內。
+# 訊息必須能從原始碼逐字讀出：字串常數、模組層級的字串常數、或兩者的條件運算式。
+# 讀不出來（變數、拼接、f-string、format、*args）一律失敗：逐字比對不了的訊息，就是規格以外的訊息。
+RESULT_CLASSES = {"OutcomeError"}
 
 
-def _frontend_files(root: Path) -> list[Path]:
-    app = root / "app"
-    if not app.exists():
-        return []
-    return sorted(p for p in app.rglob("*") if p.is_file() and {"templates", "static"} & set(p.relative_to(app).parts))
+def _module_constants(tree: ast.Module) -> dict[str, ast.expr | None]:
+    """模組層級 `NAME = <常數>`；同一個名稱被賦值兩次以上就當作無法確定（None）。"""
+    consts: dict[str, ast.expr | None] = {}
+    for node in tree.body:
+        targets = node.targets if isinstance(node, ast.Assign) else [node.target] if isinstance(node, ast.AnnAssign) else []
+        for t in targets:
+            if isinstance(t, ast.Name):
+                consts[t.id] = None if t.id in consts else getattr(node, "value", None)
+    return consts
+
+
+def _message_values(node: ast.expr | None, consts: dict, depth: int = 0) -> list[str | None] | None:
+    """訊息可能的值（None = 沒有訊息）；讀不出來回傳 None。"""
+    if node is None:
+        return [None]
+    if isinstance(node, ast.Constant) and (node.value is None or isinstance(node.value, str)):
+        return [node.value]
+    if isinstance(node, ast.IfExp):
+        a, b = _message_values(node.body, consts, depth), _message_values(node.orelse, consts, depth)
+        return None if a is None or b is None else a + b
+    if isinstance(node, ast.Name) and depth < 3 and consts.get(node.id) is not None:
+        return _message_values(consts[node.id], consts, depth + 1)
+    return None
+
+
+def _result_class_messages(tree: ast.Module):
+    """逐一產生 (行號, 訊息的值或 None 表示讀不出來, 原始碼片段)。"""
+    consts = _module_constants(tree)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        fn = node.func
+        name = fn.id if isinstance(fn, ast.Name) else fn.attr if isinstance(fn, ast.Attribute) else None
+        if name not in RESULT_CLASSES:
+            continue
+        if any(isinstance(a, ast.Starred) for a in node.args) or any(k.arg is None for k in node.keywords):
+            yield node.lineno, None, ast.unparse(node)
+            continue
+        msg = node.args[1] if len(node.args) >= 2 else next((k.value for k in node.keywords if k.arg == "message"), None)
+        yield node.lineno, _message_values(msg, consts), ast.unparse(node)
 
 
 def check_strings(ctx: Ctx) -> list[str]:
@@ -561,33 +593,13 @@ def check_strings(ctx: Ctx) -> list[str]:
         except SyntaxError as e:
             bad.append(f"{rel}:{e.lineno} 語法錯誤，無法檢查")
             continue
-        docstrings = set()
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)) and node.body:
-                first = node.body[0]
-                if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str):
-                    docstrings.add(id(first.value))
-        for node in ast.walk(tree):
-            if isinstance(node, ast.JoinedStr):
-                # f-string：訊息必須逐字出現在附錄，不能在執行時拼出來
-                if any(isinstance(v, ast.Constant) and _CJK.search(v.value) for v in node.values):
-                    bad.append(f"{rel}:{node.lineno} f-string 含中文，錯誤訊息必須逐字寫成常數")
-            elif isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in docstrings:
-                if _CJK.search(node.value) and node.value.strip() not in allowed:
-                    bad.append(f"{rel}:{node.lineno} 字串「{node.value[:40]}」不在 spec/appendix-b-fields.md")
-    for p in _frontend_files(ctx.root):
-        rel = p.relative_to(ctx.root).as_posix()
-        try:
-            text = p.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
-            continue  # 圖片、字型等二進位檔
-        for pattern in _FRONTEND_COMMENTS.get(p.suffix.lower(), []):
-            # 註解不是使用者看得到的文字；換成同樣數量的換行，行號才不會跑掉
-            text = re.sub(pattern, lambda m: "\n" * m.group(0).count("\n"), text, flags=re.S)
-        for m in _CJK_RUN.finditer(text):
-            run = m.group(0).rstrip()
-            if run.strip("「」") not in allowed and run not in allowed:
-                bad.append(f"{rel}:{text.count(chr(10), 0, m.start()) + 1} 文字「{run[:40]}」不在 spec/appendix-b-fields.md")
+        for line, values, src in _result_class_messages(tree):
+            if values is None:
+                bad.append(f"{rel}:{line} 傳給結果類別的錯誤訊息無法逐字讀出（要寫成字串常數）：{src[:80]}")
+                continue
+            for v in values:
+                if v is not None and v not in allowed:
+                    bad.append(f"{rel}:{line} 錯誤訊息「{v[:40]}」不在 spec/appendix-b-fields.md")
     return bad
 
 
