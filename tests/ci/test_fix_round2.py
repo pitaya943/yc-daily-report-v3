@@ -278,3 +278,263 @@ def test_d047_a_module_constant_that_is_not_in_appendix_b_fails(repo):
     code = IMPORTS + 'BAD = "請輸入名字"\ndef f():\n    raise OutcomeError(Outcome.INVALID, BAD)\n'
     assert _strings(repo, code)
 
+
+
+# ------------------------------------------------------------------ D-046：no-weakened-tests 以結果判斷
+# scripts/ci/test_report.py（pytest plugin）輸出每個測試 ID 的結果；目標分支上通過的每個 ID，在 PR 上都必須被收集而且通過。
+
+import json  # noqa: E402
+import os  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def _run_with_report(pytester, monkeypatch, out: Path, *args):
+    """在子行程裡真的跑 pytest，載入 scripts.ci.test_report（子行程：os._exit 不會殺掉外層的測試）。"""
+    monkeypatch.setenv("PYTHONPATH", os.pathsep.join([str(ROOT), str(pytester.path)]))
+    monkeypatch.setenv("YC_TEST_REPORT", str(out))
+    return pytester.runpytest_subprocess("-p", "scripts.ci.test_report", "-p", "no:cacheprovider", *args)
+
+
+def _read(out: Path):
+    return checks.load_test_report(out)
+
+
+def test_d046_the_plugin_records_every_test_id_and_its_outcome(pytester, monkeypatch):
+    pytester.makepyfile(test_mix=(
+        "import pytest\n"
+        "def test_ok(): pass\n"
+        "def test_bad(): assert False\n"
+        "@pytest.mark.parametrize('n', [1, 2])\ndef test_param(n): pass\n"
+        "@pytest.fixture\ndef broken(): raise RuntimeError\n"
+        "def test_setup_error(broken): pass\n"
+    ))
+    out = pytester.path / "report.json"
+    _run_with_report(pytester, monkeypatch, out)
+    tests = _read(out)["tests"]
+    assert tests == {
+        "test_mix.py::test_ok": "passed",
+        "test_mix.py::test_bad": "failed",
+        "test_mix.py::test_param[1]": "passed",
+        "test_mix.py::test_param[2]": "passed",
+        "test_mix.py::test_setup_error": "failed",
+    }
+
+
+def test_d046_the_plugin_removes_a_stale_report_before_running(pytester, monkeypatch):
+    """session 中途死掉時不能留下上一次的報告；沒有報告就判為失敗。"""
+    pytester.makeconftest("import os\nos._exit(0)\n")
+    pytester.makepyfile(test_a="def test_a(): pass\n")
+    out = pytester.path / "report.json"
+    out.write_text('{"tests": {"test_a.py::test_a": "passed"}}', encoding="utf-8")
+    _run_with_report(pytester, monkeypatch, out)
+    assert not out.exists()
+    assert checks.load_test_report(out) is None
+
+
+BASE_PASSED = {"tests": {"t.py::test_ok": "passed", "t.py::test_money": "passed", "t.py::test_was_red": "failed",
+                         "t.py::test_not_implemented": "skipped"}}
+
+
+@pytest.mark.parametrize("head,needle", [
+    ({"t.py::test_ok": "passed"}, "test_money"),                                           # 消失
+    ({"t.py::test_ok": "passed", "t.py::test_money": "failed"}, "test_money"),           # 變紅
+    ({"t.py::test_ok": "passed", "t.py::test_money": "skipped"}, "test_money"),          # 被跳過
+    ({"t.py::test_ok": "passed", "t.py::test_money": "xfailed"}, "test_money"),          # 預期失敗
+    ({"t.py::test_ok": "passed", "t.py::test_money": "not-run"}, "test_money"),          # 收集了但沒執行
+    ({"t.py::test_ok": "passed", "t.py::test_money_renamed": "passed"}, "test_money"),   # 改名 = 舊 ID 消失
+])
+def test_d046_a_test_that_passed_on_the_target_must_be_collected_and_pass(head, needle):
+    problems = checks.compare_test_results(BASE_PASSED, {"tests": head})
+    assert problems and any(needle in p for p in problems), problems
+
+
+def test_d046_only_tests_that_passed_on_the_target_are_required():
+    head = {"tests": {"t.py::test_ok": "passed", "t.py::test_money": "passed", "t.py::test_new": "passed"}}
+    assert checks.compare_test_results(BASE_PASSED, head) == []
+
+
+@pytest.mark.parametrize("base,head", [(None, {"tests": {}}), ({"tests": {}}, None), (None, None)])
+def test_d046_a_missing_report_fails(base, head):
+    problems = checks.compare_test_results(base, head)
+    assert problems and any("報告" in p for p in problems), problems
+
+
+@pytest.mark.parametrize("content", ["", "not json", "[]", '{"no_tests": 1}', '{"tests": []}'])
+def test_d046_an_unreadable_report_counts_as_missing(tmp_path, content):
+    p = tmp_path / "r.json"
+    p.write_text(content, encoding="utf-8")
+    assert checks.load_test_report(p) is None
+
+
+# Verifier 第 2 輪問題 2 的四種寫法：會失敗的測試消失，pytest 仍回傳 0。用真的 pytest 在「目標分支」與「PR」各跑一次。
+SABOTAGE = {
+    "pycollect_makeitem": {"conftest.py": (
+        "def pytest_pycollect_makeitem(collector, name, obj):\n"
+        "    if 'money' in name:\n        return []\n")},
+    "sessionstart_exit": {"conftest.py": (
+        "import pytest\ndef pytest_sessionstart(session):\n    pytest.exit('done', returncode=0)\n")},
+    "os_exit": {"conftest.py": "import os\nos._exit(0)\n"},
+    "plugin_in_app": {
+        "pytest.ini": "[pytest]\naddopts = -p app_plug\n",
+        "app_plug.py": "def pytest_collection_modifyitems(items):\n    items[:] = [i for i in items if 'money' not in i.nodeid]\n",
+    },
+}
+
+
+@pytest.mark.parametrize("name", sorted(SABOTAGE))
+def test_d046_the_verifiers_four_ways_to_make_a_test_vanish_are_caught_by_results(pytester, monkeypatch, name):
+    pytester.makepyfile(test_t="def test_ok(): pass\ndef test_money(): assert 1 + 1 == 2\n")
+    base_out = pytester.path / "base.json"
+    _run_with_report(pytester, monkeypatch, base_out)
+    base = _read(base_out)
+    assert base["tests"]["test_t.py::test_money"] == "passed"
+    for path, text in SABOTAGE[name].items():
+        (pytester.path / path).write_text(text, encoding="utf-8")
+    (pytester.path / "test_t.py").write_text("def test_ok(): pass\ndef test_money(): assert 1 + 1 == 3\n", encoding="utf-8")
+    head_out = pytester.path / "head.json"
+    _run_with_report(pytester, monkeypatch, head_out)
+    problems = checks.compare_test_results(base, _read(head_out))
+    assert problems, name
+
+
+def test_d046_run_py_fails_without_reports(monkeypatch, capsys):
+    for var in ("CI_BASE_REF", "CI_HEAD_REF", "CI_BASE_SHA", "YC_BASE_TEST_REPORT", "YC_HEAD_TEST_REPORT"):
+        monkeypatch.delenv(var, raising=False)
+    assert run.main(["run.py", "no-weakened-tests"]) == 1
+    assert "報告" in capsys.readouterr().out
+
+
+def test_d046_run_py_compares_the_two_reports(monkeypatch, capsys, tmp_path):
+    for var in ("CI_BASE_REF", "CI_HEAD_REF", "CI_BASE_SHA"):
+        monkeypatch.delenv(var, raising=False)
+    base, head = tmp_path / "b.json", tmp_path / "h.json"
+    base.write_text(json.dumps(BASE_PASSED), encoding="utf-8")
+    monkeypatch.setenv("YC_BASE_TEST_REPORT", str(base))
+    monkeypatch.setenv("YC_HEAD_TEST_REPORT", str(head))
+    head.write_text(json.dumps({"tests": {"t.py::test_ok": "passed"}}), encoding="utf-8")
+    assert run.main(["run.py", "no-weakened-tests"]) == 1
+    assert "test_money" in capsys.readouterr().out
+    head.write_text(json.dumps({"tests": {"t.py::test_ok": "passed", "t.py::test_money": "passed"}}), encoding="utf-8")
+    assert run.main(["run.py", "no-weakened-tests"]) == 0, capsys.readouterr().out
+
+
+def test_d046_the_results_script_runs_a_tree_and_writes_a_report(tmp_path):
+    """scripts/ci/test-results <原始碼目錄> <輸出>：CI 用它在同一個 job 裡跑出目標分支與 PR 的結果。"""
+    import subprocess
+
+    tree = tmp_path / "tree"
+    (tree / "tests").mkdir(parents=True)
+    (tree / "tests" / "test_a.py").write_text("def test_a(): pass\ndef test_b(): assert False\n", encoding="utf-8")
+    out = tmp_path / "out.json"
+    env = {k: v for k, v in os.environ.items() if k not in ("YC_TEST_REPORT", "DATABASE_URL")}
+    r = subprocess.run([str(ROOT / "scripts" / "ci" / "test-results"), str(tree), str(out)], env=env,
+                       capture_output=True, text=True, check=False)
+    assert r.returncode == 0, r.stdout + r.stderr       # 測試失敗由比對判斷，腳本本身不因此失敗
+    assert checks.load_test_report(out)["tests"] == {"tests/test_a.py::test_a": "passed", "tests/test_a.py::test_b": "failed"}
+
+
+def test_d046_the_workflow_runs_the_target_branch_itself_in_the_same_job():
+    """目標分支的結果要在同一個 job 裡實際跑出來，不使用 PR 提供的檔案或其他 job 的 artifact。"""
+    import re
+
+    wf = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    job = re.search(r"(?ms)^  no-weakened-tests:\n(.*?)(?=^  [A-Za-z0-9_-]+:\n|\Z)", wf).group(1)
+    assert re.search(r"(?m)^\s*image:\s*postgres:17\s*$", job)
+    assert "download-artifact" not in job and "needs:" not in job
+    assert re.search(r'git worktree add --detach "\$RUNNER_TEMP/base" "\$CI_BASE_SHA"', job)
+    assert re.search(r'scripts/ci/test-results "\$RUNNER_TEMP/base" "\$YC_BASE_TEST_REPORT"', job)
+    assert re.search(r'scripts/ci/test-results "\$GITHUB_WORKSPACE" "\$YC_HEAD_TEST_REPORT"', job)
+    assert "run.py no-weakened-tests" in job
+
+
+# ------------------------------------------------------------------ D-046：conftest 的 hook 採允許清單（語法掃描保留，給易懂的訊息）
+
+@pytest.mark.parametrize("path", ["tests/conftest.py", "tests/unit/conftest.py", "conftest.py", "app/conftest.py"])
+@pytest.mark.parametrize("hook", [
+    "pytest_pycollect_makeitem(collector, name, obj)", "pytest_collection(session)", "pytest_sessionstart(session)",
+    "pytest_itemcollected(item)", "pytest_make_collect_report(collector)", "pytest_runtestloop(session)",
+    "pytest_bdd_apply_tag(tag, function)", "pytest_deselected(items)",
+])
+def test_d046_a_conftest_hook_outside_the_allowlist_is_rejected(repo, path, hook):
+    repo.commit({path: f"def {hook}:\n    return None\n"})
+    problems = checks.check_no_weakened_tests(repo.ctx())
+    assert any(hook.split("(")[0] in p and "允許清單" in p for p in problems), problems
+
+
+@pytest.mark.parametrize("code", [
+    "def pytest_addoption(parser):\n    parser.addoption('--x')\n",
+    "def pytest_configure(config):\n    config.addinivalue_line('markers', 'slow: x')\n",
+    "def pytest_generate_tests(metafunc):\n    pass\n",
+    "def pytest_bdd_before_scenario(request, feature, scenario):\n    pass\n",
+    "pytest_plugins = ['tests.steps.common.steps']\n",
+])
+def test_d046_allowlisted_hooks_are_fine(repo, code):
+    repo.commit({"tests/conftest.py": code})
+    assert checks.check_no_weakened_tests(repo.ctx()) == []
+
+
+@pytest.mark.parametrize("code", [
+    "import pytest\ndef test_a():\n    pytest.exit('bye', returncode=0)\n",
+    "import os\nos._exit(0)\n",
+])
+def test_d046_session_exits_get_a_readable_message(repo, code):
+    repo.commit({"tests/conftest.py": code})
+    assert checks.check_no_weakened_tests(repo.ctx())
+
+
+def test_d046_the_real_conftests_pass_the_allowlist():
+    assert checks.check_no_weakened_tests(checks.Ctx(root=ROOT)) == []
+
+
+# ------------------------------------------------------------------ D-048：tests/support/** 只有 allowed_paths 明確列出時才能修改
+
+SUPPORT = "tests/support/bdd_plugin.py"
+SUPPORT_TEXT = ("import pytest\ndef pytest_collection_modifyitems(config, items):\n"
+                "    for item in items:\n        item.add_marker(pytest.mark.skip(reason='not implemented'))\n")
+
+
+@pytest.fixture
+def support_repo(repo):
+    def make(paths):
+        repo.checkout("milestone/M9")
+        repo.commit({SUPPORT: SUPPORT_TEXT, "tests/support/other.py": "X = 1\n",
+                     "docs/tickets/T-940.md": make_ticket("T-940", paths)})
+        repo._git("checkout", "-q", "-B", "ticket/T-940")
+        return repo
+    return make
+
+
+@pytest.mark.parametrize("paths", [["tests/**"], ["tests/support/**"], ["tests/support/*.py"], ["tests/support/other.py"]])
+def test_d048_modifying_a_support_file_not_listed_explicitly_fails(support_repo, paths):
+    repo = support_repo(paths)
+    repo.commit({SUPPORT: SUPPORT_TEXT + "# changed\n"})
+    problems = checks.check_no_weakened_tests(repo.ctx(head_ref="ticket/T-940"))
+    assert any("D-048" in p and SUPPORT in p for p in problems), problems
+
+
+def test_d048_deleting_a_support_file_not_listed_explicitly_fails(support_repo):
+    repo = support_repo(["tests/**"])
+    repo.commit({"tests/support/other.py": None})
+    assert any("D-048" in p for p in checks.check_no_weakened_tests(repo.ctx(head_ref="ticket/T-940")))
+
+
+def test_d048_a_ticket_that_lists_the_file_explicitly_may_modify_it(support_repo):
+    """明確列出時可以修改，由 Verifier 審查 diff；結果比對仍然生效。不再要求「與目標分支完全相同」。"""
+    repo = support_repo(["tests/**", SUPPORT])
+    repo.commit({SUPPORT: SUPPORT_TEXT + "# changed\n"})
+    assert checks.check_no_weakened_tests(repo.ctx(head_ref="ticket/T-940")) == []
+
+
+def test_d048_the_listing_is_read_from_the_target_branch(support_repo):
+    repo = support_repo(["tests/**"])
+    repo.commit({SUPPORT: SUPPORT_TEXT + "# changed\n", "docs/tickets/T-940.md": make_ticket("T-940", ["tests/**", SUPPORT])})
+    assert any("D-048" in p for p in checks.check_no_weakened_tests(repo.ctx(head_ref="ticket/T-940")))
+
+
+def test_d048_adding_a_new_support_file_is_not_a_modification(support_repo):
+    """T-001 就是新增 tests/support/ 的 ticket。新檔案不是「修改」；它若讓既有測試消失，結果比對會抓到。"""
+    repo = support_repo(["tests/**"])
+    repo.commit({"tests/support/new_plugin.py": SUPPORT_TEXT})
+    assert checks.check_no_weakened_tests(repo.ctx(head_ref="ticket/T-940")) == []

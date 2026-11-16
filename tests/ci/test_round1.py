@@ -95,6 +95,11 @@ def test_the_exemption_covers_only_the_bdd_plugin_unchanged_on_the_base(repo):
 
 
 def test_a_skip_in_another_support_file_is_not_exempt(repo):
+    # D-048 之後：tests/support/** 由「明確列出才能修改」與結果比對（D-046）管，不再做語法掃描。
+    # 這裡改成修改目標分支上已有的 support 檔案：ticket 沒有明確列出，所以失敗。
+    repo.checkout("milestone/M9")
+    repo.commit({"tests/support/other_plugin.py": "X = 1\n"})
+    repo._git("checkout", "-q", "-B", "ticket/T-900")
     repo.commit({"tests/support/other_plugin.py": BDD_PLUGIN})
     assert checks.check_no_weakened_tests(repo.ctx())
 
