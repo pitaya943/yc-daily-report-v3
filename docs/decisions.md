@@ -62,6 +62,7 @@
 | D-056 | 密碼雜湊用什麼？ | Python 標準庫 `hashlib.scrypt`，N=2^17、r=8、p=1（OWASP 最低建議），每個帳戶獨立隨機 salt，以 `hmac.compare_digest` 比對；雜湊字串帶演算法與參數前綴。 | 不新增依賴；前綴讓日後可漸進換演算法 | 2026-11-16 | issue #11 選項 1A；寫入 T-101 完成條件 11 |
 | D-057 | 登入後落地頁的路徑？ | 登入頁 `/sign-in`；USER → `/reports`；ADMIN、OWNER → `/review`。M2、M3 的頁面掛在這兩個路徑。 | 規格沒有 URL；事先固定，之後的 ticket 才能沿用 | 2026-11-16 | issue #11 選項 2A；寫入 T-101 完成條件 12 |
 | D-058 | IAM-R10 的「Saved data survives a timeout」需要 M2 的回報，怎麼辦？ | T-103 實作閒置逾時、寫好其他 3 個 scenario 的步驟，並以單元測試涵蓋閒置邊界；`IAM-R10` 由 T-201 補上回報步驟後加入 `tests/implemented.txt`。 | `done-when` 以規則為單位；不改規格也讓 M1 的 CI 驗證到逾時 | 2026-11-16 | issue #11 選項 3A；T-103、T-201 的完成條件已改 |
+| D-059 | Issue 決定後由誰關閉？ | Chief。把決定記進 `docs/decisions.md` 並推送後，在 issue 留言寫明 D 編號與 commit，然後關閉。寫進 `ask-spec-question`、`plan-milestone` 與 `docs/workflow.md` 第 5 節。 | 原本流程沒有寫，M0 漏關了 #1、#8、#9 | 2026-11-16 | Kuei 在 M1 Chief session 選定；同時關閉 #1、#8、#9、#11 |
 
 ## 待決定
 
