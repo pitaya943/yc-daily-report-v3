@@ -1,0 +1,4 @@
+# 資料庫時區 = UTC（模擬 CI）
+26 passed in 0.54s
+# 資料庫時區 = Asia/Taipei（本機預設）
+26 passed in 0.50s

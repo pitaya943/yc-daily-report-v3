@@ -1,0 +1,12 @@
+# 變異檢查：把 authorize() 的 ACCESS_DENIED 寫入拿掉，測試必須失敗
+FAILED tests/unit/core/test_permissions.py::test_denied_raises_forbidden_and_writes_exactly_one_access_denied[Admin1-rule0-<lambda>-role]
+FAILED tests/unit/core/test_permissions.py::test_denied_raises_forbidden_and_writes_exactly_one_access_denied[Wen-rule1-<lambda>-ownership]
+FAILED tests/unit/core/test_permissions.py::test_denied_raises_forbidden_and_writes_exactly_one_access_denied[Wen-rule2-<lambda>-state]
+FAILED tests/unit/core/test_permissions.py::test_denied_raises_forbidden_and_writes_exactly_one_access_denied[Wen-rule3-<lambda>-state missing is not allowed]
+FAILED tests/unit/core/test_permissions.py::test_denied_raises_forbidden_and_writes_exactly_one_access_denied[Wen-rule4-<lambda>-role]
+FAILED tests/unit/core/test_permissions.py::test_denied_raises_forbidden_and_writes_exactly_one_access_denied[Admin1-rule5-<lambda>-role]
+FAILED tests/unit/core/test_permissions.py::test_denial_audit_survives_the_callers_rollback
+FAILED tests/steps/common/test_common_steps.py::test_a_forbidden_request_writes_only_the_access_denied_row
+8 failed, 29 passed in 0.58s
+# 還原後：
+37 passed in 0.53s

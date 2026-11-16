@@ -1,0 +1,70 @@
+# 修正第 2 輪：乾淨 checkout 照 README 重跑（全新 clone、全新 venv、資料目錄事先刪除）
++++ git clone -q --branch ticket/T-001 https://github.com/pitaya943/yc-daily-report-v3.git clean
++++ cd clean
++++ git log --oneline -1
+53443d9 T-001: make the local-only database guard fail-closed
++++ ls /var/lib/yc-pg17
+ls: cannot access '/var/lib/yc-pg17': No such file or directory
++++ scripts/dev/install-postgres
++++ tail -1
+已安裝：postgres (PostgreSQL) 17.12 (Ubuntu 17.12-1.pgdg24.04+1)
++++ python3 -m venv $SCRATCH/cvenv
++++ . $SCRATCH/cvenv/bin/activate
++++ grep -v notice
++++ pip install -q -e '.[dev]'
+
++++ scripts/dev/db-start
+初始化資料目錄 /var/lib/yc-pg17
+PostgreSQL 已啟動（port 5433）
+已建立資料庫 yc
+DATABASE_URL=postgresql://postgres@127.0.0.1:5433/yc
++++ scripts/dev/migrate
+套用 0001_init_accounts.sql
+migration 完成
++++ scripts/dev/migrate
+略過 0001_init_accounts.sql（已套用）
+migration 完成
++++ python3 -m pytest
+============================= test session starts ==============================
+platform linux -- Python 3.13.18, pytest-9.2.0, pluggy-1.7.0
+rootdir: $SCRATCH/clean
+configfile: pyproject.toml
+testpaths: tests
+plugins: bdd-9.0.1, anyio-4.16.0
+collected 570 items
+
+tests/integration/test_smoke.py .....                                    [  0%]
+tests/integration/test_world_bdd.py ..                                   [  1%]
+tests/test_spec.py sssssssssssssssssssssssssssssssssssssssssssssssssssss [ 10%]
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 23%]
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 35%]
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 48%]
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 61%]
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 73%]
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 86%]
+ssss                                                                     [ 87%]
+tests/unit/test_background_parser.py .                                   [ 87%]
+tests/unit/test_clock.py ......                                          [ 88%]
+tests/unit/test_implemented_mechanism.py ....                            [ 88%]
+tests/unit/test_local_only.py .......................................... [ 96%]
+..................                                                       [ 99%]
+tests/unit/test_spec_collection.py ...                                   [100%]
+
+======================= 81 passed, 489 skipped in 2.09s ========================
++++ tail -1
++++ python3 -m pytest --collect-only -q tests/test_spec.py
+489 tests collected in 0.11s
++++ PORT=8767
++++ scripts/dev/run
++++ sleep 4
++++ sed -n '1p;$p'
++++ curl -s -i 127.0.0.1:8767/health
+HTTP/1.1 200 OK
+{"status":"ok","accounts":9,"now":"2026-11-16T03:29:59.390823+08:00"}+++ PGSERVICEFILE=$SCRATCH/svc.conf
++++ PGSERVICE=evil
++++ DATABASE_URL=postgresql:///yc
++++ scripts/dev/migrate
+refusing to connect: environment variable PGSERVICE is set (a service file can point to any host)。本專案只使用容器內的 PostgreSQL。
++++ echo exit=1
+exit=1
++++ set +x

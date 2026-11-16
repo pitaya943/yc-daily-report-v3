@@ -1,0 +1,21 @@
+$ psql -c "select version()"
+PostgreSQL 17.12 (Ubuntu 17.12-1.pgdg24.04+1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit
+$ psql -c "\dt *.*" (non-system schemas)
+ schemaname |     tablename     
+------------+-------------------
+ yc_v3      | accounts
+ yc_v3      | schema_migrations
+(2 rows)
+
+$ scripts/dev/migrate   # 第二次執行
+略過 0001_init_accounts.sql（已套用）
+migration 完成
+$ 修改已套用的 migration 後再 migrate（應拒絕）
+migration 0001 已套用過，但檔案內容已被修改：0001_init_accounts.sql
+exit=1
+$ DATABASE_URL=<remote supabase-like host> scripts/dev/migrate（應拒絕）
+拒絕連線：DATABASE_URL 的主機不是本機（db.example.supabase.co）。本專案只使用容器內的 PostgreSQL。
+exit=1
+$ scripts/dev/db-reset  # 全新資料庫從 0001 套用到最新
+套用 0001_init_accounts.sql
+migration 完成

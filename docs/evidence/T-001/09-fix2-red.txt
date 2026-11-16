@@ -1,0 +1,33 @@
+# 修正第 2 輪：先紅（加入測試、尚未修改 app/ 時）
+# 註：這是第一批紅測試（Verifier 情境、service 環境變數、未知 PG* 變數、query allowlist、urlsplit 與 libpq 分歧）。
+# 空白字元、authority/query 重複 host、固定 seed 差分模糊測試、connect() 的 libpq 比對是修正途中依模糊測試結果再補的。
+$ python3 -m pytest tests/unit/test_local_only.py -q
+FAILED tests/unit/test_local_only.py::test_PGSERVICE_with_hostless_url_is_refused
+FAILED tests/unit/test_local_only.py::test_db_connect_refuses_PGSERVICE_before_libpq_resolves_anything
+FAILED tests/unit/test_local_only.py::test_PGSERVICE_alone_uses_the_default_service_file_and_is_refused
+FAILED tests/unit/test_local_only.py::test_service_selection_env_vars_are_refused_even_with_an_explicit_local_host[PGSERVICE-]
+FAILED tests/unit/test_local_only.py::test_service_selection_env_vars_are_refused_even_with_an_explicit_local_host[PGSERVICEFILE-/nonexistent/svc.conf]
+FAILED tests/unit/test_local_only.py::test_service_selection_env_vars_are_refused_even_with_an_explicit_local_host[PGSYSCONFDIR-/nonexistent]
+FAILED tests/unit/test_local_only.py::test_non_local_PGHOST_is_refused_even_when_the_url_names_a_local_host
+FAILED tests/unit/test_local_only.py::test_unrecognised_PG_env_var_is_refused
+FAILED tests/unit/test_local_only.py::test_url_shapes_that_could_hide_a_remote_target_are_refused[postgresql://postgres@127.0.0.1:5433/yc?servicefile=/tmp/svc.conf]
+FAILED tests/unit/test_local_only.py::test_url_shapes_that_could_hide_a_remote_target_are_refused[postgresql://postgres@127.0.0.1:5433/yc?oauth_issuer=https://remote-db.invalid]
+FAILED tests/unit/test_local_only.py::test_url_shapes_that_could_hide_a_remote_target_are_refused[postgresql://localhost?@remote-db.invalid/yc]
+FAILED tests/unit/test_local_only.py::test_url_shapes_that_could_hide_a_remote_target_are_refused[postgresql://localhost#@remote-db.invalid/yc]
+FAILED tests/unit/test_local_only.py::test_our_url_parser_agrees_with_libpq_on_the_target[postgresql://postgres@127.0.0.1:5433/yc]
+FAILED tests/unit/test_local_only.py::test_our_url_parser_agrees_with_libpq_on_the_target[postgres://postgres@localhost:5433/yc?sslmode=disable&application_name=t]
+FAILED tests/unit/test_local_only.py::test_our_url_parser_agrees_with_libpq_on_the_target[postgresql://postgres@[::1]:5433/yc]
+FAILED tests/unit/test_local_only.py::test_our_url_parser_agrees_with_libpq_on_the_target[postgresql://%2Fvar%2Frun%2Fpostgresql:5433/yc]
+FAILED tests/unit/test_local_only.py::test_our_url_parser_agrees_with_libpq_on_the_target[postgresql:///yc?host=/var/run/postgresql&port=5433]
+FAILED tests/unit/test_local_only.py::test_our_url_parser_agrees_with_libpq_on_the_target[postgresql://localhost,127.0.0.1/yc]
+FAILED tests/unit/test_local_only.py::test_our_url_parser_agrees_with_libpq_on_the_target[postgresql://u@localhost/yc?hostaddr=127.0.0.1]
+FAILED tests/unit/test_local_only.py::test_our_url_parser_agrees_with_libpq_on_the_target[postgresql://localhost?@remote-db.invalid/yc]
+FAILED tests/unit/test_local_only.py::test_our_url_parser_agrees_with_libpq_on_the_target[postgresql://u:p%40ss@127.0.0.1:5433/yc?options=-c%20search_path%3Dyc_v3]
+FAILED tests/unit/test_local_only.py::test_migrate_script_refuses_PGSERVICE_before_running_psql
+22 failed, 34 passed in 0.15s
+
+# 代表性的失敗原因
+E               psycopg.OperationalError: connection is bad: could not translate host name "remote-db.invalid" to address: Name or service not known
+E       Failed: DID NOT RAISE UnsafeDatabaseUrl
+E       ImportError: cannot import name 'parse_libpq_uri' from 'app.core.local_url' (/home/user/yc-daily-report-v3/app/core/local_url.py)
+E       AssertionError: psql: error: could not translate host name "remote-db.invalid" to address: Name or service not known

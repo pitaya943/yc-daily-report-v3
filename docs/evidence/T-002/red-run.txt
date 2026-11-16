@@ -1,0 +1,4 @@
+ImportError while loading conftest '/home/user/yc-daily-report-v3/tests/ci/conftest.py'.
+tests/ci/conftest.py:13: in <module>
+    from scripts.ci.checks import BOT_EMAIL, Ctx
+E   ModuleNotFoundError: No module named 'scripts.ci.checks'

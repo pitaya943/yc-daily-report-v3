@@ -14,7 +14,7 @@ main                    只有 Kuei 合併
 - 所有 GitHub 操作都以機器帳號 `bullet-bots` 進行；它只有寫入權限，規則集不允許它更新 `main`。
 - Ticket PR 合併進 `milestone/Mx` 的條件全部由機器判定：CI 全綠、Verifier 的判定為 PASS、沒有動到範圍外的檔案、規格檔沒被修改。四項都成立時 Chief 合併，不需要 Kuei。
 - Milestone 的所有 ticket 合併後，Chief 開 `milestone/Mx → main` 的 PR。Kuei 審查並合併。
-- Kuei 合併後手動把該 milestone 的 migration 套用到共用資料庫。指令與檢查步驟在 milestone 報告裡。
+- Migration 不在每個 milestone 合併後套用，而是延到部署時（D-050）。部署前先做一張「部署準備」ticket：建立 v3 專用的 staging Supabase 專案，由 CI 以權限受限的帳號套用全部 migration 並跑冒煙測試；通過後 Kuei 再套用到正式環境。每份 milestone 報告仍列出該 milestone 新增的 migration 與檢查步驟，供部署時使用。
 
 ## 2. 一個 milestone 的流程
 

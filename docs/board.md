@@ -4,11 +4,16 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 
 狀態：`todo` → `building` → `verifying` → `fixing` → `passed` → `merged`，或 `escalated`（已開 issue 等 Kuei）、`blocked`（依賴的 ticket 尚未完成或被擋住）。
 
+## M0（計畫：issue #1，D-029）
+
+- 同時進行上限：2 張（T-002 ‖ T-003）。
+- 模型：Chief claude-opus-5-5；Builder claude-sonnet-5-5；Verifier claude-opus-5-5；修正第二輪 Builder claude-opus-5-5。
+
 | Ticket | Milestone | 標題 | 狀態 | PR | 修正輪數 | 備註 |
 | --- | --- | --- | --- | --- | --- | --- |
-| T-001 | M0 | 專案骨架與測試框架 | todo | — | — | — |
-| T-002 | M0 | CI 檢查 | todo | — | — | — |
-| T-003 | M0 | 共用基礎：結果類別、稽核寫入、權限檢查 | todo | — | — | — |
+| T-001 | M0 | 專案骨架與測試框架 | merged | [#2](https://github.com/pitaya943/yc-daily-report-v3/pull/2) | 2 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（FAIL）；修正第 1 輪：claude-sonnet-5-5；Verifier 第 2 輪：claude-opus-5-5（FAIL：PGSERVICE）；修正第 2 輪：claude-opus-5-5（新 session）；Verifier 第 3 輪：claude-opus-5-5（PASS） |
+| T-002 | M0 | CI 檢查 | merged | [#5](https://github.com/pitaya943/yc-daily-report-v3/pull/5) | 2 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（FAIL）；修正第 1 輪：claude-sonnet-5-5；issue #6 已決定（D-039～D-042）；Verifier 第 2 輪：claude-opus-5-5（FAIL）；issue #7 已決定（D-043～D-049）；修正第 2 輪：claude-opus-5-5（新 session）；Verifier 第 3 輪：claude-opus-5-5（PASS） |
+| T-003 | M0 | 共用基礎：結果類別、稽核寫入、權限檢查 | merged | [#4](https://github.com/pitaya943/yc-daily-report-v3/pull/4) | 1 | Builder 第一輪：claude-sonnet-5-5；合併順序在 T-002 之後；CI 全綠；Verifier 第 1 輪：claude-opus-5-5（FAIL：nothing else is written）；修正第 1 輪：claude-sonnet-5-5；Verifier 第 2 輪：claude-opus-5-5（PASS） |
 | T-101 | M1 | 登入 | todo | — | — | — |
 | T-102 | M1 | 登入鎖定與頻率限制 | todo | — | — | — |
 | T-103 | M1 | Session 與登出 | todo | — | — | — |

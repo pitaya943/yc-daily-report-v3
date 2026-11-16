@@ -1,0 +1,22 @@
+$ python3 -m pytest tests/steps/common -q   # 紅燈：修正第 1 輪的測試（實作前）
+E       AssertionError: 資料庫在動作前後不一致：{'audit_log': {'added': ['(1,"2026-11-15 10:00:00+08",4,Wen,ACCESS_DENIED,"嘗試執行但被拒絕：confirm a report")'], 'removed': []}}
+E       AttributeError: module 'tests.steps.common.steps' has no attribute 'claim_audit_row'
+E       AttributeError: module 'tests.steps.common.steps' has no attribute 'claim_audit_row'
+E       AttributeError: module 'tests.steps.common.steps' has no attribute 'claim_audit_row'
+E           AttributeError: module 'tests.steps.common.steps' has no attribute 'check_nothing_else_written'. Did you mean: 'check_nothing_written'?
+E       AttributeError: module 'tests.steps.common.steps' has no attribute 'claim_audit_row'
+E       AttributeError: module 'tests.steps.common.steps' has no attribute 'claim_audit_row'
+E       AttributeError: module 'tests.steps.common.steps' has no attribute 'check_nothing_else_written'. Did you mean: 'check_nothing_written'?
+E           AttributeError: module 'tests.steps.common.steps' has no attribute 'claim_audit_row'
+E       AttributeError: module 'tests.steps.common.steps' has no attribute 'claim_audit_row'
+FAILED tests/steps/common/test_common_steps.py::test_a_blocked_attempt_writes_only_the_access_denied_row_that_was_asserted
+FAILED tests/steps/common/test_nothing_else_written.py::test_only_the_asserted_access_denied_row_is_allowed
+FAILED tests/steps/common/test_nothing_else_written.py::test_a_second_write_besides_access_denied_fails
+FAILED tests/steps/common/test_nothing_else_written.py::test_a_second_audit_row_besides_the_asserted_one_fails
+FAILED tests/steps/common/test_nothing_else_written.py::test_an_access_denied_row_that_was_never_asserted_fails
+FAILED tests/steps/common/test_nothing_else_written.py::test_changing_or_deleting_existing_data_fails_even_with_an_asserted_row
+FAILED tests/steps/common/test_nothing_else_written.py::test_nothing_written_stays_strict_and_is_not_relaxed_by_claims
+FAILED tests/steps/common/test_nothing_else_written.py::test_nothing_else_written_with_no_write_and_no_claim_passes
+FAILED tests/steps/common/test_nothing_else_written.py::test_a_claim_needs_a_matching_new_row
+FAILED tests/steps/common/test_nothing_else_written.py::test_the_same_row_cannot_be_claimed_twice
+10 failed, 12 passed in 0.33s

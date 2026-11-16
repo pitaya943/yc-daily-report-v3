@@ -12,7 +12,7 @@
 
 | 角色 | 做什麼 | 不做什麼 |
 | --- | --- | --- |
-| Kuei | 核准每個 milestone 的計畫、回答 issue、審查並合併 `milestone/Mx → main`、手動套用 migration 到共用資料庫 | — |
+| Kuei | 核准每個 milestone 的計畫、回答 issue、審查並合併 `milestone/Mx → main`、部署時手動套用 migration 到共用資料庫（D-050） | — |
 | Chief | 切 ticket、排順序、開子 session、更新 `docs/board.md`、合併 ticket PR 進 milestone 分支、寫 milestone 報告 | 不寫產品程式 |
 | Builder | 一張 ticket 一個全新 session：先讓指定的 scenario 失敗，再實作到通過，開 PR | 不改規格、不改範圍外的檔案、不合併 |
 | Verifier | 一個 PR 一個全新 session：從乾淨 checkout 重跑，依檢查表判定 PASS 或 FAIL | 不修產品程式 |
@@ -22,7 +22,7 @@
 ## 不可違反
 
 1. **只有 Kuei 合併 `main`。** Chief 只在 CI 全綠且 Verifier 判定 PASS 時，把 ticket PR 合併進 `milestone/Mx`。不 force-push，不改寫別人的分支歷史。
-2. **Builder 不得修改** `spec/**`、`AGENTS.md`、`.claude/**`、`.github/**`、`docs/decisions.md`、`docs/board.md`，也不得修改 ticket 的 `allowed_paths` 以外的檔案。
+2. **Builder 不得修改** `spec/**`、`AGENTS.md`、`.claude/**`、`.github/**`、`docs/decisions.md`、`docs/board.md`，也不得修改 ticket 的 `allowed_paths` 以外的檔案。唯一的例外：ticket 的 `allowed_paths` 明確列出的 `.github/workflows/**` 可以修改（D-031）。
 3. **不得為了通過而弱化測試**：不跳過、不標記預期失敗、不刪除 scenario、不放寬斷言。
 4. **先寫會失敗的測試，再寫實作。**
 5. **每個拒絕案例斷言三件事**：結果類別、完整錯誤字串、資料沒有任何變動。
@@ -94,7 +94,19 @@ docs/                             流程、決定、看板、ticket、milestone 
 
 ## 指令
 
-（T-001 完成後由該 ticket 填入：安裝、啟動資料庫、套用 migration、執行測試、啟動應用程式。）
+在 repo 根目錄執行。完整說明見 `README.md`（D-030：由 T-001 寫入 README，Chief 搬到這裡）。
+
+```bash
+scripts/dev/install-postgres   # 安裝 PostgreSQL 17（PGDG apt，需要 root；D-033）
+pip install -e '.[dev]'        # 安裝 Python 套件
+scripts/dev/db-start           # 啟動本機資料庫：127.0.0.1:5433，資料庫 yc
+scripts/dev/migrate            # 依編號套用 migrations/NNNN_*.sql 到 yc_v3
+python3 -m pytest              # 全部測試；會清空本機 yc_v3 的資料
+scripts/dev/run                # 啟動應用程式：http://127.0.0.1:8000，GET /health
+```
+
+- 其他：`scripts/dev/db-stop`、`scripts/dev/db-reset`。
+- 本機防線是 fail-closed：`DATABASE_URL` 只接受本機位址；`PGSERVICE`、`PGSERVICEFILE`、`PGSYSCONFDIR` 或不認得的 `PG*` 環境變數只要有設就拒絕。訊息以 `refusing to connect:` 開頭時，先 `unset` 該變數。
 
 ## Skills
 

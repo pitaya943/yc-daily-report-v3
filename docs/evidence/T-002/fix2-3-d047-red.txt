@@ -1,0 +1,13 @@
+$ git checkout f4fd733   # 只有測試的 commit（D-047）
+$ python3 -m pytest -q -p no:cacheprovider tests/ci
+FAILED tests/ci/test_fix_round2.py::test_d047_t003_audit_descriptions_are_not_checked
+FAILED tests/ci/test_fix_round2.py::test_d047_chinese_text_that_is_not_passed_to_a_result_class_is_not_checked
+FAILED tests/ci/test_fix_round2.py::test_d047_a_message_that_is_not_in_appendix_b_fails[OutcomeError(Outcome.INVALID, "\u8acb\u8f38\u5165\u986f\u793a\u540d\u7a31 ")]
+FAILED tests/ci/test_fix_round2.py::test_d047_a_message_that_cannot_be_read_as_a_literal_fails[OutcomeError(Outcome.INVALID, a)]
+FAILED tests/ci/test_fix_round2.py::test_d047_a_message_that_cannot_be_read_as_a_literal_fails[OutcomeError(Outcome.INVALID, MESSAGES[a])]
+FAILED tests/ci/test_fix_round2.py::test_d047_a_message_that_cannot_be_read_as_a_literal_fails[OutcomeError(Outcome.INVALID, *a)]
+FAILED tests/ci/test_fix_round2.py::test_d047_a_message_that_cannot_be_read_as_a_literal_fails[OutcomeError(Outcome.INVALID, **a)]
+FAILED tests/ci/test_fix_round2.py::test_d047_a_message_that_cannot_be_read_as_a_literal_fails[OutcomeError(Outcome.INVALID, message=a)]
+FAILED tests/ci/test_round1.py::test_strings_no_longer_scans_templates_and_static_files_d047[app/modules/x/templates/form.html-<p class=error>\u8acb\u8f38\u5165\u540d\u5b57</p>\n]
+FAILED tests/ci/test_round1.py::test_strings_no_longer_scans_templates_and_static_files_d047[app/static/app.js-alert('\u8acb\u8f38\u5165\u540d\u5b57');\n]
+10 failed, 360 passed in 12.87s

@@ -1,0 +1,16 @@
+$ scripts/dev/db-reset   # 乾淨資料庫，從 0001 套用到最新
+套用 0001_init_accounts.sql
+套用 0002_audit_log.sql
+migration 完成
+$ scripts/dev/migrate    # 第二次：應全部略過、無錯誤
+略過 0001_init_accounts.sql（已套用）
+略過 0002_audit_log.sql（已套用）
+migration 完成
+$ psql ... select to_regclass(...)   # migration 0002 的「套用後檢查」
+t
+$ psql ... 只碰 yc_v3：非系統 schema 與其資料表
+yc_v3.accounts
+yc_v3.audit_log
+yc_v3.schema_migrations
+$ psql ... audit_log 的 check 約束（類型數）
+37

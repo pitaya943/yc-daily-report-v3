@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# 啟動應用程式（開發模式，自動重載）。需要先 db-start 與 migrate。
+source "$(dirname "$0")/_common.sh"
+assert_local_database_url
+cd "$REPO_ROOT"
+exec python3 -m uvicorn app.main:app --host 127.0.0.1 --port "${PORT:-8000}" --reload

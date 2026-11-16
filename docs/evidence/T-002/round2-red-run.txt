@@ -1,0 +1,24 @@
+# 修正第 2 輪（D-039～D-041）「先紅」：新的測試對上修正前的 scripts/ci（commit adcc5b5，程式尚未改）
+# 指令：python3 -m pytest tests/ci/test_git_checks.py -q
+      5 test_git_checks.py::test_evidence_fails_when_screens_is_not_true_or_false
+      3 test_git_checks.py::test_evidence_fails_for_prose_without_a_code_block_or_link
+      1 test_git_checks.py::test_the_recorded_api_logins_for_main_to_milestone_m0_all_map_to_the_bot
+      1 test_git_checks.py::test_the_email_is_no_longer_what_decides
+      1 test_git_checks.py::test_screens_true_is_required_even_when_the_paths_do_not_mention_templates
+      1 test_git_checks.py::test_screens_false_needs_no_screenshot_even_if_the_paths_mention_templates
+      1 test_git_checks.py::test_fetch_pr_commits_rejects_a_non_list_response
+      1 test_git_checks.py::test_fetch_pr_commits_pages_through_the_api_with_a_bearer_token
+      1 test_git_checks.py::test_fetch_pr_commits_fails_closed_without_leaking_the_token
+      1 test_git_checks.py::test_evidence_requires_a_screenshot_when_screens_is_true
+      1 test_git_checks.py::test_evidence_fails_when_the_ticket_has_no_screens_field
+      1 test_git_checks.py::test_evidence_fails_when_the_section_only_has_the_template_comment
+      1 test_git_checks.py::test_evidence_fails_for_an_empty_code_block
+      1 test_git_checks.py::test_evidence_fails_for_a_link_to_another_tickets_directory
+      1 test_git_checks.py::test_commit_author_range_checks_the_local_git_range_against_recorded_api_logins
+      1 test_git_checks.py::test_commit_author_login_is_case_insensitive
+      1 test_git_checks.py::test_commit_author_fails_when_the_author_cannot_be_mapped_to_an_account
+      1 test_git_checks.py::test_commit_author_fails_for_a_merge_commit_by_another_account
+      1 test_git_checks.py::test_commit_author_fails_for_a_commit_by_another_account
+      1 test_git_checks.py::test_commit_author_fails_closed_on_an_empty_list_and_on_the_api_cap
+      1 test_git_checks.py::test_commit_author_accepts_a_github_generated_merge_commit_of_the_bot_whatever_its_email
+27 failed, 29 passed in 1.83s

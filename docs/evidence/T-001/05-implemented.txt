@@ -1,0 +1,25 @@
+# 注意：此檔是修正第 1 輪之前的輸出；現在的測試數量是 42 passed / 489 skipped（見 08-fix1-green.txt、06）
+$ python -m pytest tests/unit/test_implemented_mechanism.py -v
+tests/unit/test_implemented_mechanism.py::test_rule_id_of PASSED         [ 25%]
+tests/unit/test_implemented_mechanism.py::test_load_implemented_ignores_comments_and_blank_lines PASSED [ 50%]
+tests/unit/test_implemented_mechanism.py::test_only_listed_rules_run_and_the_rest_are_skipped_not_failed PASSED [ 75%]
+tests/unit/test_implemented_mechanism.py::test_empty_list_skips_everything PASSED [100%]
+============================== 4 passed in 0.09s ===============================
+
+$ python -m pytest -q   # tests/implemented.txt 為空
+27 passed, 483 skipped in 0.88s
+
+# 對真實 spec：用暫存清單只列 IAM-R01（不改 repo 裡的 implemented.txt）
+E   pytest_bdd.exceptions.StepDefinitionNotFoundError: Step definition is not found: When "a visitor chooses group "admin"". Line 13 in scenario "Group picker lists the right accounts" in the feature "<clean-checkout>/clean/spec/features/IAM-F01-sign-in.feature"
+E   pytest_bdd.exceptions.StepDefinitionNotFoundError: Step definition is not found: When "a visitor chooses group "west"". Line 13 in scenario "Group picker lists the right accounts" in the feature "<clean-checkout>/clean/spec/features/IAM-F01-sign-in.feature"
+E   pytest_bdd.exceptions.StepDefinitionNotFoundError: Step definition is not found: When "a visitor chooses group "south"". Line 13 in scenario "Group picker lists the right accounts" in the feature "<clean-checkout>/clean/spec/features/IAM-F01-sign-in.feature"
+E   pytest_bdd.exceptions.StepDefinitionNotFoundError: Step definition is not found: When "a visitor chooses group "admin"". Line 25 in scenario "The owner is listed under the admin group" in the feature "<clean-checkout>/clean/spec/features/IAM-F01-sign-in.feature"
+FAILED tests/test_spec.py::test_group_picker_lists_the_right_accounts[admin-Admin1, Admin2, Kuei]
+FAILED tests/test_spec.py::test_group_picker_lists_the_right_accounts[west-Big, Wan, Wei, Wen]
+FAILED tests/test_spec.py::test_group_picker_lists_the_right_accounts[south-Nan]
+FAILED tests/test_spec.py::test_the_owner_is_listed_under_the_admin_group - p...
+
+$ python -m pytest tests/test_spec.py -rs | grep "尚未實作" | head -3
+SKIPPED [12] ../venv/lib/python3.13/site-packages/pytest_bdd/scenario.py:303: 尚未實作 (IAM-R13; not listed in implemented.txt)
+SKIPPED [7] ../venv/lib/python3.13/site-packages/pytest_bdd/scenario.py:303: 尚未實作 (IAM-R14; not listed in implemented.txt)
+SKIPPED [13] ../venv/lib/python3.13/site-packages/pytest_bdd/scenario.py:303: 尚未實作 (IAM-R15; not listed in implemented.txt)
