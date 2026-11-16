@@ -1,0 +1,15 @@
+==================================== ERRORS ====================================
+_____________ ERROR collecting tests/unit/domain/test_retention.py _____________
+ImportError while importing test module '/home/user/yc-daily-report-v3/tests/unit/domain/test_retention.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/local/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/unit/domain/test_retention.py:14: in <module>
+    from app.domain import retention
+E   ImportError: cannot import name 'retention' from 'app.domain' (/home/user/yc-daily-report-v3/app/domain/__init__.py)
+=========================== short test summary info ============================
+ERROR tests/unit/domain/test_retention.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.07s
