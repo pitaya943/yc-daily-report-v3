@@ -1,0 +1,18 @@
+$ docs/evidence/T-002/fix2-false-positive-check.sh T-003 $(git merge-base origin/ticket/T-003 origin/milestone/M0) origin/ticket/T-003
+== T-003：目標分支 eb8ddbb（+ 目前的 ticket 檔 → b1b83c9），PR head 8b5e3be
+== PR 修改的檔案：22 個
+[tests] 通過
+[spec-readonly] 通過
+[path-scope] 通過
+[evidence] 通過
+[migration-scope] 通過
+[strings] 通過
+[lint] 通過
+pytest 結束碼：0（不在這裡判斷；由 no-weakened-tests 比對結果）
+pytest 結束碼：0（不在這裡判斷；由 no-weakened-tests 比對結果）
+[no-weakened-tests] 通過
+118 passed, 489 skipped in 3.49s
+[done-when] 通過
+[commit-author] 通過
+== 結果報告：目標分支 570 個 ID（81 passed），PR 607 個 ID（118 passed）
+== 結束碼：0

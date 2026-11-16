@@ -1,0 +1,253 @@
+# CI：每個 PR 都跑 docs/ci-checks.md 的全部檢查；job 名稱就是檢查名稱（branch protection 以名稱指定必要檢查）。
+# 政策檢查的邏輯在 scripts/ci/checks.py，測試在 tests/ci/（每項都有一個會讓它失敗的案例）。
+name: ci
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]   # edited：改 PR 說明後要重跑 evidence
+  push:
+    branches: ["milestone/**", main]                 # milestone 分支與 main 上也要全綠（只跑不需要 PR 資訊的檢查）
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI_BASE_REF: ${{ github.base_ref }}
+  CI_HEAD_REF: ${{ github.head_ref }}
+  CI_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+  CI_PR_BODY: ${{ github.event.pull_request.body }}
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    # 乾淨的 PostgreSQL 17（D-033）：每個 run 一個全新的 service container。
+    # 對應到 runner 的 127.0.0.1:5433，與本機開發的預設連線字串（app/core/db.py）相同，
+    # 所以 T-001 的「只連本機」防線不必為 CI 開例外。trust 驗證：容器只在這個 job 存活，裡面沒有任何真實資料。
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: yc
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ["127.0.0.1:5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d yc"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      DATABASE_URL: postgresql://postgres@127.0.0.1:5433/yc
+      PYTHONPATH: .
+      YC_RULE_REPORT: rule-report.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: 確認沒有會被「只連本機」防線拒絕的 PG* 環境變數
+        # 只印變數名稱，不印值（AGENTS.md 不可違反 #8）。防線本身（app/core/local_url.py）才是裁判。
+        run: |
+          echo "runner 上設定的 PG* 變數名稱：$(env | grep -o '^PG[A-Z_]*' | tr '\n' ' ' || true)"
+          python3 -m app.core.local_url
+      - name: 安裝 PostgreSQL 17 用戶端（migrate 腳本需要 psql 17）
+        run: sudo scripts/dev/install-postgres && sudo systemctl stop postgresql || true
+      - name: 守衛：tests job 本身不能把失敗吞掉或縮小範圍（scripts/ci/checks.py 的 check_tests）
+        run: python3 scripts/ci/run.py tests
+      - run: pip install -e '.[dev]'
+      - name: 安裝 ruff（tests/ci 的 lint 測試要實際執行它；版本與 lint job 相同）
+        run: pip install ruff==0.16.9
+      - name: 套用 migration 到 yc_v3
+        run: scripts/dev/migrate
+      - name: 單元測試與 tests/implemented.txt 列出的規則
+        run: python3 -m pytest -p scripts.ci.rule_report -p no:cacheprovider
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: rule-report
+          path: rule-report.json
+          if-no-files-found: warn
+
+  # ---- 政策檢查：只需要 git 歷史與 PR 資訊，不裝專案套件、不需要資料庫 ----
+  spec-readonly:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: 取得目標分支的 commit
+        run: echo "CI_BASE_SHA=$(git rev-parse origin/${{ github.base_ref }})" >> "$GITHUB_ENV"
+      - run: python3 scripts/ci/run.py spec-readonly
+
+  path-scope:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: 取得目標分支的 commit
+        run: echo "CI_BASE_SHA=$(git rev-parse origin/${{ github.base_ref }})" >> "$GITHUB_ENV"
+      - run: python3 scripts/ci/run.py path-scope
+
+  evidence:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: 取得目標分支的 commit
+        run: echo "CI_BASE_SHA=$(git rev-parse origin/${{ github.base_ref }})" >> "$GITHUB_ENV"
+      - run: python3 scripts/ci/run.py evidence
+
+  migration-scope:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # 靜態檢查（scripts/ci/sql_scope.py）之外，還要把 migration 真的套用在拋棄式資料庫上讓 PostgreSQL 判定
+    # （scripts/ci/migration_sandbox.py）。這個 job 自己的 postgres:17 service，只有這個 job 用，用完即丟。
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: yc
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ["127.0.0.1:5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d yc"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      DATABASE_URL: postgresql://postgres@127.0.0.1:5433/yc
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: 取得目標分支的 commit
+        run: echo "CI_BASE_SHA=$(git rev-parse origin/${{ github.base_ref }})" >> "$GITHUB_ENV"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install 'psycopg[binary]>=3.2'
+      - run: python3 scripts/ci/run.py migration-scope
+
+  no-weakened-tests:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    # D-046：以結果判斷。目標分支的結果在這個 job 裡實際跑出來（不使用 PR 提供的檔案，也不用其他 job 的 artifact），
+    # 再跑 PR 的結果；目標分支上通過的每個測試 ID，在 PR 上都必須被收集而且通過。
+    # 兩次都在這個 job 自己的乾淨 postgres:17 上跑，每次先清掉 yc_v3、套用該版本自己的 migration。
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: yc
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ["127.0.0.1:5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d yc"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      DATABASE_URL: postgresql://postgres@127.0.0.1:5433/yc
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: 取得目標分支的 commit；兩份結果報告放在 runner 的暫存目錄（不在 checkout 裡，PR 放不進去）
+        run: |
+          echo "CI_BASE_SHA=$(git rev-parse origin/${{ github.base_ref }})" >> "$GITHUB_ENV"
+          echo "YC_BASE_TEST_REPORT=$RUNNER_TEMP/base-test-report.json" >> "$GITHUB_ENV"
+          echo "YC_HEAD_TEST_REPORT=$RUNNER_TEMP/head-test-report.json" >> "$GITHUB_ENV"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: 安裝 PostgreSQL 17 用戶端（migrate 腳本需要 psql 17）
+        run: sudo scripts/dev/install-postgres && sudo systemctl stop postgresql || true
+      - run: pip install -e '.[dev]'
+      - name: 安裝 ruff（與 tests job 相同版本；否則 lint 的測試在這裡會失敗，比對就看不到它們）
+        run: pip install ruff==0.16.9
+      - name: 在目標分支上實際跑出每個測試的結果（同一個 job）
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/base" "$CI_BASE_SHA"
+          scripts/ci/test-results "$RUNNER_TEMP/base" "$YC_BASE_TEST_REPORT"
+      - name: 在 PR 上跑出每個測試的結果
+        run: scripts/ci/test-results "$GITHUB_WORKSPACE" "$YC_HEAD_TEST_REPORT"
+      - name: 比對結果，並做語法與設定的檢查
+        run: python3 scripts/ci/run.py no-weakened-tests
+
+  commit-author:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    # D-039：用 GitHub API 的 author.login 判斷，所以需要讀 PR 的 commit。權限只給最小的唯讀。
+    permissions:
+      contents: read
+      pull-requests: read
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CI_PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - run: python3 scripts/ci/run.py commit-author
+
+  done-when:
+    needs: tests
+    # tests 失敗時也要跑（並因為缺報告而失敗），避免「被略過」被當成通過
+    if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      YC_RULE_REPORT: rule-report.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - run: echo "CI_BASE_SHA=$(git rev-parse origin/${{ github.base_ref }})" >> "$GITHUB_ENV"
+      - uses: actions/download-artifact@v4
+        with:
+          name: rule-report
+      - run: python3 scripts/ci/run.py done-when
+
+  # ---- 不需要 PR 資訊的檢查：push 與 PR 都跑 ----
+  strings:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - run: python3 scripts/ci/run.py strings
+
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff==0.16.9
+      - run: python3 scripts/ci/run.py lint
