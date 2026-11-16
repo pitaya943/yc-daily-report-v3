@@ -1,0 +1,28 @@
+$ python3 -m pytest -q -p no:cacheprovider -k "group_picker or owner_is_listed or landing_page_by_role or failed_signin"
+E       AssertionError: 名單頁應回 200，實際 404：{"detail":"Not Found"}
+E       AssertionError: 名單頁應回 200，實際 404：{"detail":"Not Found"}
+E       AssertionError: 名單頁應回 200，實際 404：{"detail":"Not Found"}
+E       AssertionError: 名單頁應回 200，實際 404：{"detail":"Not Found"}
+E       AssertionError: 登入成功應轉址（303），實際 404：{"detail":"Not Found"}
+E       AssertionError: 登入成功應轉址（303），實際 404：{"detail":"Not Found"}
+E       AssertionError: 登入成功應轉址（303），實際 404：{"detail":"Not Found"}
+_ test_failed_signin_reveals_nothing_about_the_account[Wen-wrong-wrong password] _
+request = <FixtureRequest for <Function test_failed_signin_reveals_nothing_about_the_account[Wen-wrong-wrong password]>>
+E       AssertionError: HTTP status 應為 401，實際 404
+_ test_failed_signin_reveals_nothing_about_the_account[Nobody-any-unknown account] _
+request = <FixtureRequest for <Function test_failed_signin_reveals_nothing_about_the_account[Nobody-any-unknown account]>>
+E       AssertionError: HTTP status 應為 401，實際 404
+_ test_failed_signin_reveals_nothing_about_the_account[Old-correct-archived account] _
+request = <FixtureRequest for <Function test_failed_signin_reveals_nothing_about_the_account[Old-correct-archived account]>>
+E       AssertionError: HTTP status 應為 401，實際 404
+FAILED tests/test_spec.py::test_group_picker_lists_the_right_accounts[admin-Admin1, Admin2, Kuei]
+FAILED tests/test_spec.py::test_group_picker_lists_the_right_accounts[west-Big, Wan, Wei, Wen]
+FAILED tests/test_spec.py::test_group_picker_lists_the_right_accounts[south-Nan]
+FAILED tests/test_spec.py::test_the_owner_is_listed_under_the_admin_group - A...
+FAILED tests/test_spec.py::test_landing_page_by_role[Wen-daily report] - Asse...
+FAILED tests/test_spec.py::test_landing_page_by_role[Admin1-confirmation] - A...
+FAILED tests/test_spec.py::test_landing_page_by_role[Kuei-confirmation] - Ass...
+FAILED tests/test_spec.py::test_failed_signin_reveals_nothing_about_the_account[Wen-wrong-wrong password]
+FAILED tests/test_spec.py::test_failed_signin_reveals_nothing_about_the_account[Nobody-any-unknown account]
+FAILED tests/test_spec.py::test_failed_signin_reveals_nothing_about_the_account[Old-correct-archived account]
+10 failed, 1051 deselected in 3.00s
