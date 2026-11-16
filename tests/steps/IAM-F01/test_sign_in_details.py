@@ -65,11 +65,17 @@ def test_stored_password_is_a_hash_not_the_password(db):
 # ───────────────────────── 缺少或不合法的欄位 ─────────────────────────
 
 
-def _rejected(client, db, send, outcome, message):
+# D-077：被評估的登入嘗試（密碼錯誤、缺少密碼）一定會寫這兩張表（IAM-R05、R07，migration 0004）。
+# 只有明確傳入 `ignore_tables` 的兩個測試可以排除它們；預設仍是整個資料庫完全不變。
+LOCKOUT_TABLES = frozenset({"sign_in_failures", "sign_in_attempts"})
+
+
+def _rejected(client, db, send, outcome, message, *, ignore_tables=frozenset()):
     recorder = Recorder(db)
     recorder.perform(send)
     check_rejected(recorder, outcome, message)
-    assert diff(recorder.before, recorder.after) == {}, "被拒絕的請求不得改變任何資料"
+    changed = {t: c for t, c in diff(recorder.before, recorder.after).items() if t not in ignore_tables}
+    assert changed == {}, "被拒絕的請求不得改變任何資料"
     assert SESSION_COOKIE not in client.cookies
 
 
@@ -82,7 +88,7 @@ def test_missing_name_is_invalid_with_the_exact_message(client, db):
 def test_missing_password_is_indistinguishable_from_a_wrong_password(client, db):
     set_password(db, "Wen")
     for body in ({"name": "Wen"}, {"name": "Wen", "password": ""}):
-        _rejected(client, db, lambda body=body: client.post("/sign-in", data=body, follow_redirects=False), "UNAUTHENTICATED", "密碼錯誤，請重試")
+        _rejected(client, db, lambda body=body: client.post("/sign-in", data=body, follow_redirects=False), "UNAUTHENTICATED", "密碼錯誤，請重試", ignore_tables=LOCKOUT_TABLES)
 
 
 def test_empty_request_body_is_invalid(client, db):
@@ -114,7 +120,7 @@ def test_sign_in_with_matching_group_succeeds(client, db):
 def test_account_without_a_password_cannot_sign_in(client, db):
     # background 的帳戶沒有密碼：不能用空字串、也不能用任何字串登入
     for password in ("", "anything"):
-        _rejected(client, db, lambda password=password: post_sign_in(client, "Wen", password), "UNAUTHENTICATED", "密碼錯誤，請重試")
+        _rejected(client, db, lambda password=password: post_sign_in(client, "Wen", password), "UNAUTHENTICATED", "密碼錯誤，請重試", ignore_tables=LOCKOUT_TABLES)
 
 
 # ───────────────────────── session ─────────────────────────
