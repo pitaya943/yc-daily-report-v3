@@ -26,7 +26,6 @@ from __future__ import annotations
 
 import base64
 import binascii
-import functools
 import hashlib
 import hmac
 import os
@@ -98,3 +97,76 @@ def _parse(stored: str) -> tuple[tuple[int, int, int], bytes, bytes] | None:
         return (n, r, p), base64.b64decode(salt_b64, validate=True), base64.b64decode(digest_b64, validate=True)
     except (ValueError, KeyError, binascii.Error):
         return None
+
+
+# ───────────────────────── Session ─────────────────────────
+
+# 落地頁路徑（D-057）。頁面由 M2（/reports）、M3（/review）實作；這裡只決定「去哪裡」。
+_LANDING = {Role.USER: "/reports", Role.ADMIN: "/review", Role.OWNER: "/review"}
+
+
+def landing_path_for(role: Role) -> str:
+    """登入後（或已登入的人打開登入頁時）該去的頁面。SYSTEM 不會登入，沒有落地頁。"""
+    try:
+        return _LANDING[role]
+    except KeyError:
+        raise ValueError(f"role {role.value} has no landing page") from None
+
+
+@dataclass(frozen=True)
+class IssuedSession:
+    token: str  # 只在登入回應的 cookie 出現一次，資料庫裡只有它的雜湊
+    anti_forgery_token: str  # T-103 的 anti-forgery 檢查比對的值
+
+
+def _token_hash(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def issue_session(conn: psycopg.Connection, account_id: int) -> IssuedSession:
+    """替帳戶發出新的 session。寫進呼叫端的 transaction，由呼叫端提交（與其他寫入同生同死）。"""
+    issued = IssuedSession(token=secrets.token_urlsafe(32), anti_forgery_token=secrets.token_urlsafe(32))
+    now = clock.now()
+    conn.execute(
+        "insert into yc_v3.sessions(account_id, token_hash, anti_forgery_token, created_at, last_used_at) "
+        "values (%s, %s, %s, %s, %s)",
+        (account_id, _token_hash(issued.token), issued.anti_forgery_token, now, now),
+    )
+    return issued
+
+
+def set_session_cookie(response: Response, token: str) -> None:
+    """HttpOnly（JavaScript 讀不到）、SameSite=Lax（跨站的 POST 不帶）、正式環境才加 Secure（IAM-R12）。
+
+    不設 max_age／expires：這是 session cookie，關掉瀏覽器就消失，沒有「記住我」（Q-011）。
+    Secure 由環境變數 APP_ENV=production 開啟：本機與測試用 http，加了 Secure 瀏覽器不會送回 cookie。
+    """
+    response.set_cookie(SESSION_COOKIE, token, httponly=True, samesite="lax", secure=os.environ.get("APP_ENV") == "production", path="/")
+
+
+def actor_for_token(conn: psycopg.Connection, token: str) -> Actor | None:
+    """session 憑證 → 行為者；沒有這個 session、或帳戶已封存（封存的帳戶不能登入）回傳 None。
+
+    T-103 會在這裡加閒置逾時（last_used_at）與更新最後使用時間。
+    """
+    row = conn.execute(
+        "select a.id, a.name, a.role from yc_v3.sessions s join yc_v3.accounts a on a.id = s.account_id "
+        "where s.token_hash = %s and not a.archived",
+        (_token_hash(token),),
+    ).fetchone()
+    return None if row is None else Actor(id=row[0], name=row[1], role=Role(row[2]))
+
+
+def get_current_actor(request: Request, conn: psycopg.Connection = Depends(get_db)) -> Actor:
+    """FastAPI dependency：其他模組由這裡取得目前的行為者。沒有有效 session 就丟 UNAUTHENTICATED。
+
+        @router.get("/x")
+        def x(actor: Actor = Depends(get_current_actor)): ...
+
+    UNAUTHENTICATED 沒有 spec 規定的錯誤字串（見 outcomes.py），所以 message 為 None。
+    """
+    token = request.cookies.get(SESSION_COOKIE)
+    actor = actor_for_token(conn, token) if token else None
+    if actor is None:
+        raise OutcomeError(Outcome.UNAUTHENTICATED)
+    return actor
