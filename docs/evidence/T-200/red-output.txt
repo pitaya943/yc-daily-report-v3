@@ -1,0 +1,33 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.18, pytest-9.2.0, pluggy-1.7.0
+rootdir: /home/user/yc-daily-report-v3
+configfile: pyproject.toml
+plugins: bdd-9.0.1, anyio-4.15.1
+collected 0 items / 2 errors
+
+==================================== ERRORS ====================================
+________________ ERROR collecting tests/unit/core/test_pages.py ________________
+ImportError while importing test module '/home/user/yc-daily-report-v3/tests/unit/core/test_pages.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/local/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/unit/core/test_pages.py:17: in <module>
+    from app.core.pages import render_page
+E   ModuleNotFoundError: No module named 'app.core.pages'
+____________ ERROR collecting tests/unit/core/test_static_assets.py ____________
+ImportError while importing test module '/home/user/yc-daily-report-v3/tests/unit/core/test_static_assets.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/local/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/unit/core/test_static_assets.py:17: in <module>
+    from app.core.pages import HTMX_SHA256, HTMX_VERSION
+E   ModuleNotFoundError: No module named 'app.core.pages'
+=========================== short test summary info ============================
+ERROR tests/unit/core/test_pages.py
+ERROR tests/unit/core/test_static_assets.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!
+============================== 2 errors in 1.05s ===============================

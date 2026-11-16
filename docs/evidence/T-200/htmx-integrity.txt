@@ -1,0 +1,10 @@
+$ npm pack htmx.org@2.0.11 --json   # (excerpt)
+{'id': 'htmx.org@2.0.11', 'shasum': 'a85363c4c5af94cd634df04c4b83d06dd0e91aa7', 'integrity': 'sha512-Thx/WtpeOQqSrqBCw/A1cwGJGg4UrVa3+sW0GmrM3p4gJgO89ecH4qtbnyzDDWFvBTqjnIMCgELTNt636dtamA==', 'filename': 'htmx.org-2.0.11.tgz'}
+$ npm view htmx.org@2.0.11 dist.integrity
+sha512-Thx/WtpeOQqSrqBCw/A1cwGJGg4UrVa3+sW0GmrM3p4gJgO89ecH4qtbnyzDDWFvBTqjnIMCgELTNt636dtamA==
+$ openssl dgst -sha512 -binary htmx.org-2.0.11.tgz | base64   # computed from the downloaded tarball
+sha512-Thx/WtpeOQqSrqBCw/A1cwGJGg4UrVa3+sW0GmrM3p4gJgO89ecH4qtbnyzDDWFvBTqjnIMCgELTNt636dtamA==
+$ cmp package/dist/htmx.min.js app/core/static/htmx.min.js && echo identical
+identical
+$ sha256sum app/core/static/htmx.min.js
+d6fdc75f204e6bdefa99b69bf1e6d4ac69b8a364f77929f45c13476b4000f717  app/core/static/htmx.min.js

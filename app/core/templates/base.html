@@ -1,0 +1,15 @@
+{#- 所有頁面共用的版型（D-062、D-080）。feature 的模板 `{% extends "base.html" %}`，填 title 與 content。
+    已登入時（csrf_token 不是 None）body 帶 hx-headers，HTMX 的每個請求自動送出 X-CSRF-Token。
+    tojson 會轉義 < > & '，所以值放在單引號屬性內是安全的。 -#}
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{% endblock %}</title>
+<script src="/static/htmx.min.js"></script>
+</head>
+<body{% if csrf_token %} hx-headers='{{ {csrf_header: csrf_token}|tojson }}'{% endif %}>
+{% block content %}{% endblock %}
+</body>
+</html>
