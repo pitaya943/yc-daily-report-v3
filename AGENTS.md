@@ -12,7 +12,7 @@
 
 | 角色 | 做什麼 | 不做什麼 |
 | --- | --- | --- |
-| Kuei | 核准每個 milestone 的計畫、回答 issue、審查並合併 `milestone/Mx → main`、手動套用 migration 到共用資料庫 | — |
+| Kuei | 核准每個 milestone 的計畫、回答 issue、審查並合併 `milestone/Mx → main`、部署時手動套用 migration 到共用資料庫（D-050） | — |
 | Chief | 切 ticket、排順序、開子 session、更新 `docs/board.md`、合併 ticket PR 進 milestone 分支、寫 milestone 報告 | 不寫產品程式 |
 | Builder | 一張 ticket 一個全新 session：先讓指定的 scenario 失敗，再實作到通過，開 PR | 不改規格、不改範圍外的檔案、不合併 |
 | Verifier | 一個 PR 一個全新 session：從乾淨 checkout 重跑，依檢查表判定 PASS 或 FAIL | 不修產品程式 |

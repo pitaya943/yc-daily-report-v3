@@ -108,7 +108,7 @@ python3 -m pytest                        # 預期：572 passed, 489 skipped</pre
   </ul>
 
   <h2>5. Migration 套用步驟</h2>
-  <p>兩個檔案都只碰 <code>yc_v3</code>，可以重複套用（<code>IF NOT EXISTS</code>）。請依序套用到共用資料庫。</p>
+  <p><strong>依 D-050，這兩個檔案現在不套用</strong>，延到部署時，先在 v3 專用的 staging Supabase 專案經 CI 驗證，再由 Kuei 套用到正式環境。下表供部署時使用。兩個檔案都只碰 <code>yc_v3</code>，可以重複套用（<code>IF NOT EXISTS</code>）。</p>
   <div class="scroll"><table>
     <tr><th>檔案</th><th>內容</th><th>套用後的檢查</th><th>回滾</th></tr>
     <tr><td><code>migrations/0001_init_accounts.sql</code></td><td>建立 schema <code>yc_v3</code> 與 <code>yc_v3.accounts</code>（id、name 唯一、role、zone、big_meter、archived）</td><td><code>select to_regclass('yc_v3.accounts') is not null;</code> → 1 列，<code>t</code></td><td>只在沒有資料、且 Kuei 同意時：<code>drop table yc_v3.accounts;</code></td></tr>
@@ -155,6 +155,7 @@ python3 -m pytest                        # 預期：572 passed, 489 skipped</pre
     <li><strong>沒做到：AUD-R13（稽核紀錄不可修改）。</strong>現在資料庫允許 UPDATE、DELETE <code>audit_log</code>。要等 AUD-F02（M6，T-602），屆時需要 Kuei 授權 <code>allow_functions: true</code>。</li>
     <li><strong>沒做到：附錄 A 的預設單價、費率、上限沒有載入測試資料</strong>（D-036）。由 T-401 補上；在那之前，依賴單價的 scenario 都不能實作。</li>
     <li><strong>T-003 的 14 個變異中，有 1 個（M12）只在資料庫時區為 UTC 時抓得到。</strong>本機時區不是 UTC 時，那個變異不會讓測試失敗。CI 是 UTC，所以 CI 抓得到。</li>
+    <li><strong>Migration 尚未套用到任何 Supabase 專案（D-050）。</strong>Supabase 特有的差異（pooler 的 transaction mode 會讓 psycopg 的 prepared statement 出錯、必須用 SSL、手動套用時沒有 <code>schema_migrations</code> 追蹤、角色權限）要到部署準備 ticket 才會被驗證。</li>
     <li><strong>未回覆的 issue：</strong>#8、#9（第 7 節）。</li>
     <li><strong><code>bullet-bots</code> 帳號的主要 email 出現在 git 歷史中</strong>（<code>84852d9</code>、<code>a50bb68</code>、<code>9a50fcd</code> 三個 merge commit）。這是 GitHub 合併的預設行為，已經無法移除。如果不希望這個 email 公開，可以在 GitHub 帳號設定開啟「Keep my email addresses private」，之後的合併就會改用 noreply。</li>
   </ul>
