@@ -186,3 +186,70 @@ def _secure_in_production(recorder, client, db, monkeypatch):
 @when("a state-changing request arrives with the session but without a valid anti-forgery token")
 def _without_token(recorder, client):
     recorder.perform(lambda: client.post(STATE_CHANGING, follow_redirects=False))
+
+
+# ───────────────────────── T-201 補上：IAM-R10「Saved data survives a timeout」─────────────────────────
+# D-058：這個 scenario 需要 M2 的回報，由 T-201 補上下面三個步驟（只新增，不修改上面 T-103 寫好的任何步驟）。
+# 「saved a report」走真的 `POST /reports`，所以也驗證了「有 session 才能存」；「signed out for idle time」把時鐘推進
+# 滿 30 分鐘（IDLE_TIMEOUT，剛好滿就逾時），並確認那個 session 真的失效了，不只是假設它失效。
+
+
+@pytest.fixture
+def saved_report() -> dict:
+    """前面的步驟存下的回報（供「登入後它還在」比對）。"""
+    return {}
+
+
+def _report_snapshot(db, report_id: int) -> tuple:
+    with db.cursor() as cur:
+        cur.execute(
+            "select r.submitter_id, r.report_date, r.catalogue, r.status, "
+            "(select string_agg(item_code || '=' || tenths, ',' order by item_code) from yc_v3.report_items where report_id = r.id) "
+            "from yc_v3.reports r where r.id = %s",
+            (report_id,),
+        )
+        row = cur.fetchone()
+    db.rollback()
+    return row
+
+
+@given(parsers.parse('"{name}" saved a report and was then signed out for idle time'))
+def _saved_then_idle(client, db, saved_report, name):
+    from datetime import timedelta
+
+    sign_in_at(client, db, name, clock.now())
+    saved = client.post(
+        "/reports",
+        data=[("report_date", clock.now().date().isoformat()), ("direct_13", "2.0")],
+        headers={CSRF_HEADER: anti_forgery_token(db, name)},
+        follow_redirects=False,
+    )
+    assert saved.status_code == 200, f"回報應存成功（200），實際 {saved.status_code}：{saved.text[:200]}"
+    with db.cursor() as cur:
+        cur.execute("select max(id) from yc_v3.reports")
+        report_id = cur.fetchone()[0]
+    db.rollback()
+    assert report_id is not None, "送出成功後資料庫應有這張回報"
+    saved_report.update(id=report_id, before=_report_snapshot(db, report_id))
+    clock.advance(timedelta(minutes=30))
+    expired = client.get(PROTECTED)
+    assert expired.status_code == 401, f"閒置滿 30 分鐘後 session 應已失效（401），實際 {expired.status_code}"
+
+
+@when(parsers.parse('"{name}" signs in again'))
+def _signs_in_again(recorder, client, db, name):
+    set_password(db, name)
+    recorder.perform(lambda: post_sign_in(client, name, TEST_PASSWORD))
+
+
+@then("the report is still there")
+def _report_still_there(recorder, client, db, saved_report):
+    assert recorder.response.status_code == 303, f"重新登入應成功（303），實際 {recorder.response.status_code}"
+    assert saved_report, "前面的步驟沒有存下回報"
+    after = _report_snapshot(db, saved_report["id"])
+    assert after is not None, "逾時登出之後，存好的回報不見了"
+    assert after == saved_report["before"], f"逾時登出前後，回報的內容不應不同：{saved_report['before']} → {after}"
+    assert after[3] == "PENDING" and after[4] == "direct_13=20", f"回報內容應為 PENDING 與 direct_13 = 2.0（20 個 0.1 只），實際 {after}"
+    # 重新登入後，這個人用新的 session 打開日報頁是成功的
+    page = client.get("/reports")
+    assert page.status_code == 200, f"重新登入後應能打開日報頁（200），實際 {page.status_code}"
