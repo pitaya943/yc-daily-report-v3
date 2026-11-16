@@ -45,6 +45,7 @@ Feature: Session and sign-out
 
   Rule: IAM-R12 The session credential is protected in transit and against forgery
 
+    # 「production」= 環境變數 APP_ENV=production（D-063）
     @api
     Scenario: Cookie attributes
       When "Wen" signs in

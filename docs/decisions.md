@@ -63,6 +63,15 @@
 | D-057 | 登入後落地頁的路徑？ | 登入頁 `/sign-in`；USER → `/reports`；ADMIN、OWNER → `/review`。M2、M3 的頁面掛在這兩個路徑。 | 規格沒有 URL；事先固定，之後的 ticket 才能沿用 | 2026-11-16 | issue #11 選項 2A；寫入 T-101 完成條件 12 |
 | D-058 | IAM-R10 的「Saved data survives a timeout」需要 M2 的回報，怎麼辦？ | T-103 實作閒置逾時、寫好其他 3 個 scenario 的步驟，並以單元測試涵蓋閒置邊界；`IAM-R10` 由 T-201 補上回報步驟後加入 `tests/implemented.txt`。 | `done-when` 以規則為單位；不改規格也讓 M1 的 CI 驗證到逾時 | 2026-11-16 | issue #11 選項 3A；T-103、T-201 的完成條件已改 |
 | D-059 | Issue 決定後由誰關閉？ | Chief。把決定記進 `docs/decisions.md` 並推送後，在 issue 留言寫明 D 編號與 commit，然後關閉。寫進 `ask-spec-question`、`plan-milestone` 與 `docs/workflow.md` 第 5 節。 | 原本流程沒有寫，M0 漏關了 #1、#8、#9 | 2026-11-16 | Kuei 在 M1 Chief session 選定；同時關閉 #1、#8、#9、#11 |
+| D-060 | 帳戶不在所選群組的名單內時回什麼？ | `INVALID`「請選擇帳戶」（維持 T-101 的實作）；`group` 選填，介面一律帶上。名單公開，不會洩漏額外資訊，與 IAM-R03 不衝突。 | 不改程式；附錄 B 補說明 | 2026-11-16 | issue #15 選項 1A；`spec/appendix-b-fields.md` |
+| D-061 | 登入群組的代號與顯示名稱？ | `admin`／`west`／`south`，顯示「管理員／西區／南區」。 | 維持 T-101 的實作 | 2026-11-16 | issue #15 選項 2A；`spec/appendix-b-fields.md` 新增「登入群組」一列 |
+| D-062 | HTMX 怎麼供應？ | 把固定版本的 `htmx.min.js` 放進 repo 當靜態檔，記下版本與 sha256；由 M2 規劃時新增一張小 ticket 處理，排在 M2 第一張有畫面的 ticket 之前。 | 不依賴外部 CDN；本機與 CI 測得到 | 2026-11-16 | issue #15 選項 3A；M2 的 plan-approval 要列出這張 ticket |
+| D-063 | 怎麼判斷「production」？ | 環境變數 `APP_ENV=production` 時 session cookie 加上 `Secure`。部署準備 ticket 與 README 要寫明 railway 上的設定。 | 一律 `Secure` 會讓 http 的測試與本機開發壞掉 | 2026-11-16 | issue #15 選項 4A；IAM-F03 加註解 |
+| D-064 | 「已加保」怎麼判斷？ | 保費 > 0 即視為已加保。 | 符合 PAY-R01 既有範例；不改資料模型 | 2026-11-16 | issue #15 選項 5A；PAY-F01 加註解 |
+| D-065 | `exempt` 的範圍？ | 只免除未投保扣除，不影響固定薪資與保險。 | 維持 T-112 的實作 | 2026-11-16 | issue #15 選項 6A；PAY-R01 新增一列範例 |
+| D-066 | every-period 的帳戶，非 10 號發薪的那一期扣不扣保險？ | 不扣；保險只在 10 號發薪扣。 | 符合 PAY-R01 的規則標題 | 2026-11-16 | issue #15 選項 7A；PAY-R01 新增一列範例 |
+| D-067 | 自訂工項的金額算不算未投保扣除的基數？ | 算。自訂工項也是工項；PAY-R02 的 `only` 排除的是固定薪資。 | 名稱就是「自訂工項」；維持 T-112 的實作 | 2026-11-16 | issue #15 選項 8A；PAY-R02 新增一個 scenario；T-402 改為 25 個 scenario |
+| D-068 | 實發為負數時？ | 照實列出負數，由管理員人工處理；不結轉。 | 不新增結轉的規則與資料 | 2026-11-16 | issue #15 選項 9A；PAY-R01 新增一列範例 |
 
 ## 待決定
 
