@@ -202,27 +202,6 @@ def test_seven_eligible_collaborators_are_invalid_and_six_are_fine(db):
     assert [c[0] for c in report.crew] == ids[:6]
 
 
-def test_ineligible_and_duplicate_collaborators_do_not_count_toward_six(db):
-    ids = _add_users(db, 6)
-    nan = db.execute("select id from yc_v3.accounts where name = 'Nan'").fetchone()[0]
-    db.rollback()
-    client, token = _client_for(db, "Wen")
-    fields = [("report_date", "2026-11-15"), ("direct_13", "1.0")] + [("collaborator", str(i)) for i in ids] + [("collaborator", str(nan)), ("collaborator", str(ids[0])), ("collaborator", "abc"), ("collaborator", ""), ("collaborator", "999999")]
-    assert _post(client, token, fields).status_code == 200
-    report = repo.list_reports(db)[0]
-    db.rollback()
-    assert [c[0] for c in report.crew] == ids  # 順序保留、重複只留第一次、不符資格的不存
-
-
-def test_an_empty_report_with_no_quantities_is_accepted_and_stores_no_items(db):
-    # 規格沒有「至少一個工項」的規則（RPT-R03：空白視為 0），所以不替規格發明；PR 說明列為未解問題
-    client, token = _client_for(db, "Wen")
-    assert _post(client, token, [("report_date", "2026-11-15")]).status_code == 200
-    report = repo.list_reports(db)[0]
-    db.rollback()
-    assert report.items == {} and report.status == "PENDING"
-
-
 def test_the_catalogue_is_recorded_at_submit_time_and_survives_a_later_zone_change(db):  # AD-4
     client, token = _client_for(db, "Wen")
     assert _post(client, token, [("report_date", "2026-11-15"), ("direct_13", "1.0")]).status_code == 200

@@ -61,6 +61,8 @@ Feature: History and export
         | big-meter | date, account, the BIG_METER items, custom item, confirmation             |
 
   Rule: RPT-R23 Filter values are validated
+    # D-099：畫面上，篩選無效時清空清單並停用匯出連結（畫面行為，不寫成 scenario）。
+    # D-101：USER 歷史只接受日期與「有自訂工項」兩種篩選。
 
     Scenario Outline: Invalid filters
       When "Admin1" filters history by <filter>
@@ -71,3 +73,12 @@ Feature: History and export
         | date "2026-13-40"      |
         | zone "EAST"            |
         | account "Nobody"       |
+
+  Rule: RPT-R24 On ordinary history the zone filter follows the catalogue recorded on the report
+    # D-100：帳戶之後換區域，不改變舊回報屬於哪一區（AD-4）。大表歷史的回報工項組是 BIG_METER，不含區域，該頁的區域篩選維持依提交者目前的區域。
+
+    Scenario: A report stays in the zone it was filed in
+      Given R1 by "Wen" dated "2026-11-10"
+      And "Wen" has since moved to zone SOUTH
+      When "Admin1" filters ordinary history by zone WEST
+      Then the list is "R1"
