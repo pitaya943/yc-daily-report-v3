@@ -21,7 +21,7 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 | T-002 | M0 | CI 檢查 | merged | [#5](https://github.com/pitaya943/yc-daily-report-v3/pull/5) | 2 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（FAIL）；修正第 1 輪：claude-sonnet-5-5；issue #6 已決定（D-039～D-042）；Verifier 第 2 輪：claude-opus-5-5（FAIL）；issue #7 已決定（D-043～D-049）；修正第 2 輪：claude-opus-5-5（新 session）；Verifier 第 3 輪：claude-opus-5-5（PASS） |
 | T-003 | M0 | 共用基礎：結果類別、稽核寫入、權限檢查 | merged | [#4](https://github.com/pitaya943/yc-daily-report-v3/pull/4) | 1 | Builder 第一輪：claude-sonnet-5-5；合併順序在 T-002 之後；CI 全綠；Verifier 第 1 輪：claude-opus-5-5（FAIL：nothing else is written）；修正第 1 輪：claude-sonnet-5-5；Verifier 第 2 輪：claude-opus-5-5（PASS） |
 | T-101 | M1 | 登入 | merged | [#14](https://github.com/pitaya943/yc-daily-report-v3/pull/14) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS）；規格問題 4 項待 Kuei |
-| T-102 | M1 | 登入鎖定與頻率限制 | building | — | 0 | Builder 第一輪：claude-sonnet-5-5；碰到 usage 上限一次；issue #20 escalated → D-069 後繼續 |
+| T-102 | M1 | 登入鎖定與頻率限制 | building | — | 0 | Builder 第一輪：claude-sonnet-5-5；碰到 usage 上限一次；issue #20 escalated → D-069、issue #21 → D-077 後繼續 |
 | T-103 | M1 | Session 與登出 | merged | [#18](https://github.com/pitaya943/yc-daily-report-v3/pull/18) | 0 | Builder 第一輪：claude-sonnet-5-5；合併 milestone 後 CI 重跑全綠；Verifier 第 1 輪：claude-opus-5-5（PASS）；IAM-R10 延到 T-201（D-058） |
 | T-111 | M1 | 純函式：小組分配 | merged | [#12](https://github.com/pitaya943/yc-daily-report-v3/pull/12) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS） |
 | T-112 | M1 | 純函式：薪資公式 | merged | [#13](https://github.com/pitaya943/yc-daily-report-v3/pull/13) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS；變異 2 個存活，測試缺口記給 T-402）；規格問題 6 項待 Kuei |

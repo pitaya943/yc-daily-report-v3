@@ -80,6 +80,7 @@
 | D-074 | 一列同時有多個疑點時，likely fault 怎麼填？ | 依序只報第一個：A 不一致 → x < 0（`?`）→ B 不符。 | A 壞了 B 就無從比較 | 2026-11-16 | issue #19 選項 5A；MAT-R20 新增一列範例 |
 | D-075 | 「信任 A」的結果不合不變式時？ | 比照 AD-6 拒絕為 `CONFLICT`「A 系統數值不一致，無法採用」，該列留在暫存區。 | 避免之後的核准在壞資料上運算 | 2026-11-16 | issue #19 選項 6A；MAT-R21 新增 scenario；附錄 B、`spec/definitions.md` 新增字串；T-504 改 `app/domain/inventory_import.py` |
 | D-076 | 庫存可以是負數嗎？ | 不可以。不變式加上實領量、累計使用量、庫存量都 ≥ 0，用在 AD-6 與 D-075。 | 負庫存沒有業務意義 | 2026-11-16 | issue #19 選項 7A；MAT-R21 新增 scenario；附錄 B 更新 |
+| D-077 | T-101 的兩個補充測試（`test_sign_in_details.py`）也斷言登入失敗時整個資料庫不變，與 IAM-R05、R07 衝突？ | 只有這兩個測試改用排除 `0004` 兩張表的比對（範圍同 D-069）；共用的 `_rejected` 維持嚴格。`INVALID` 的請求（欄位驗證就被擋下）不算 IAM-R07 的登入嘗試，不寫資料。 | 與 D-069 同一原因；其他拒絕情況維持最嚴格的斷言 | 2026-11-16 | issue #21 選項 A（依 Chief 留言收窄）；T-102 完成條件 12、`allowed_paths` 加 `tests/steps/IAM-F01/test_sign_in_details.py` |
 
 ## 待決定
 
