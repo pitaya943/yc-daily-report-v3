@@ -9,18 +9,24 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 - 同時進行上限：2 張（T-002 ‖ T-003）。
 - 模型：Chief claude-opus-5-5；Builder claude-sonnet-5-5；Verifier claude-opus-5-5；修正第二輪 Builder claude-opus-5-5。
 
+## M1（計畫：issue #11，D-055）
+
+- 順序：IAM 依序 T-101 → T-103 → T-102；純函式 T-111～T-114 與 IAM 平行。
+- 同時進行上限：3 張。第一批 T-101、T-111、T-112；有一張合併就補 T-113、T-114。
+- 模型：Chief claude-opus-5-5；Builder claude-sonnet-5-5；Verifier claude-opus-5-5；修正第二輪 Builder claude-opus-5-5。
+
 | Ticket | Milestone | 標題 | 狀態 | PR | 修正輪數 | 備註 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T-001 | M0 | 專案骨架與測試框架 | merged | [#2](https://github.com/pitaya943/yc-daily-report-v3/pull/2) | 2 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（FAIL）；修正第 1 輪：claude-sonnet-5-5；Verifier 第 2 輪：claude-opus-5-5（FAIL：PGSERVICE）；修正第 2 輪：claude-opus-5-5（新 session）；Verifier 第 3 輪：claude-opus-5-5（PASS） |
 | T-002 | M0 | CI 檢查 | merged | [#5](https://github.com/pitaya943/yc-daily-report-v3/pull/5) | 2 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（FAIL）；修正第 1 輪：claude-sonnet-5-5；issue #6 已決定（D-039～D-042）；Verifier 第 2 輪：claude-opus-5-5（FAIL）；issue #7 已決定（D-043～D-049）；修正第 2 輪：claude-opus-5-5（新 session）；Verifier 第 3 輪：claude-opus-5-5（PASS） |
 | T-003 | M0 | 共用基礎：結果類別、稽核寫入、權限檢查 | merged | [#4](https://github.com/pitaya943/yc-daily-report-v3/pull/4) | 1 | Builder 第一輪：claude-sonnet-5-5；合併順序在 T-002 之後；CI 全綠；Verifier 第 1 輪：claude-opus-5-5（FAIL：nothing else is written）；修正第 1 輪：claude-sonnet-5-5；Verifier 第 2 輪：claude-opus-5-5（PASS） |
-| T-101 | M1 | 登入 | todo | — | — | — |
-| T-102 | M1 | 登入鎖定與頻率限制 | todo | — | — | — |
-| T-103 | M1 | Session 與登出 | todo | — | — | — |
-| T-111 | M1 | 純函式：小組分配 | todo | — | — | — |
-| T-112 | M1 | 純函式：薪資公式 | todo | — | — | — |
-| T-113 | M1 | 純函式：保留金 | todo | — | — | — |
-| T-114 | M1 | 純函式：庫存比對 | todo | — | — | — |
+| T-101 | M1 | 登入 | merged | [#14](https://github.com/pitaya943/yc-daily-report-v3/pull/14) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS）；規格問題 4 項 → issue #15（D-060～D-063） |
+| T-102 | M1 | 登入鎖定與頻率限制 | merged | [#22](https://github.com/pitaya943/yc-daily-report-v3/pull/22) | 0 | Builder 第一輪：claude-sonnet-5-5；碰到 usage 上限一次；issue #20 → D-069、issue #21 → D-077；Verifier 第 1 輪：claude-opus-5-5（PASS，12 個變異全抓到） |
+| T-103 | M1 | Session 與登出 | merged | [#18](https://github.com/pitaya943/yc-daily-report-v3/pull/18) | 0 | Builder 第一輪：claude-sonnet-5-5；合併 milestone 後 CI 重跑全綠；Verifier 第 1 輪：claude-opus-5-5（PASS）；IAM-R10 延到 T-201（D-058） |
+| T-111 | M1 | 純函式：小組分配 | merged | [#12](https://github.com/pitaya943/yc-daily-report-v3/pull/12) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS） |
+| T-112 | M1 | 純函式：薪資公式 | merged | [#13](https://github.com/pitaya943/yc-daily-report-v3/pull/13) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS；變異 2 個存活，測試缺口記給 T-402）；規格問題 → issue #15（D-064～D-068） |
+| T-113 | M1 | 純函式：保留金 | merged | [#17](https://github.com/pitaya943/yc-daily-report-v3/pull/17) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS）；規格問題見 issue #19 |
+| T-114 | M1 | 純函式：庫存比對 | merged | [#16](https://github.com/pitaya943/yc-daily-report-v3/pull/16) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS）；規格問題見 issue #19 |
 | T-201 | M2 | 送出日報 | todo | — | — | — |
 | T-202 | M2 | 回報生命週期 | todo | — | — | — |
 | T-203 | M2 | 歷史與匯出 | todo | — | — | — |

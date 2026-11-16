@@ -10,6 +10,8 @@ Feature: Gross, net, and final pay
   # 預設：WEST 單價 direct_13 = 120，保留金 20/unit，未投保比例 3%。
 
   Rule: PAY-R01 Fixed salary and insurance apply on payday-10; the uninsured deduction applies on every run
+    # 已加保 = insurance > 0（D-064）。exempt 只免除未投保扣除，不影響固定薪資與保險（D-065）。
+    # every-period 只讓固定薪資每期套用，保險仍只在 payday-10 扣（D-066）。實發為負數時照實列出（D-068）。
 
     Scenario Outline: Components by run type and enrolment
       Given "Wen" has confirmed "direct_13" shares of <qty> in the period
@@ -25,6 +27,9 @@ Feature: Gross, net, and final pay
         | 10  | 5000  | 0   | yes   | no     | no  | 1200  | 200 | 5000 | 0   | 36 | 5964  | every-period fixed salary    |
         | 10  | 0     | 0   | no    | yes    | no  | 1200  | 200 | 0    | 0   | 0  | 1000  | exempt                       |
         | 0   | 5000  | 0   | no    | no     | yes | 0     | 0   | 5000 | 0   | 0  | 5000  | fixed salary only            |
+        | 10  | 5000  | 834 | no    | yes    | yes | 1200  | 200 | 5000 | 834 | 0  | 5166  | exempt keeps fixed and ins   |
+        | 10  | 5000  | 834 | yes   | no     | no  | 1200  | 200 | 5000 | 0   | 0  | 6000  | every-period, ins only p10   |
+        | 0   | 0     | 834 | no    | no     | yes | 0     | 0   | 0    | 834 | 0  | -834  | negative final listed as is  |
 
   Rule: PAY-R02 The uninsured deduction base is work-item gross only
 
@@ -38,6 +43,12 @@ Feature: Gross, net, and final pay
       Given "Wen" has gross 10000 and a personal uninsured rate of 5%
       When payroll is calculated
       Then the uninsured deduction for "Wen" is 500
+
+    # 自訂工項也是工項，計入基數（D-067）
+    Scenario: Custom-item money is in the base
+      Given "Wen" has work-item gross 9000 and custom-item money 1000
+      When payroll is calculated
+      Then the uninsured deduction for "Wen" is 300
 
   Rule: PAY-R03 Money is rounded half-up to whole NTD at payroll only
 

@@ -30,3 +30,4 @@ description: 遇到規格不清楚、需要未授權的變更、修正兩輪失�
 1. 在 `docs/decisions.md` 新增一列。
 2. 回覆改變規格時，修改 `spec/` 與受影響 ticket 的完成條件，放在同一個 PR。
 3. 把 ticket 改回 `todo` 或 `building`，解除 `blocked`。
+4. 推送後在 issue 留言寫明記錄在哪個 D 編號與 commit，然後關閉 issue（D-059）。

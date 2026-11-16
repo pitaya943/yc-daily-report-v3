@@ -18,6 +18,7 @@ description: 在 milestone 開始前，把該 milestone 切成 ticket、確認�
 5. 排出平行安排：依賴都已完成且路徑不重疊的 ticket 可以同時進行；`migration: true` 的一次一張。
 6. 用 `.github/ISSUE_TEMPLATE/plan-approval.md` 開 issue。
 7. **等 Kuei 回覆同意。** 在那之前不開任何 Builder session。
+8. Kuei 回覆後：把核准與選項記進 `docs/decisions.md`、依選項修改 ticket，推送後在 issue 留言寫明 D 編號與 commit，然後關閉 issue（D-059）。
 
 ## 輸出
 

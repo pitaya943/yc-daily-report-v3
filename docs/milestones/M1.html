@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M1 報告 — 員工日報系統</title>
+<style>
+  :root { --bg:#f7f9f9; --card:#fff; --ink:#18282b; --muted:#5a6c6f; --line:#d6dfe0; --accent:#0d6b74; --warn:#b5560b; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111b1d; --card:#182628; --ink:#e5eced; --muted:#9db1b4; --line:#2d4144; --accent:#6cc7cf; --warn:#f0a45c; } }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.75 "Noto Sans TC", system-ui, sans-serif; }
+  main { max-width:860px; margin:0 auto; padding:40px 16px 80px; }
+  h1 { font-size:1.8rem; margin:0 0 4px; }
+  h2 { font-size:1.25rem; color:var(--accent); margin:44px 0 12px; border-bottom:1px solid var(--line); padding-bottom:6px; }
+  h3 { font-size:1.05rem; margin:28px 0 8px; }
+  p, li { max-width:68ch; }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .verdict { background:var(--card); border:1px solid var(--line); border-left:5px solid var(--accent); padding:16px 20px; margin-top:20px; }
+  .todo { color:var(--warn); }
+  .scroll { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; font-size:.92rem; background:var(--card); }
+  th, td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { white-space:nowrap; }
+  code, pre { font-family:ui-monospace, Menlo, monospace; font-size:.88em; }
+  pre { background:var(--card); border:1px solid var(--line); padding:12px 14px; overflow-x:auto; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>M1 報告：身分與純計算</h1>
+  <p class="meta">分支 <code>milestone/M1</code> · 報告日期 2026-11-16 · 撰寫者 Chief（模型 <code>claude-opus-5-5</code>）</p>
+
+  <div class="verdict">
+    <p><strong>結論。</strong>M1 的 7 張 ticket 都已合併進 <code>milestone/M1</code>，每張都在第 1 輪驗證就 PASS，沒有用到修正輪。<code>milestone/M1</code> 的 CI 是 <code>769 passed, 473 skipped</code>。員工與管理員可以登入；同一帳戶連續輸錯會被鎖定；同一個來源位址每分鐘最多嘗試 10 次；可以登出；有 CSRF 防護。分配、薪資公式、保留金、庫存比對四組純函式也都完成。</p>
+    <p><strong>沒完成的一件事：</strong>「閒置 30 分鐘登出」（IAM-R10）的程式已經寫好，也有單元測試，但它的 4 個 Gherkin scenario 要到 M2 的 T-201 才會開啟，因為其中一個 scenario 需要日報資料（D-058）。所以 M1 原訂的 19 個 scenario 只開了 15 個。</p>
+    <p><strong>最該注意的一件事：</strong>這個 milestone 問了你 5 個 issue、記了 27 個決定（D-051～D-077），其中 9 個是金額規則（D-064～D-068、D-070～D-073）。測試通過只代表程式符合規格；規格本身對不對，特別是第 7 節的薪資與保留金決定，請對照實際業務檢查。</p>
+  </div>
+
+  <h2>1. 達成的 feature</h2>
+  <p>使用者可以選擇群組與帳戶並輸入密碼登入，系統依角色帶到落地頁；輸錯 5 次鎖定 15 分鐘；閒置 30 分鐘或登出後 session 立即失效。另外有四組不讀資料庫、不讀時鐘的純函式，之後的審核、薪資與材料 ticket 都會呼叫它們。</p>
+  <div class="scroll"><table>
+    <tr><th>Feature</th><th>規則</th><th>Scenario 通過／總數</th><th>Ticket</th><th>PR</th><th>證據</th><th>Builder／Verifier 的模型</th></tr>
+    <tr><td>IAM-F01 登入</td><td>IAM-R01～R03</td><td>4／4</td><td>T-101</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/14">#14</a></td><td><code>docs/evidence/T-101/</code>（含截圖）；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/14#issuecomment-6917900778">Verifier PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>IAM-F02 登入鎖定與頻率限制</td><td>IAM-R04～R07</td><td>7／7</td><td>T-102</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/22">#22</a></td><td><code>docs/evidence/T-102/</code>（含截圖）；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/22">Verifier PASS</a>（最後一則留言）</td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>IAM-F03 Session 與登出</td><td>IAM-R11、R12（IAM-R10 延到 T-201）</td><td>4／4（IAM-R10 的 4 個為 skipped）</td><td>T-103</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/18">#18</a></td><td><code>docs/evidence/T-103/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/18#issuecomment-6919252778">Verifier PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>純函式：小組分配</td><td>REV-R10 的例子</td><td>不適用；單元測試 10 項（含 70,000 組不變式）</td><td>T-111</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/12">#12</a></td><td><code>docs/evidence/T-111/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/12#issuecomment-6917841473">Verifier PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>純函式：薪資公式</td><td>PAY-R01、R02、R03、R06 的例子</td><td>不適用；單元測試 43 項</td><td>T-112</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/13">#13</a></td><td><code>docs/evidence/T-112/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/13#issuecomment-6917853972">Verifier PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>純函式：保留金</td><td>PAY-R10、R11、R12、R14 的例子</td><td>不適用；單元測試</td><td>T-113</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/17">#17</a></td><td><code>docs/evidence/T-113/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/17#issuecomment-6918638871">Verifier PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>純函式：庫存比對</td><td>MAT-R20、R21</td><td>不適用；單元測試</td><td>T-114</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/16">#16</a></td><td><code>docs/evidence/T-114/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/16#issuecomment-6918643947">Verifier PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+  </table></div>
+  <p>模型名稱都是各 session 用 <code>get_session</code> 讀出的實際設定，寫在各 PR 的交付留言與判定留言中。重算的方式：<code>milestone/M1</code> 合併 T-102 後（<code>cf071ad</code>），CI run <a href="https://github.com/pitaya943/yc-daily-report-v3/actions/runs/43925609646">43925609646</a> 的 <code>tests</code> job log：</p>
+  <pre>套用 0001_init_accounts.sql
+套用 0002_audit_log.sql
+套用 0003_sign_in_sessions.sql
+套用 0004_sign_in_lockout_and_rate_limit.sql
+================= 769 passed, 473 skipped in 66.97s (0:01:06) ==================</pre>
+  <p>Chief 在本機用相同步驟重跑的結果相同，並用 CI 的 <code>rule_report</code> plugin 逐條統計（<code>docs/evidence/M1/rerun.txt</code>）：</p>
+  <pre>$ python3 -m pytest -q -p scripts.ci.rule_report -p no:cacheprovider
+769 passed, 473 skipped
+IAM-R01 2/2  IAM-R02 1/1  IAM-R03 1/1  IAM-R04 3/3  IAM-R05 1/1  IAM-R06 1/1  IAM-R07 2/2
+IAM-R10 0/4 (skipped, D-058)  IAM-R11 2/2  IAM-R12 2/2
+$ python3 -m pytest -q tests/unit/domain tests/unit/iam
+135 passed</pre>
+
+  <h2>2. 為何這樣設計</h2>
+  <h3>2.1 IAM 三張依序進行，而不是 T-102 與 T-103 平行（D-055）</h3>
+  <p>原本的計畫是 T-102 和 T-103 平行。檢查後發現：鎖定要掛在登入流程上，「已登入者開登入頁會被轉走」也在登入模組裡，所以兩張都要改 <code>app/modules/iam/sign_in/</code>，平行會互相衝突。改成 T-101 → T-103 → T-102。T-103 排前面，因為 M2 的 T-201 依賴它；T-102 最難（並行 scenario），卡住也不會擋到 M2。<strong>代價：</strong>IAM 這條線沒有平行，M1 的總時間變長。後來 T-102 真的因為兩個 issue 停了兩次，這個排序讓那段時間沒有擋住其他工作。</p>
+  <h3>2.2 共用的 session 程式放在 <code>app/core/session.py</code></h3>
+  <p>之後每個模組都要知道「現在是誰」。比較過兩種做法：(A) 放在 <code>app/core</code>，每個模組都經由同一個 FastAPI dependency 取得行為者；(B) 放在 IAM 模組裡，其他模組跨模組 import。選 A：閒置逾時、CSRF、session 失效都集中在一個 dependency，沒有模組能繞過，也不必修改 <code>app/main.py</code>。<strong>會出問題的情況：</strong>如果之後有端點沒有使用這個 dependency，它就沒有受到保護。這件事要由 M6 的權限矩陣（T-603）檢查。</p>
+  <h3>2.3 密碼雜湊用標準庫 scrypt（D-056）</h3>
+  <p>比較過 scrypt（標準庫）、Argon2id（第三方 <code>argon2-cffi</code>）、bcrypt。選 scrypt：不新增依賴，參數採 OWASP 最低建議（N=2^17、r=8、p=1），雜湊字串帶演算法前綴，日後可以漸進換演算法。bcrypt 會截斷超過 72 bytes 的密碼，30 個中文字可能踩到。<strong>代價：</strong>每次登入約 128 MiB 記憶體與 0.3 秒 CPU。T-103 因此把登入改到 threadpool 執行，並限制同時最多 4 個 scrypt（T-103 Builder 自己的取捨，見第 6 節）。</p>
+  <h3>2.4 鎖定與頻率限制的計數存在資料庫，不存在記憶體</h3>
+  <p>規格要求計數「跨 worker 與重新啟動」（IAM-R07）。記憶體做不到，所以 migration <code>0004</code> 建了兩張表，並用交易內的 advisory lock 避免競爭（不用 trigger，因為 D-045 禁止）。代價是測試要能分辨「計數真的在資料庫」：Verifier 發現單看 <code>@concurrency</code> 這個 scenario 分不出來，但整組測試分得出來（12 個變異都被抓到）。見 issue #23 第 6 項。</p>
+  <h3>2.5 IAM-R10 延到 T-201，並用單元測試補上 M1 的驗證（D-058）</h3>
+  <p><code>done-when</code> 檢查以規則為單位：一條規則加進 <code>implemented.txt</code>，它底下的每個 scenario 都必須通過。IAM-R10 有一個 scenario 需要日報資料，M1 還沒有。比較過三種做法：(A) 延後規則 ID，M1 用單元測試驗證閒置邊界；(B) 改規格，把那個 scenario 移走；(C) 整張 T-103 延到 M2。你選了 A。<strong>代價：</strong>M1 的「逾時登出」只由 <code>tests/unit/iam/</code> 把關；那些單元測試在 T-201 之前不能刪除或改名。</p>
+  <h3>2.6 「被拒絕的登入不寫任何資料」改成「只寫失敗計數與嘗試紀錄」（D-069、D-077）</h3>
+  <p>T-101 的 Builder 把 IAM-R03 寫得比規格嚴格：登入失敗時整個資料庫不變。但 T-102 依規格必須寫失敗次數與嘗試紀錄，兩者衝突，Builder 依規停下來找你兩次。你同意收窄：只排除 <code>0004</code> 的兩張表，其他表仍須完全不變；而且被排除的寫入要由 IAM-F02 明確斷言。<strong>學到的事：</strong>比規格更嚴的斷言不是免費的，它會變成後續 ticket 的地雷（pitfall #29）。</p>
+
+  <h2>3. 如何審查</h2>
+  <div class="scroll"><table>
+    <tr><th>順序</th><th>檔案</th><th>要看什麼</th></tr>
+    <tr><td>1</td><td><code>docs/decisions.md</code> D-051～D-077</td><td>這個 milestone 的所有決定，特別是 D-064～D-068、D-070～D-073 的金額規則</td></tr>
+    <tr><td>2</td><td><code>spec/features/PAY-F01-gross-net-and-final-pay.feature</code>、<code>PAY-F02-…</code>、<code>MAT-F03-…</code>、<code>IAM-F03-…</code>、<code>spec/appendix-b-fields.md</code></td><td>Chief 依你的決定新增的範例與註解（<code>git diff origin/main -- spec/</code>）。新增的金額範例請手算一次</td></tr>
+    <tr><td>3</td><td><code>app/core/session.py</code></td><td>密碼雜湊、session 發出、閒置逾時、CSRF 檢查；之後每個模組都依賴它</td></tr>
+    <tr><td>4</td><td><code>app/modules/iam/sign_in/</code>、<code>sign_in_lockout_and_rate_limit/</code></td><td>登入流程、鎖定與頻率限制怎麼掛上去；來源位址怎麼取得</td></tr>
+    <tr><td>5</td><td><code>migrations/0003_sign_in_sessions.sql</code>、<code>0004_sign_in_lockout_and_rate_limit.sql</code></td><td>要套用到 Supabase 的 SQL（第 5 節）</td></tr>
+    <tr><td>6</td><td><code>app/domain/payroll.py</code>、<code>retention.py</code>、<code>split.py</code>、<code>inventory_import.py</code></td><td>金額與數量都用整數或 <code>Fraction</code>，不用浮點數；四捨五入用 half-up</td></tr>
+    <tr><td>7</td><td><code>tests/steps/IAM-F01/iam_f01_steps.py</code>、<code>tests/steps/IAM-F01/test_sign_in_details.py</code></td><td>D-069、D-077 收窄的斷言，確認只排除兩張表</td></tr>
+  </table></div>
+
+  <h2>4. 如何驗證</h2>
+  <h3>4.1 自動測試</h3>
+  <pre>git checkout milestone/M1
+scripts/dev/install-postgres        # PostgreSQL 17（PGDG apt，需要 root）
+pip install -e '.[dev]'
+scripts/dev/db-start                # 127.0.0.1:5433，資料庫 yc
+scripts/dev/migrate                 # 預期最後四行：套用 0001～0004、「migration 完成」
+python3 -m pytest -q                # 預期：769 passed, 473 skipped</pre>
+  <p>只跑 <code>tests/test_spec.py</code> 會出現「Step definition is not found」，要跑完整的 <code>python3 -m pytest</code>（pitfall #26）。</p>
+  <h3>4.2 手動操作流程</h3>
+  <p>先載入背景帳戶並替所有帳戶設定密碼 <code>test-pass-1</code>。目前還沒有設定密碼的介面（IAM-F06 在 M3），所以用下面的腳本（只用在本機資料庫；<code>python3 -m pytest</code> 會清空 <code>yc_v3</code>，跑過測試後要重跑這段）。把它存成 <code>seed.py</code>，在 repo 根目錄執行：</p>
+  <pre>import os, psycopg
+from tests.conftest import load_background
+from app.core.session import hash_password
+url = os.environ.get("DATABASE_URL", "postgresql://postgres@127.0.0.1:5433/yc")
+with psycopg.connect(url) as c:
+    c.execute("truncate yc_v3.sign_in_attempts, yc_v3.sign_in_failures, yc_v3.sessions, "
+              "yc_v3.audit_log, yc_v3.accounts restart identity cascade")
+    c.commit()
+    load_background(c)
+    c.execute("update yc_v3.accounts set password_hash = %s", (hash_password("test-pass-1"),))
+    c.commit()
+    print(c.execute("select count(*), count(password_hash) from yc_v3.accounts").fetchone())</pre>
+  <pre>PYTHONPATH=. python3 seed.py         # 預期 (9, 9)
+scripts/dev/run                      # http://127.0.0.1:8000/sign-in</pre>
+  <p>同一個來源位址每分鐘最多 10 次嘗試（IAM-R07），連續操作太快會看到 <code>RATE_LIMITED</code>，等一分鐘即可。Chief 照這個流程實測的輸出在 <code>docs/evidence/M1/manual-flow.txt</code>。</p>
+  <div class="scroll"><table>
+    <tr><th>步驟</th><th>操作</th><th>預期結果</th><th>對應規則</th></tr>
+    <tr><td>1</td><td>開 <code>/sign-in</code>，群組選「西區」</td><td>名單正好是 Big、Wan、Wei、Wen（不含已封存的 Old）</td><td>IAM-R01</td></tr>
+    <tr><td>2</td><td>選 Wen，輸入錯誤密碼</td><td>「密碼錯誤，請重試」</td><td>IAM-R03</td></tr>
+    <tr><td>3</td><td>選 Wen，輸入正確密碼</td><td>轉到 <code>/reports</code>（頁面 M2 才有，目前是 404，只看網址）；管理員轉到 <code>/review</code></td><td>IAM-R02、D-057</td></tr>
+    <tr><td>4</td><td>已登入時再開 <code>/sign-in</code></td><td>被轉回落地頁</td><td>IAM-R11</td></tr>
+    <tr><td>5</td><td>開發者工具看 cookie <code>yc_session</code></td><td>HttpOnly、SameSite=Lax；沒有 Expires（不是「記住我」）；<code>APP_ENV=production</code> 時才有 Secure</td><td>IAM-R12、D-063</td></tr>
+    <tr><td>6</td><td>登出 Wen，換 Wei 連續輸錯 5 次</td><td>第 5 次顯示「密碼錯誤次數過多，請在 15 分鐘後再試」；之後輸入正確密碼也被拒絕；<code>audit_log</code> 多一列 <code>ACCOUNT_LOCKOUT</code>，actor 為 SYSTEM</td><td>IAM-R04</td></tr>
+    <tr><td>7</td><td>同時用 Wen 登入</td><td>Wen 不受 Wei 的鎖定影響</td><td>IAM-R06</td></tr>
+  </table></div>
+  <h3>4.3 建議的獨立驗證</h3>
+  <ul>
+    <li><strong>金額：</strong>把 PAY-F01 的 PAY-R01 範例表（9 列，其中 3 列是這個 milestone 依 D-065、D-066、D-068 新增的）抄進試算表，用公式 <code>final = gross − retention + fixed − insurance − 未投保扣除</code> 自己算一次，再與 <code>tests/unit/domain/test_payroll.py</code> 對照。</li>
+    <li><strong>分配：</strong>請另一個模型只讀 REV-R10 的規則文字，自己寫一個 <code>split</code> 與不變式測試，和 <code>app/domain/split.py</code> 比對 70,000 組輸入的結果。</li>
+    <li><strong>鎖定與並行：</strong>用兩個真的 uvicorn 行程（不同 port、同一個資料庫）各送 6 次錯誤密碼，確認第 11 次以後被擋（這是 issue #23 第 6 項 B 的做法，目前的測試沒有做到）。</li>
+  </ul>
+
+  <h2>5. Migration 套用步驟</h2>
+  <p>依 D-050，migration 不在這個 milestone 合併後套用，而是延到部署時由「部署準備」ticket 處理。以下供部署時使用。順序：<code>0003</code> 再 <code>0004</code>（依賴 M0 的 <code>0001</code>、<code>0002</code>）。兩個檔都只碰 <code>yc_v3</code>，可重複執行（<code>IF NOT EXISTS</code>），已通過 CI 的 <code>migration-scope</code> 兩層檢查。</p>
+  <div class="scroll"><table>
+    <tr><th>檔案</th><th>內容</th><th>套用後檢查（預期 1 列，全部為 t）</th><th>回滾（只在沒有真實資料、且 Kuei 同意時）</th></tr>
+    <tr><td><code>0003_sign_in_sessions.sql</code></td><td><code>accounts.password_hash</code>（可為 null，帶演算法前綴的 check）；<code>sessions</code> 表（只存 token 的 SHA-256、anti-forgery token、建立與最後使用時間）</td><td><code>select to_regclass('yc_v3.sessions') is not null, exists (select 1 from information_schema.columns where table_schema='yc_v3' and table_name='accounts' and column_name='password_hash');</code></td><td><code>drop table yc_v3.sessions; alter table yc_v3.accounts drop column password_hash;</code> 並刪除 <code>schema_migrations</code> 的 <code>0003</code></td></tr>
+    <tr><td><code>0004_sign_in_lockout_and_rate_limit.sql</code></td><td><code>sign_in_failures</code>（每帳戶一列）、<code>sign_in_attempts</code>（每次被接受評估的嘗試一列，依位址與時間建索引）</td><td><code>select to_regclass('yc_v3.sign_in_failures') is not null, to_regclass('yc_v3.sign_in_attempts') is not null;</code></td><td><code>drop table yc_v3.sign_in_attempts; drop table yc_v3.sign_in_failures;</code> 並刪除 <code>schema_migrations</code> 的 <code>0004</code></td></tr>
+  </table></div>
+  <p><strong>部署時另外要設定：</strong><code>APP_ENV=production</code>（cookie 才會加 Secure，D-063）；uvicorn 加 <code>--proxy-headers --forwarded-allow-ips=&lt;Railway 代理&gt;</code>，否則所有人會共用代理的位址，也共用同一個「每分鐘 10 次」的額度（T-102 Builder 與 Verifier 的提醒）。</p>
+
+  <h2>6. Agent 自行做的判斷</h2>
+  <p>規格沒有明說、由 agent 決定，而且沒有經過你的事。已經由你在 issue 中決定的，列在第 7 節，不重複列在這裡。</p>
+  <div class="scroll"><table>
+    <tr><th>判斷</th><th>誰做的</th><th>理由</th><th>位置</th></tr>
+    <tr><td>缺少「登入密碼」時回 <code>UNAUTHENTICATED</code>「密碼錯誤，請重試」，不回 <code>INVALID</code></td><td>T-101 Builder（Verifier 認可）</td><td>附錄 B 對登入密碼只給這個字串；也讓缺密碼與密碼錯誤無法分辨</td><td><code>app/modules/iam/sign_in/</code></td></tr>
+    <tr><td>沒有用 HTMX，改用 GET 表單加少量原生 fetch</td><td>T-101 Builder</td><td>容器連不到 CDN，<code>pyproject.toml</code> 不在範圍內；之後由 D-062 處理</td><td>登入頁模板</td></tr>
+    <tr><td>密碼雜湊字串格式 <code>scrypt$n=…,r=…,p=…$salt$hash</code>；資料庫只存 session token 的 SHA-256</td><td>T-101 Builder</td><td>資料庫外洩時 token 不能直接使用</td><td><code>app/core/session.py</code>、<code>0003</code></td></tr>
+    <tr><td>protected action 用 <code>GET /session</code>（回傳目前行為者與 anti-forgery token）；state-changing request 用 <code>POST /sign-out</code></td><td>T-103 Builder（ticket 授權它自選）</td><td>M1 沒有其他受保護的端點</td><td><code>app/modules/iam/session_and_sign_out/</code></td></tr>
+    <tr><td>anti-forgery token 只接受標頭 <code>X-CSRF-Token</code></td><td>T-103 Builder</td><td>dependency 不必讀請求主體；之後用 HTMX 的 <code>hx-headers</code>。待你在 issue #23 第 3 項確認</td><td><code>app/core/session.py</code></td></tr>
+    <tr><td><code>POST /sign-in</code> 本身沒有 anti-forgery 檢查</td><td>T-103 Builder</td><td>登入前沒有 session 可綁定；規格的 scenario 是「with the session」。防 login CSRF 需要另外的規格</td><td><code>app/modules/iam/sign_in/</code></td></tr>
+    <tr><td>同時最多 4 個 scrypt 計算（號誌）</td><td>T-103 Builder</td><td>改到 threadpool 後，最多可能 40 條 × 128 MiB；4 是它的取捨，不是規格</td><td><code>app/core/session.py</code></td></tr>
+    <tr><td>失敗次數以「距離最後一次失敗 15 分鐘」為視窗；被鎖定拒絕的請求不計入頻率</td><td>T-102 Builder</td><td>與 IAM-R05 的文字、D-069 一致。待你在 issue #23 第 4、5 項確認</td><td><code>app/modules/iam/sign_in_lockout_and_rate_limit/</code></td></tr>
+    <tr><td>來源位址取自 ASGI 的 <code>client</code>，不讀 <code>X-Forwarded-For</code></td><td>T-102 Builder</td><td>標頭可以偽造；部署時要設定 uvicorn（第 5 節）</td><td>同上</td></tr>
+    <tr><td><code>split</code> 只收人數，「提交者排第一」由呼叫端排好順序</td><td>T-111 Builder</td><td>REV-R10 的分配與 crew 順序分開；T-301 要處理</td><td><code>app/domain/split.py</code></td></tr>
+    <tr><td>IAM-F01 的群組選單、移到共用位置的 <code>the outcome is</code> 步驟；T-103 完成條件 11（不阻塞 event loop）、T-102 完成條件 10、T-402 補兩個測試</td><td>Chief</td><td>都是 ticket 的範圍調整，不是業務規則；理由寫在各 ticket 檔與看板</td><td><code>docs/tickets/</code></td></tr>
+  </table></div>
+
+  <h2>7. 問過 Kuei 的問題與決定</h2>
+  <div class="scroll"><table>
+    <tr><th>Issue</th><th>問題</th><th>決定</th><th>影響</th></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/8">#8</a>、<a href="https://github.com/pitaya943/yc-daily-report-v3/issues/9">#9</a>（M0 留下）</td><td>新增 <code>tests/support</code> 檔案、測試改名、CSRF 被拒絕要不要寫稽核</td><td>D-051～D-053；另 D-054 branch protection 只在 <code>main</code></td><td>IAM-F03 一個 scenario 改為斷言 <code>ACCESS_DENIED</code></td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/11">#11</a></td><td>M1 計畫、密碼雜湊、落地頁路徑、IAM-R10</td><td>D-055～D-058</td><td>IAM 依序；scrypt；<code>/reports</code>、<code>/review</code>；IAM-R10 延到 T-201</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/15">#15</a></td><td>登入群組、HTMX、production 的判定；已加保、exempt、every-period、自訂工項、負實發</td><td>D-060～D-068</td><td>附錄 B 新增「登入群組」；PAY-R01 新增 3 列範例；PAY-R02 新增 1 個 scenario；T-402 改為 25 個 scenario</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/19">#19</a></td><td>保留金的個人費率、跨年捨入、負目標、目標範圍；庫存比對的多重疑點、信任 A、負庫存</td><td>D-070～D-076</td><td>PAY-R14、MAT-R20 各新增 1 列範例；MAT-R21 新增 2 個 scenario 與新字串「A 系統數值不一致，無法採用」；T-504 改為 7 個 scenario，並要修改 T-114 的純函式</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/20">#20</a>、<a href="https://github.com/pitaya943/yc-daily-report-v3/issues/21">#21</a></td><td>T-101 加嚴的「登入失敗不寫資料」斷言與 T-102 衝突</td><td>D-069、D-077：只排除兩張新表</td><td>T-102 可修改 IAM-F01 的步驟與兩個細節測試</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/23">#23</a>（<span class="todo">尚未回覆</span>）</td><td>Session 與登入鎖定的 6 個規格問題</td><td>—</td><td>不擋 M1；目前的實作都是選項 A。第 3 項（CSRF 怎麼送）要在 M2 第一張有畫面的 ticket 前決定</td></tr>
+  </table></div>
+
+  <h2>8. 已知風險與沒做到的事</h2>
+  <ul class="todo">
+    <li><strong>IAM-R10 的 4 個 scenario 沒有開啟（D-058）。</strong>閒置逾時只由 <code>tests/unit/iam/</code> 的單元測試把關。後果：如果 T-201 忘了開啟，逾時就一直沒有 Gherkin 驗證。處理：T-201 的完成條件已列出 <code>IAM-R10</code>（4），CI 的 <code>done-when</code> 會擋。</li>
+    <li><strong><code>@concurrency</code> scenario 沒有用真的多個行程。</strong>「跨重新啟動」沒有被模擬。後果：單看這個 scenario，分不出計數在記憶體還是資料庫，要靠其他 scenario 補（Verifier 已確認整組測試抓得到）。處理：issue #23 第 6 項。</li>
+    <li><strong>新增的規格範例要到 M4、M5 才會執行。</strong>PAY-F01、PAY-F02、MAT-F03 新增的範例由 Chief 手算，在 T-402、T-504 之前沒有測試執行它們。後果：如果我算錯，要到那時才會發現。</li>
+    <li><strong>逾時的 session 與過期的嘗試紀錄沒有定期清理。</strong>嘗試紀錄會在同一個位址下次嘗試時清掉；session 不會。後果：資料表會慢慢變大，不影響正確性。處理：issue #23 第 2 項。</li>
+    <li><strong>登入頁沒有用 HTMX。</strong>處理：D-062 的 ticket 在 M2。</li>
+    <li><strong>T-112 有 2 個變異沒被測試抓到</strong>（未投保扣除的基數用四捨五入前的毛額、自訂工項金額）。實作正確，但測試沒有釘住。處理：T-402 的完成條件已要求補上。</li>
+  </ul>
+
+  <h2>9. 過程紀錄</h2>
+  <div class="scroll"><table>
+    <tr><th>Ticket</th><th>修正輪數</th><th>Verifier 找到的問題</th><th>備註</th></tr>
+    <tr><td>T-101</td><td>0</td><td>無 FAIL；觀察到登入阻塞 event loop（4 個同時登入時 <code>/health</code> 1.23 s）；4 個規格問題</td><td>阻塞問題交給 T-103 修正</td></tr>
+    <tr><td>T-111</td><td>0</td><td>無；4 個變異全部抓到</td><td>2 個規格問題交給 T-301</td></tr>
+    <tr><td>T-112</td><td>0</td><td>無 FAIL；10 個變異抓到 8 個；6 個規格問題</td><td>→ issue #15</td></tr>
+    <tr><td>T-113</td><td>0</td><td>無；4 個規格問題</td><td>→ issue #19</td></tr>
+    <tr><td>T-114</td><td>0</td><td>無 FAIL；1 個邊界變異存活（x = −1 tenth）；3 個規格問題</td><td>→ issue #19</td></tr>
+    <tr><td>T-103</td><td>0</td><td>無；6 個變異全部抓到；event loop 阻塞從 1.9 s 降到 24～43 ms</td><td>Verifier 前先請 Builder 合併 milestone 重跑 CI，避免 <code>no-weakened-tests</code> 誤擋</td></tr>
+    <tr><td>T-102</td><td>0</td><td>無；12 個變異全部抓到；3 個規格問題</td><td>Builder 兩度依規停下來開 issue（#20、#21）；碰到一次 usage 上限</td></tr>
+  </table></div>
+  <p>Chief 這次的失誤：(1) 兩次讓完成的子 session 空等 7～20 分鐘，原因是 PR 留言叫不醒 Chief，而備援檢查的間隔太寬（pitfall #24）；(2) T-102 停下來時，Chief 一度誤判成 usage 中斷，後來看到 Builder 的回報才更正。</p>
+
+  <h2>10. 這個 milestone 的學習重點</h2>
+  <h3>10.1 密碼雜湊為什麼要「慢」</h3>
+  <p>一般的雜湊（SHA-256）設計成很快，攻擊者拿到資料庫後，每秒可以猜數十億次。scrypt 這類「記憶體困難」的函式，刻意讓每次計算都要大量記憶體（這裡是 128 MiB）與時間，所以 GPU 無法大量平行猜測。代價由伺服器承擔，所以要限制同時進行的數量，並避免在 async 路由裡直接計算（2.3 節）。</p>
+  <h3>10.2 CSRF 與 SameSite cookie</h3>
+  <p>瀏覽器會自動附上 cookie，所以惡意網站可以讓已登入的使用者「替它送出」請求。防法是：改變資料的請求要帶一個只有本站頁面拿得到的 token（這裡放在標頭 <code>X-CSRF-Token</code>），再加上 SameSite=Lax 讓跨站的 POST 不帶 cookie。D-053 讓這種被擋下的請求也寫稽核，偽造攻擊因此會留下紀錄。</p>
+  <h3>10.3 以結果判定測試是否被弱化，以及「過度嚴格」的代價</h3>
+  <p><code>no-weakened-tests</code> 比對的是「目標分支上通過的測試，在 PR 上是否仍通過」，不看語法。所以分支落後時，別人新增的測試看起來就像「消失」（T-103 開 Verifier 前先合併 milestone 就是為此）。反過來，Builder 寫得比規格更嚴的斷言也會被 CI 保護，之後要放寬就得經過你（#20、#21）。測試越嚴不一定越好；嚴格的方向要和規格一致。</p>
+  <h3>10.4 金額計算：不用浮點數、明確的四捨五入</h3>
+  <p><code>0.1 + 0.2 ≠ 0.3</code> 是浮點數的本質，所以金額全部用整數或分數（<code>Fraction</code>）計算。Python 的 <code>round()</code> 是「銀行家捨入」（2.5 → 2），而 AD-2 要求 half-up（2.5 → 3），所以用 <code>(2x+1)//2</code> 自己實作。「在哪一步捨入」也會改變結果：例如跨年的保留金，每年各自捨入再相加（D-071），和合併後才捨入，結果可能不同。</p>
+  <h3>10.5 變異測試：驗證測試本身</h3>
+  <p>Verifier 故意把產品程式改壞（例如 <code>&gt;=</code> 改成 <code>&gt;</code>），看測試會不會失敗。沒失敗的變異（「存活」）代表那個行為沒有被測試釘住。T-112 有 2 個存活，雖然實作是對的，但之後有人改壞也不會被發現，所以要在 T-402 補測試。</p>
+
+  <h3>請你回答的四個問題</h3>
+  <ol>
+    <li><strong>Q1：</strong>這個 milestone 做了什麼？為什麼要在日報之前先做身分與四組純函式？</li>
+    <li><strong>Q2：</strong>為什麼 IAM 改成依序、IAM-R10 延到 T-201、密碼用 scrypt？你會怎麼比較其他做法？</li>
+    <li><strong>Q3：</strong>什麼情況下這些設計會失效？例如反向代理沒設定、有端點沒用 <code>app/core/session.py</code> 的 dependency、新增的金額範例算錯。</li>
+    <li><strong>Q4：</strong>你學到了什麼？特別是第 7 節的金額決定，有沒有哪一項和實際業務不符？</li>
+  </ol>
+</main>
+</body>
+</html>

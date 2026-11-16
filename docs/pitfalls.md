@@ -13,12 +13,24 @@
 | 7 | GitHub 網頁或 API 產生的 merge commit，作者 email 是 `bullet-bots` 帳號的主要 email，不是 noreply | `commit-author` 依 `author.login` 判斷（D-039）；不要改回比對 email | #5 | M0 |
 | 8 | `no-weakened-tests` 與目標分支的最新 commit 比對結果；分支落後時可能被擋 | 推送前先 `git merge origin/milestone/Mx`（不要 rebase、不要用 GitHub 的 Update branch） | #5 | M0 |
 | 9 | PR 說明被編輯時 CI 會重跑（`edited`），`evidence` 檢查靠這個 | 改完 PR 說明後等 CI 重跑；不要推空 commit 來觸發 CI | #5 | M0 |
-| 10 | 子 session 不會被 CI 自動叫醒 | Builder 推送後要自己輪詢 check 結果直到全部跑完，再貼交付留言 | #5 | M0 |
+| 10 | 子 session 不會被 CI 自動叫醒 | Builder 的指示寫明「推送後自己輪詢 check 結果直到全部跑完，再貼交付留言」；Chief 另用 `send_later` 排備援檢查，不要只等子 session 回報 | #5 | M0 |
 | 11 | ticket front matter 沒有 `screens` 欄位時 `evidence` 判為失敗（D-040） | Chief 規劃 milestone 時替每張 ticket 填 `screens: true/false`；`tests/ci/` 自建 ticket 時用 `make_ticket` | #5 | M0 |
-| 12 | 測試改名會被 `no-weakened-tests` 判為原測試消失（D-046） | 不要為了整理而改測試名稱；真的需要時先請 Chief 處理（issue #8） | #5 | M0 |
+| 12 | 測試改名會被 `no-weakened-tests` 判為原測試消失（D-046、D-052） | 不要為了整理而改測試名稱；真的需要時由 Chief 在 ticket 寫明舊名對新名，並記錄在 `docs/decisions.md` | #5 | M0 |
 | 13 | `tests/unit/test_clock.py` 以文字掃描 `app/` 裡的 `now()`，連 docstring 與註解都會被判違規 | 產品程式的註解不要寫出那個字樣；時間一律用 `app/core/clock.py` | #4 | M0 |
 | 14 | `scripts/dev/migrate` 會檢查已套用 migration 的 sha256 | 本機改過 migration 後先跑 `scripts/dev/db-reset` | #4 | M0 |
 | 15 | `tests/unit/conftest.py` 會關掉 `world`（資料庫 fixture） | 需要資料庫的單元測試，照 `tests/unit/core/conftest.py` 把它開回來 | #4 | M0 |
 | 16 | 本機資料庫時區和 CI（UTC）可能不同 | 不要斷言 psycopg 回傳的 `timestamptz` 的 `utcoffset()`；讓資料庫或 `app/core/clock.py` 換算 | #4 | M0 |
 | 17 | `nothing else is written` 只扣掉前面步驟明確斷言過的寫入，目前只有 `an audit row ... is written` 會記錄 | 新增會斷言其他表寫入的步驟時，也要把斷言的列記錄進 recorder，否則產品正確也會失敗 | #4 | M0 |
 | 18 | 共用步驟沒有全域載入 | 其他 feature 的步驟檔用 `from tests.steps.common.steps import *`，動作用 `recorder.perform(...)`（用法在 `tests/steps/common/steps.py` 開頭） | #4 | M0 |
+| 19 | 碰到 usage 上限時子 session 會中斷，不會自己恢復 | 額度恢復後，Chief 用 `send_message` 請該 session 從中斷處繼續；不要另開新 session 重做 | M0 Chief | M1 |
+| 20 | 某個 ticket 在驗證期間推送 milestone 分支，PR 分支就會落後，`no-weakened-tests` 可能擋下 | 驗證期間不推送 `milestone/Mx`；看板的更新等合併時一起推送 | M0 Chief | M1 |
+| 21 | Verifier 若把刻意繞過也算進判定，會無謂地消耗修正輪數 | Verifier 的指示寫明 D-044：判 FAIL 只看疏忽與誤擋；刻意繞過另外列出，不影響判定 | M0 Chief | M1 |
+| 22 | 有會影響完成條件的 issue 還在等 Kuei 時就開 Verifier，答案一改就白費一輪 | 先等 Kuei 回覆、更新完成條件，再開 Verifier；修正輪數有上限（兩輪） | M0 Chief | M1 |
+| 23 | 推送到 `milestone/Mx` 的那次 CI run 有 7 項 skipped，看起來像沒跑完 | 判斷 milestone PR 能否合併，看 `pull_request` 事件那次 run；push 那次的 skipped 是正常的 | M0 Chief | M1 |
+| 24 | Verifier 寫在 PR 上的判定留言不會叫醒 Chief（PR 訂閱只送 CI、review 與合併事件）；M1 因此兩度空等 7～20 分鐘 | 開 Verifier 後，用 `send_later` 每 10 分鐘以內檢查一次 PR 留言與子 session 狀態，直到判定出現 | M1 Chief | M1 |
+| 25 | `done-when` 會把 ticket「完成條件」裡**加了反引號**的規則 ID 都當成必須在 `tests/implemented.txt` 且通過 | 規劃時，不在本 ticket 轉綠的規則 ID（純函式 ticket、延到後面的規則）不加反引號；改完用 `scripts/ci/checks.py` 的 `rule_ids_in()` 確認 | M1 Chief | M1 |
+| 26 | `tests/steps/<feature ID>/` 的步驟要在該目錄 `conftest.py` 用 `pytest_configure` 註冊成 plugin，`tests/test_spec.py` 才看得到；註冊是全域的，同文字的步驟會靜靜覆蓋 | 仿 `tests/steps/IAM-F01/conftest.py`；跑完整 `python3 -m pytest`；新增步驟前先 `grep` 同文字；多個 feature 共用的步驟放 `tests/steps/common/`（例如 `outcome.py`） | #14、#18、#22 | M1 |
+| 27 | FastAPI 的 `Form()` 需要 `python-multipart`，專案沒有宣告這個依賴（本機剛好裝著） | 用 `urllib.parse.parse_qs` 解析表單，或先請 Chief 授權修改 `pyproject.toml` | #14 | M1 |
+| 28 | `async def` 的路由直接呼叫 scrypt 或同步 DB，會阻塞整個 event loop（4 個同時登入時 `/health` 要 1.9 s） | 需要 session、DB 或 CPU 密集計算的端點用 `def`；讀請求主體放在 async dependency | #14、#18 | M1 |
+| 29 | Builder 自己加嚴、超出規格的斷言（例如「登入失敗時整個資料庫不變」）會擋住後續 ticket，而改它要找 Kuei（issue #20、#21） | 比規格更嚴的斷言要在 PR 說明列出；改變寫入行為前先 `grep "diff(\|check_nothing_written" tests/` | #22 | M1 |
+| 30 | 金額四捨五入用內建 `round()` 是銀行家捨入，AD-2 的例子會錯；變異抽查時 Python 可能沿用舊的 `.pyc`，判讀錯誤 | 金額用 `Fraction` 與 `(2x+1)//2`；變異抽查時設 `PYTHONDONTWRITEBYTECODE=1` 並清 `__pycache__` | #13、#16 | M1 |

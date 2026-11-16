@@ -1,0 +1,26 @@
+$ scripts/dev/db-reset && scripts/dev/migrate   # 乾淨的資料庫
+套用 0002_audit_log.sql
+套用 0003_sign_in_sessions.sql
+migration 完成
+略過 0001_init_accounts.sql（已套用）
+略過 0002_audit_log.sql（已套用）
+略過 0003_sign_in_sessions.sql（已套用）
+migration 完成
+$ scripts/dev/migrate   # 第二次：可重複執行
+略過 0001_init_accounts.sql（已套用）
+略過 0002_audit_log.sql（已套用）
+略過 0003_sign_in_sessions.sql（已套用）
+migration 完成
+$ psql ... -c "套用後檢查"
+ has_sessions | has_password_hash 
+--------------+-------------------
+ t            | t
+(1 row)
+
+$ psql -f migrations/0003_sign_in_sessions.sql   # 直接重跑 SQL 本身（不經 migrate 的略過），驗證 IF NOT EXISTS
+psql:migrations/0003_sign_in_sessions.sql:27: NOTICE:  column "password_hash" of relation "accounts" already exists, skipping
+ALTER TABLE
+psql:migrations/0003_sign_in_sessions.sql:38: NOTICE:  relation "sessions" already exists, skipping
+CREATE TABLE
+psql:migrations/0003_sign_in_sessions.sql:40: NOTICE:  relation "sessions_account_idx" already exists, skipping
+CREATE INDEX

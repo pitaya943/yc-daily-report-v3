@@ -54,6 +54,33 @@
 | D-048 | 怎麼修改 `tests/support/**`？ | 只有 ticket 的 `allowed_paths` 明確列出該檔案時才能修改，由 Verifier 審查。 | 比照 D-031 | 2026-11-15 | issue #7 選項 6A |
 | D-049 | 不是 `ticket/*` 分支的 PR？ | 目標是 `milestone/*` 的 PR，來源分支必須是 `ticket/T-xxx` 且有對應的 ticket 檔，否則判為失敗。 | fail-closed | 2026-11-15 | issue #7 選項 7A |
 | D-050 | Migration 什麼時候套用到 Supabase？agent 能不能用 Supabase？ | 延到部署時。agent 與 CI 仍只用拋棄式資料庫，不碰任何 Supabase 專案（不可違反第 7 條不變）。部署前新增「部署準備」ticket：建立 v3 專用的 staging Supabase 專案，由 CI 以權限受限的帳號套用 migration 並跑冒煙測試，處理 pooler 的 prepared statement、SSL、`schema_migrations` 追蹤、角色權限等差異；通過後 Kuei 套用到正式環境。 | 改規則的成本（機密管理、放寬本機防線）現在就要付，好處要到有東西可部署時才出現；共用專案有舊系統的正式資料，不能當拋棄式使用 | 2026-11-16 | Kuei 在 Chief session 選 A；取代 `docs/workflow.md` 原本「每個 milestone 合併後套用」的做法 |
+| D-051 | 新增 `tests/support/` 的檔案，算不算 D-048 說的「修改」？ | 不算。只有修改目標分支上已經存在的 `tests/support/` 檔案，才需要 ticket 的 `allowed_paths` 明確列出；新增的檔案由 Verifier 審查內容。 | 新增 helper 不會讓既有的測試變弱，弱化的風險在修改既有檔案；也不必由 Chief 事先預測檔名 | 2026-11-16 | issue #8 選項 1A；`docs/ci-checks.md` 的 `no-weakened-tests` 同步寫明 |
+| D-052 | 測試可以改名嗎？ | 不可以。結果比對看測試 ID，改名會被判為原測試消失而失敗，CI 不提供例外。真的需要改名時，由 Chief 在 ticket 寫明舊名對新名的對應，並記錄在本檔。 | 改名很少見，而且正是讓測試悄悄消失的常見方式；PR 說明不能成為繞過的管道 | 2026-11-16 | issue #8 選項 2A；`docs/ci-checks.md` 的 `no-weakened-tests` 同步寫明 |
+| D-053 | 沒有有效 anti-forgery token 的請求被拒絕為 `FORBIDDEN` 時，要不要寫 `ACCESS_DENIED`？ | 要。與 `spec/README.md` 的結果類別表、AUD-R03 一致：所有 `FORBIDDEN` 都寫 `ACCESS_DENIED`，沒有例外。 | 規則保持一致，T-003 的自動寫入不必改；偽造請求也留下紀錄 | 2026-11-16 | issue #9 選項 A；`spec/features/IAM-F03-session-and-sign-out.feature` 該 scenario 改為斷言 `ACCESS_DENIED` 與 `nothing else is written`；T-103 完成條件同步更新 |
+| D-054 | Branch protection 的必要檢查放在哪些分支？ | 只在 `main` 要求 `docs/ci-checks.md` 的 10 個必要檢查；`milestone/*` 不要求。Ticket PR 合併進 `milestone/*` 的條件不變（D-003：CI 全綠且 Verifier PASS，由 Chief 確認）。 | Kuei 指定 | 2026-11-16 | 方案 A；Kuei 在 M1 的 Chief session 交接事項中指定 |
+| D-055 | M1 的 ticket 計畫？ | 照 issue #11 核准：IAM 依序 T-101 → T-103 → T-102；純函式 T-111～T-114 與 IAM 平行；同時進行上限 3 張；共用 session 程式在 `app/core/session.py`，共用登入步驟在 `tests/steps/common/session.py`。 | Kuei 核准 | 2026-11-16 | issue #11 |
+| D-056 | 密碼雜湊用什麼？ | Python 標準庫 `hashlib.scrypt`，N=2^17、r=8、p=1（OWASP 最低建議），每個帳戶獨立隨機 salt，以 `hmac.compare_digest` 比對；雜湊字串帶演算法與參數前綴。 | 不新增依賴；前綴讓日後可漸進換演算法 | 2026-11-16 | issue #11 選項 1A；寫入 T-101 完成條件 11 |
+| D-057 | 登入後落地頁的路徑？ | 登入頁 `/sign-in`；USER → `/reports`；ADMIN、OWNER → `/review`。M2、M3 的頁面掛在這兩個路徑。 | 規格沒有 URL；事先固定，之後的 ticket 才能沿用 | 2026-11-16 | issue #11 選項 2A；寫入 T-101 完成條件 12 |
+| D-058 | IAM-R10 的「Saved data survives a timeout」需要 M2 的回報，怎麼辦？ | T-103 實作閒置逾時、寫好其他 3 個 scenario 的步驟，並以單元測試涵蓋閒置邊界；`IAM-R10` 由 T-201 補上回報步驟後加入 `tests/implemented.txt`。 | `done-when` 以規則為單位；不改規格也讓 M1 的 CI 驗證到逾時 | 2026-11-16 | issue #11 選項 3A；T-103、T-201 的完成條件已改 |
+| D-059 | Issue 決定後由誰關閉？ | Chief。把決定記進 `docs/decisions.md` 並推送後，在 issue 留言寫明 D 編號與 commit，然後關閉。寫進 `ask-spec-question`、`plan-milestone` 與 `docs/workflow.md` 第 5 節。 | 原本流程沒有寫，M0 漏關了 #1、#8、#9 | 2026-11-16 | Kuei 在 M1 Chief session 選定；同時關閉 #1、#8、#9、#11 |
+| D-060 | 帳戶不在所選群組的名單內時回什麼？ | `INVALID`「請選擇帳戶」（維持 T-101 的實作）；`group` 選填，介面一律帶上。名單公開，不會洩漏額外資訊，與 IAM-R03 不衝突。 | 不改程式；附錄 B 補說明 | 2026-11-16 | issue #15 選項 1A；`spec/appendix-b-fields.md` |
+| D-061 | 登入群組的代號與顯示名稱？ | `admin`／`west`／`south`，顯示「管理員／西區／南區」。 | 維持 T-101 的實作 | 2026-11-16 | issue #15 選項 2A；`spec/appendix-b-fields.md` 新增「登入群組」一列 |
+| D-062 | HTMX 怎麼供應？ | 把固定版本的 `htmx.min.js` 放進 repo 當靜態檔，記下版本與 sha256；由 M2 規劃時新增一張小 ticket 處理，排在 M2 第一張有畫面的 ticket 之前。 | 不依賴外部 CDN；本機與 CI 測得到 | 2026-11-16 | issue #15 選項 3A；M2 的 plan-approval 要列出這張 ticket |
+| D-063 | 怎麼判斷「production」？ | 環境變數 `APP_ENV=production` 時 session cookie 加上 `Secure`。部署準備 ticket 與 README 要寫明 railway 上的設定。 | 一律 `Secure` 會讓 http 的測試與本機開發壞掉 | 2026-11-16 | issue #15 選項 4A；IAM-F03 加註解 |
+| D-064 | 「已加保」怎麼判斷？ | 保費 > 0 即視為已加保。 | 符合 PAY-R01 既有範例；不改資料模型 | 2026-11-16 | issue #15 選項 5A；PAY-F01 加註解 |
+| D-065 | `exempt` 的範圍？ | 只免除未投保扣除，不影響固定薪資與保險。 | 維持 T-112 的實作 | 2026-11-16 | issue #15 選項 6A；PAY-R01 新增一列範例 |
+| D-066 | every-period 的帳戶，非 10 號發薪的那一期扣不扣保險？ | 不扣；保險只在 10 號發薪扣。 | 符合 PAY-R01 的規則標題 | 2026-11-16 | issue #15 選項 7A；PAY-R01 新增一列範例 |
+| D-067 | 自訂工項的金額算不算未投保扣除的基數？ | 算。自訂工項也是工項；PAY-R02 的 `only` 排除的是固定薪資。 | 名稱就是「自訂工項」；維持 T-112 的實作 | 2026-11-16 | issue #15 選項 8A；PAY-R02 新增一個 scenario；T-402 改為 25 個 scenario |
+| D-068 | 實發為負數時？ | 照實列出負數，由管理員人工處理；不結轉。 | 不新增結轉的規則與資料 | 2026-11-16 | issue #15 選項 9A；PAY-R01 新增一列範例 |
+| D-069 | T-102 的登入失敗必須寫入計數，與 IAM-F01 `nobody is signed in` 的「整個資料庫不變」衝突，怎麼辦？ | 只在 IAM-F01 的這個步驟內排除 `0004` 新增的失敗次數表與登入嘗試表；其他表仍須完全不變；IAM-F02 明確斷言這兩張表的寫入，`RATE_LIMITED` 與鎖定期間的拒絕不寫資料。不改共用步驟。 | 規格 IAM-R03 只寫 `nobody is signed in`；「整個資料庫不變」是 T-101 加嚴的；IAM-R05、R07 要求寫入 | 2026-11-16 | issue #20 選項 A（依 Chief 留言收窄）；T-102 完成條件 11、`allowed_paths` 加 `tests/steps/IAM-F01/iam_f01_steps.py` |
+| D-070 | 個人費率能不能讓非保留金項目或大表帳戶產生保留金？ | 不能，一律為 0；個人費率只覆寫本來就有保留金的項目。 | 維持 T-113 的實作 | 2026-11-16 | issue #19 選項 1A；PAY-F02 加註解 |
+| D-071 | 跨年區間的保留金在哪裡四捨五入？ | 每個年度各自 half-up 到整數再相加。 | 每個年度的累計都是整數，上限比較沒有小數 | 2026-11-16 | issue #19 選項 2A；PAY-F02 加註解 |
+| D-072 | 保留金目標可以是負數，上限空間會超過 cap？ | 維持：上限比較的是加上 offset 後的淨額，負的目標代表多出可扣的空間。 | offset 代表管理員調整後的實際保留 | 2026-11-16 | issue #19 選項 3A；PAY-F02 加註解 |
+| D-073 | 保留金目標的範圍？ | 整數 −999999～999999；超出為 `INVALID`，沿用「保留金調整須為整數（可為負）」。 | 避免 T-402 定欄位型別後溢位 | 2026-11-16 | issue #19 選項 4A；附錄 B 與 PAY-R14 新增一列範例 |
+| D-074 | 一列同時有多個疑點時，likely fault 怎麼填？ | 依序只報第一個：A 不一致 → x < 0（`?`）→ B 不符。 | A 壞了 B 就無從比較 | 2026-11-16 | issue #19 選項 5A；MAT-R20 新增一列範例 |
+| D-075 | 「信任 A」的結果不合不變式時？ | 比照 AD-6 拒絕為 `CONFLICT`「A 系統數值不一致，無法採用」，該列留在暫存區。 | 避免之後的核准在壞資料上運算 | 2026-11-16 | issue #19 選項 6A；MAT-R21 新增 scenario；附錄 B、`spec/definitions.md` 新增字串；T-504 改 `app/domain/inventory_import.py` |
+| D-076 | 庫存可以是負數嗎？ | 不可以。不變式加上實領量、累計使用量、庫存量都 ≥ 0，用在 AD-6 與 D-075。 | 負庫存沒有業務意義 | 2026-11-16 | issue #19 選項 7A；MAT-R21 新增 scenario；附錄 B 更新 |
+| D-077 | T-101 的兩個補充測試（`test_sign_in_details.py`）也斷言登入失敗時整個資料庫不變，與 IAM-R05、R07 衝突？ | 只有這兩個測試改用排除 `0004` 兩張表的比對（範圍同 D-069）；共用的 `_rejected` 維持嚴格。`INVALID` 的請求（欄位驗證就被擋下）不算 IAM-R07 的登入嘗試，不寫資料。 | 與 D-069 同一原因；其他拒絕情況維持最嚴格的斷言 | 2026-11-16 | issue #21 選項 A（依 Chief 留言收窄）；T-102 完成條件 12、`allowed_paths` 加 `tests/steps/IAM-F01/test_sign_in_details.py` |
 
 ## 待決定
 

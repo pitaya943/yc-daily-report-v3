@@ -1,3 +1,12 @@
 # 已實作的規則 ID（一行一個，例如 IAM-R01）。
 # 只有列在這裡的 Rule 底下的 scenario 會被執行；其餘標示為「尚未實作」（skip），不算失敗。
 # 每張 ticket 實作完一條規則，就在同一個 PR 把規則 ID 加進來。
+IAM-R01
+IAM-R02
+IAM-R03
+IAM-R11
+IAM-R12
+IAM-R04
+IAM-R05
+IAM-R06
+IAM-R07

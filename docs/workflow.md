@@ -67,7 +67,7 @@ Verifier 每一輪都是全新的 session。
 
 每個 issue 都要有選項與建議，格式見 `ask-spec-question`。等待期間，不依賴該 ticket 的其他 ticket 繼續進行；依賴它的標為 `blocked`。
 
-Kuei 的回覆由 Chief 記進 `docs/decisions.md`；如果回覆改變了規格，Chief 在同一個 PR 修改 `spec/` 並更新受影響 ticket 的完成條件。
+Kuei 的回覆由 Chief 記進 `docs/decisions.md`；如果回覆改變了規格，Chief 在同一個 PR 修改 `spec/` 並更新受影響 ticket 的完成條件。記錄並推送後，Chief 在 issue 留言寫明 D 編號與 commit，然後關閉 issue（D-059）。Kuei 只負責回覆，不必關閉。
 
 ## 6. Context 與記憶
 

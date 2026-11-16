@@ -1,0 +1,9 @@
+$ echo IAM-R10 >> tests/implemented.txt   # 只在本機暫時加入，用來驗證 3 個步驟寫對；未提交
+$ python3 -m pytest tests/steps tests/test_spec.py -rA -k "idle or activity or remember or survives"
+E   pytest_bdd.exceptions.StepDefinitionNotFoundError: Step definition is not found: Given ""Wen" saved a report and was then signed out for idle time". Line 25 in scenario "Saved data survives a time
+PASSED tests/test_spec.py::test_idle_boundary[29 min 59 sec-accepted]
+PASSED tests/test_spec.py::test_idle_boundary[30 min 00 sec-UNAUTHENTICATED]
+PASSED tests/test_spec.py::test_activity_restarts_the_idle_window
+PASSED tests/test_spec.py::test_there_is_no_rememberme
+FAILED tests/test_spec.py::test_saved_data_survives_a_timeout - pytest_bdd.ex...
+================= 1 failed, 4 passed, 532 deselected in 3.80s ==================

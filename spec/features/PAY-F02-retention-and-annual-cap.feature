@@ -6,6 +6,7 @@ Feature: Retention and annual cap
   # period retention = max(0, min(period raw, cap − ytd before))
 
   Rule: PAY-R10 Retention applies only to the retention items of the person's zone
+    # 個人費率只覆寫本來就有保留金的項目；非保留金項目與大表帳戶一律為 0（D-070）。
 
     Scenario Outline: Who and what attracts retention
       Given "<name>" has a confirmed share of 10.0 of "<item>"
@@ -54,7 +55,7 @@ Feature: Retention and annual cap
       And the 2026 figures for "Wen" are still 20000 and 1000
 
     # 本規格定義（AD-3）：每筆回報的保留金歸屬於它自己回報日期的年度，
-    # 跨年區間等於兩個年度各算一次再相加。
+    # 跨年區間等於兩個年度各算一次再相加；每個年度各自 half-up 到整數後再相加（D-071）。
     @assumed @AD-3
     Scenario: A payroll period that spans New Year
       Given "Wen" has year-to-date retention of 59000 for 2026 before "2026-12-21"
@@ -94,6 +95,8 @@ Feature: Retention and annual cap
         | 60000.5 | INVALID |
 
 Rule: PAY-R14 An administrator may set a person's year-to-date retention for one year
+    # 目標可為負；上限比較的是加上 offset 後的淨額，負的目標代表多出可扣的空間（D-072）。
+    # 目標範圍 −999999～999999，超出為 INVALID（D-073）。
 
     # 管理員輸入「目標年度累計」，系統存 offset = 目標 − 計算值；offset 按年度分開存，不帶到下一年。
     Scenario: Setting a target stores the offset for that year only
@@ -124,3 +127,4 @@ Rule: PAY-R14 An administrator may set a person's year-to-date retention for one
         | 0      | accepted |
         | 100.5  | INVALID  |
         | abc    | INVALID  |
+        | 1000000 | INVALID |
