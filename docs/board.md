@@ -33,8 +33,8 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 | T-112 | M1 | 純函式：薪資公式 | merged | [#13](https://github.com/pitaya943/yc-daily-report-v3/pull/13) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS；變異 2 個存活，測試缺口記給 T-402）；規格問題 → issue #15（D-064～D-068） |
 | T-113 | M1 | 純函式：保留金 | merged | [#17](https://github.com/pitaya943/yc-daily-report-v3/pull/17) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS）；規格問題見 issue #19 |
 | T-114 | M1 | 純函式：庫存比對 | merged | [#16](https://github.com/pitaya943/yc-daily-report-v3/pull/16) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS）；規格問題見 issue #19 |
-| T-200 | M2 | 固定版本的 HTMX 與共用頁面版型 | todo | — | — | — |
-| T-201 | M2 | 送出日報 | todo | — | — | — |
+| T-200 | M2 | 固定版本的 HTMX 與共用頁面版型 | merged | [#26](https://github.com/pitaya943/yc-daily-report-v3/pull/26) | 0 | Builder 第一輪：claude-sonnet-5-5；CI 第一次因 runner 網路錯誤失敗（install-postgres 的失敗被 `|| true` 吞掉），重跑全綠；Verifier 第 1 輪：claude-opus-5-5（PASS，9 個變異全抓到） |
+| T-201 | M2 | 送出日報 | building | — | — | Builder 第一輪：claude-sonnet-5-5 |
 | T-202 | M2 | 回報生命週期 | todo | — | — | — |
 | T-203 | M2 | 歷史與匯出 | todo | — | — | — |
 | T-301 | M3 | 確認或駁回回報，保存份額 | todo | — | — | — |
