@@ -51,9 +51,12 @@ async def _read_form(request: Request) -> dict[str, str]:
 
 
 @router.post("/sign-in")
-def sign_in(form: dict[str, str] = Depends(_read_form), conn: psycopg.Connection = Depends(get_db)):
+def sign_in(request: Request, form: dict[str, str] = Depends(_read_form), conn: psycopg.Connection = Depends(get_db)):
     # `def` 不是 `async def`：scrypt（約零點幾秒的 CPU）與同步 DB 若直接跑在 event loop 上，會讓整個應用程式停住（完成條件 11）
-    issued, landing = service.sign_in(conn, form.get("name"), form.get("password"), form.get("group") or None)
+    # 來源位址取自 ASGI 的 client（反向代理後面由 uvicorn 的 --proxy-headers 換成真實位址）；取不到時用固定字串，
+    # 讓「取不到位址」的請求共用同一個額度，而不是不受限制
+    address = request.client.host if request.client else "unknown"
+    issued, landing = service.sign_in(conn, form.get("name"), form.get("password"), form.get("group") or None, client_address=address)
     response = RedirectResponse(landing, status_code=303)
     set_session_cookie(response, issued.token)
     return response
