@@ -17,7 +17,7 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 
 ## M2（計畫：issue #25，D-084～D-092）
 
-- 順序：T-200 → T-201 → T-202 ‖ T-203。
+- 順序：T-200 → T-201 → T-202 ‖ T-203；issue #29 新增 T-205（‖ T-202）與 T-204（在 T-202 之後）。
 - 同時進行上限：2 張（只有 T-202 ‖ T-203 平行；`tests/implemented.txt` 是例外，D-089）。
 - 模型：Chief claude-opus-5-5；Builder claude-sonnet-5-5；Verifier claude-opus-5-5；修正第二輪 Builder claude-opus-5-5。
 
@@ -37,6 +37,8 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 | T-201 | M2 | 送出日報 | merged | [#28](https://github.com/pitaya943/yc-daily-report-v3/pull/28) | 0 | Builder 第一輪：claude-sonnet-5-5；共用步驟 `the outcome is` 與 RPT-R02／R03 的字串衝突 → issue #27 → D-093（同一個 session 繼續）；Verifier 第 1 輪：claude-opus-5-5（PASS，22 個變異全抓到；拿掉並行鎖的變異是機率性抓到，15 次中 10 次）；規格問題 → issue #29 |
 | T-202 | M2 | 回報生命週期 | building | — | — | Builder 第一輪：claude-sonnet-5-5；20:41 碰到 usage 上限，22:01 請它繼續；共用步驟衝突 → issue #30（audit description）、#31（FORBIDDEN 與 ACCESS_DENIED） → D-094、D-095 |
 | T-203 | M2 | 歷史與匯出 | merged | [#32](https://github.com/pitaya943/yc-daily-report-v3/pull/32) | 0 | Builder 第一輪：claude-sonnet-5-5（20:42 碰到 usage 上限，22:01 繼續）；Verifier 第 1 輪：claude-opus-5-5（PASS，14 個變異全抓到）；規格問題併入 issue #29；加嚴斷言「匯出只寫一列稽核」「一律斷言順序」可能影響 M4 匯出 |
+| T-204 | M2 | 至少一個工項與共同作業者資格（規格更新） | blocked | — | — | 等 T-202；D-096、D-097、D-103 |
+| T-205 | M2 | 歷史篩選調整（規格更新） | building | — | — | Builder 第一輪：claude-sonnet-5-5；D-099、D-100 |
 | T-301 | M3 | 確認或駁回回報，保存份額 | todo | — | — | — |
 | T-302 | M3 | 自訂工項 | todo | — | — | — |
 | T-303 | M3 | 帳戶生命週期與薪資設定 | todo | — | — | — |

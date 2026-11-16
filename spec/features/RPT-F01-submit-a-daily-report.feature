@@ -51,9 +51,10 @@ Feature: Submit a daily report
 
     Scenario Outline: Quantity boundary
       Given "Wen" is signed in
-      When "Wen" submits a report with "direct_13" = "<qty>"
+      # D-096：另外填一個有數量的工項，讓這張表只檢查 direct_13 的邊界（全部為 0 的回報見 RPT-R08）。
+      When "Wen" submits a report with "direct_13" = "<qty>" and "indirect_13" = 1.0
       Then the outcome is <outcome>
-      And the stored quantity is <tenths> tenths
+      And the stored quantity of "direct_13" is <tenths> tenths
 
       Examples:
         | qty    | outcome  | tenths |
@@ -95,20 +96,32 @@ Feature: Submit a daily report
       And the other is rejected as CONFLICT with message "每日最多只能送出 3 筆回報"
 
   Rule: RPT-R05 Collaborators are same-zone, same-type, non-archived USERs, at most 6, never the submitter
+    # D-097：不符資格或重複的共同作業者一律拒絕，不再靜默略過。
 
-    Scenario Outline: Collaborator eligibility
+    Scenario: An eligible collaborator is saved
+      Given "Wen" is signed in
+      When "Wen" submits a report naming collaborator "Wei"
+      Then the saved crew is "Wen, Wei"
+
+    Scenario Outline: An ineligible collaborator is refused
       Given "Wen" is signed in
       When "Wen" submits a report naming collaborator "<who>"
-      Then the saved crew is "<crew>"
+      Then the request is rejected as INVALID with message "共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工"
+      And nothing is written
 
       Examples:
-        | who    | crew     | why                  |
-        | Wei    | Wen, Wei | eligible             |
-        | Nan    | Wen      | different zone       |
-        | Big    | Wen      | different type       |
-        | Old    | Wen      | archived             |
-        | Admin1 | Wen      | not a USER           |
-        | Wen    | Wen      | the submitter itself |
+        | who    | why                  |
+        | Nan    | different zone       |
+        | Big    | different type       |
+        | Old    | archived             |
+        | Admin1 | not a USER           |
+        | Wen    | the submitter itself |
+
+    Scenario: Naming the same collaborator twice is refused
+      Given "Wen" is signed in
+      When "Wen" submits a report naming collaborators "Wei" then "Wei"
+      Then the request is rejected as INVALID with message "共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工"
+      And nothing is written
 
     Scenario: Crew order is the order the submitter chose
       Given "Wen" is signed in
@@ -141,3 +154,12 @@ Feature: Submit a daily report
       Given "Wen" is signed in
       When "Wen" submits a report naming collaborators "Wei" then "Wan"
       Then the audit description contains "共 3 人作業"
+
+  Rule: RPT-R08 A report needs at least one quantity above 0
+    # D-096：全部為 0（含空白）的回報不成立。自訂工項（REV-R20）有數量也算；編輯見 RPT-R14。
+
+    Scenario: A report with no quantity is refused
+      Given "Wen" is signed in
+      When "Wen" submits a report with every quantity blank
+      Then the request is rejected as INVALID with message "請至少填寫一個工項數量"
+      And nothing is written
