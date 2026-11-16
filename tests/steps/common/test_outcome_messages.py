@@ -78,12 +78,17 @@ def test_appendix_b_messages_are_parsed_from_the_spec():
         ("INVALID", None),  # 規格沒有為該情況寫字串（例如 RPT-R01 的工項組以外）
         ("CONFLICT", "每日最多只能送出 3 筆回報"),
         ("CONFLICT", None),
+        ("FORBIDDEN", None),  # D-095：FORBIDDEN 要有恰好 1 列 ACCESS_DENIED（見下方），測試 ID 不變
         ("UNAUTHENTICATED", None),
         ("LOCKED", "密碼錯誤次數過多，請在 15 分鐘後再試"),
     ],
 )
 def test_accepts_an_appendix_b_message_or_null(db, outcome, message):
-    _check(db, _reject(db, outcome, message), outcome)
+    if outcome == "FORBIDDEN":  # 規格規定每個 FORBIDDEN 都寫 ACCESS_DENIED（D-095）：這個案例要有已登入的人與那一列
+        client, _ = _wen_client(db)
+        _check(db, _forbidden(db, client, _denied(db)), outcome, client)
+    else:
+        _check(db, _reject(db, outcome, message), outcome)
 
 
 # ───────── 會失敗的（反向測試）─────────
