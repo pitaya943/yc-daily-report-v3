@@ -100,7 +100,8 @@ def path_matches(pattern: str, path: str) -> bool:
 
 
 def ticket_id_of(head_ref: str) -> str | None:
-    m = re.fullmatch(r"ticket/(T-\d+)(?:[-/].*)?", head_ref)
+    """D-049：來源分支必須正好是 ticket/T-數字（不接受後綴、小寫或子路徑）。"""
+    m = re.fullmatch(r"ticket/(T-\d+)", head_ref)
     return m.group(1) if m else None
 
 
@@ -134,16 +135,37 @@ def load_ticket(ctx: Ctx, ticket_id: str) -> tuple[dict, str]:
     return parse_ticket(text), text
 
 
+def is_ticket_pr(ctx: Ctx) -> bool:
+    """這個 PR 是否必須是 ticket PR。D-049：目標是 milestone/* 的 PR 一律是；
+    另外，來源分支是 ticket/ 開頭的 PR 也當作 ticket PR（不論目標），名稱不合規就失敗。"""
+    return ctx.base_ref.startswith("milestone/") or ctx.head_ref.startswith("ticket/")
+
+
 def ticket_context(ctx: Ctx) -> tuple[str, dict, str] | None:
-    """來源分支是 ticket/* 時回傳 (ticket 編號, front matter, 全文)，不是 ticket 分支回傳 None。
-    fail-closed：分支名稱是 ticket/ 開頭、卻不是 ticket/T-數字，或目標分支上沒有對應的 ticket 檔，一律拋 CheckError。"""
-    if not ctx.head_ref.startswith("ticket/"):
+    """ticket PR 回傳 (ticket 編號, front matter, 全文)；不是 ticket PR（例如 milestone/Mx → main）回傳 None。
+    fail-closed（D-049）：來源分支不是 ticket/T-數字，或目標分支上沒有對應的 ticket 檔，一律拋 CheckError。"""
+    if not is_ticket_pr(ctx):
         return None
     tid = ticket_id_of(ctx.head_ref)
     if tid is None:
-        raise CheckError(f"分支 {ctx.head_ref} 的名稱不是 ticket/T-數字，找不到對應的 docs/tickets/T-xxx.md")
-    meta, text = load_ticket(ctx, tid)
+        raise CheckError(
+            f"D-049：目標是 {ctx.base_ref or '(未知)'} 的 PR，來源分支必須是 ticket/T-數字，"
+            f"而這個 PR 的來源分支是 {ctx.head_ref or '(空)'}，找不到對應的 docs/tickets/T-xxx.md"
+        )
+    try:
+        meta, text = load_ticket(ctx, tid)
+    except CheckError as e:
+        raise CheckError(f"D-049：{e}") from None
     return tid, meta, text
+
+
+def branch_gate(ctx: Ctx) -> list[str]:
+    """D-049 的閘門：run.py 在每一項檢查之前都先呼叫；不合規時每一項都判為失敗。"""
+    try:
+        ticket_context(ctx)
+    except CheckError as e:
+        return [str(e)]
+    return []
 
 
 def done_section(ticket_text: str) -> str:
@@ -187,7 +209,7 @@ def check_spec_readonly(ctx: Ctx) -> list[str]:
         bad.append(str(e))
         tc = (ctx.head_ref, {"allowed_paths": []}, "")
     if tc is None:
-        return []  # 只管 ticket/* 的 PR
+        return []  # 不是 ticket PR（milestone/Mx → main）
     tid, meta, _ = tc
     exceptions = [p for p in meta["allowed_paths"] if _explicit_pattern(p)]
     for status, path in changed_files(ctx):
@@ -412,7 +434,7 @@ def _scan_targets(root: Path) -> list[Path]:
 
 
 def check_no_weakened_tests(ctx: Ctx) -> list[str]:
-    bad = []
+    bad = branch_gate(ctx)  # D-049
     for p in _scan_targets(ctx.root):
         rel = p.relative_to(ctx.root).as_posix()
         if "__pycache__" in rel:

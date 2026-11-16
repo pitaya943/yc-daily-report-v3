@@ -62,6 +62,13 @@ def main(argv: list[str]) -> int:
         head_ref=os.environ.get("CI_HEAD_REF", ""),
         pr_body=os.environ.get("CI_PR_BODY", ""),
     )
+    # D-049：目標是 milestone/* 的 PR，來源分支必須是 ticket/T-xxx 且目標分支上有 ticket 檔，否則每一項都失敗
+    gate = checks.branch_gate(ctx)
+    if gate:
+        for p in gate:
+            print(f"[{name}] {p}")
+        print(f"[{name}] 失敗：{len(gate)} 項")
+        return 1
     try:
         if name == "commit-author":
             problems = commit_author_problems(ctx, argv[2:])

@@ -1,0 +1,33 @@
+$ git checkout fae235c   # 只有測試的 commit（D-049）
+$ python3 -m pytest -q -p no:cacheprovider tests/ci
+FAILED tests/ci/test_fix_round2.py::test_d049_every_ticket_based_check_fails_for_a_non_ticket_branch_into_a_milestone[feature/x]
+FAILED tests/ci/test_fix_round2.py::test_d049_every_ticket_based_check_fails_for_a_non_ticket_branch_into_a_milestone[milestone/M9]
+FAILED tests/ci/test_fix_round2.py::test_d049_every_ticket_based_check_fails_for_a_non_ticket_branch_into_a_milestone[main]
+FAILED tests/ci/test_fix_round2.py::test_d049_every_ticket_based_check_fails_for_a_non_ticket_branch_into_a_milestone[T-900]
+FAILED tests/ci/test_fix_round2.py::test_d049_every_ticket_based_check_fails_for_a_non_ticket_branch_into_a_milestone[ticket/T-900-extra]
+FAILED tests/ci/test_fix_round2.py::test_d049_every_ticket_based_check_fails_for_a_non_ticket_branch_into_a_milestone[ticket/t-900]
+FAILED tests/ci/test_fix_round2.py::test_d049_every_ticket_based_check_fails_for_a_non_ticket_branch_into_a_milestone[ticket/T-900/x]
+FAILED tests/ci/test_fix_round2.py::test_d049_a_ticket_branch_whose_ticket_file_is_not_on_the_target_fails
+FAILED tests/ci/test_fix_round2.py::test_d049_a_proper_ticket_branch_passes_the_gate
+FAILED tests/ci/test_fix_round2.py::test_d049_pr_into_main_is_not_a_ticket_pr
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[feature/x-tests]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[feature/x-spec-readonly]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[feature/x-path-scope]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[feature/x-evidence]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[feature/x-migration-scope]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[feature/x-no-weakened-tests]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[feature/x-done-when]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[feature/x-strings]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[feature/x-commit-author]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[feature/x-lint]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[ticket/T-999-tests]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[ticket/T-999-spec-readonly]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[ticket/T-999-path-scope]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[ticket/T-999-evidence]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[ticket/T-999-migration-scope]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[ticket/T-999-no-weakened-tests]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[ticket/T-999-done-when]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[ticket/T-999-strings]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[ticket/T-999-commit-author]
+FAILED tests/ci/test_fix_round2.py::test_d049_run_py_fails_every_check[ticket/T-999-lint]
+30 failed, 293 passed in 7.15s
