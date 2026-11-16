@@ -1,0 +1,5 @@
+ERROR tests/unit/core/test_permissions.py::test_admin_does_not_get_owner_only_permission
+ERROR tests/unit/core/test_permissions.py::test_any_matching_rule_is_enough
+ERROR tests/unit/core/test_permissions.py::test_no_actor_is_unauthenticated_and_not_audited
+ERROR tests/unit/core/test_permissions.py::test_denial_audit_survives_the_callers_rollback
+28 failed, 531 passed, 489 skipped, 56 errors in 13.29s
