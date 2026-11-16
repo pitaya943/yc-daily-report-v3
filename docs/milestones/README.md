@@ -70,4 +70,5 @@
 - 依賴都已 `merged` 的 ticket 可以同時進行。
 - 同時進行的 ticket，`allowed_paths` 不得重疊。
 - `migration: true` 的 ticket 一次只做一張，依 `migration_number` 的順序。
+- 例外：`tests/implemented.txt` 可以重疊；後合併的 ticket 在開 Verifier 前先 merge milestone 分支（D-089）。
 - 同時進行的 ticket 數量由 Chief 決定，並記錄在 `docs/board.md`。

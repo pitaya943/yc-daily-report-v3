@@ -15,10 +15,10 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 - 同時進行上限：3 張。第一批 T-101、T-111、T-112；有一張合併就補 T-113、T-114。
 - 模型：Chief claude-opus-5-5；Builder claude-sonnet-5-5；Verifier claude-opus-5-5；修正第二輪 Builder claude-opus-5-5。
 
-## M2（計畫：待 plan-approval issue 核准）
+## M2（計畫：issue #25，D-084～D-092）
 
 - 順序：T-200 → T-201 → T-202 ‖ T-203。
-- 同時進行上限：2 張（只有 T-202 ‖ T-203 平行）。
+- 同時進行上限：2 張（只有 T-202 ‖ T-203 平行；`tests/implemented.txt` 是例外，D-089）。
 - 模型：Chief claude-opus-5-5；Builder claude-sonnet-5-5；Verifier claude-opus-5-5；修正第二輪 Builder claude-opus-5-5。
 
 | Ticket | Milestone | 標題 | 狀態 | PR | 修正輪數 | 備註 |

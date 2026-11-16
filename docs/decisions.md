@@ -87,6 +87,15 @@
 | D-081 | 被鎖定而拒絕的請求算不算 IAM-R07 的登入嘗試？ | 不算。 | 符合 D-069「鎖定期間的拒絕不寫資料」；這些請求不做 scrypt，也不洩漏密碼對錯 | 2026-11-16 | issue #23 選項 4A；不改程式 |
 | D-082 | IAM-R04「15 分鐘內 5 次」從哪裡起算？ | 從最後一次失敗起算 15 分鐘。 | 與 IAM-R05「15 分鐘沒有再失敗就重置」的文字一致；維持 T-102 的實作 | 2026-11-16 | issue #23 選項 5A；不改程式 |
 | D-083 | `@concurrency`「across workers and restarts」要測到什麼程度？ | 維持同一行程內的多個 app 實例，加上直接斷言資料庫的列數。 | 「計數只存在記憶體」的錯誤由其他 scenario 抓到；多行程的並行測試由 M6 的 T-604 負責 | 2026-11-16 | issue #23 選項 6A；不改程式 |
+| D-084 | M2 的計畫？ | 核准：新增 T-200（HTMX 與共用版型）；順序 T-200 → T-201 → T-202 ‖ T-203，同時最多 2 張；四張 ticket 的 `screens` 依計畫填寫。模型：Chief claude-opus-5-5、Builder claude-sonnet-5-5、Verifier claude-opus-5-5、修正第二輪 Builder claude-opus-5-5。 | Kuei 核准 | 2026-11-16 | issue #25 |
+| D-085 | RPT-R12 需要的份額表要到 M3 才建立？ | RPT-R12 移到 T-301。T-202 實作管理員編輯（CONFIRMED → PENDING，寫 `REPORT_UNCONFIRM` 與 `REPORT_UPDATE`）；T-301 建立份額表後補上刪除份額並讓 RPT-R12 轉綠，`allowed_paths` 加 `app/modules/reports/report_lifecycle/**`、`tests/steps/RPT-F02/**`。 | 不在 REV-R11 實作前決定份額的資料模型 | 2026-11-16 | issue #25 選項 1A；T-202 改為 6 個 scenario，T-301 改為 12 個 |
+| D-086 | 自訂工項在 M2 怎麼保存？ | T-201 的 `0005` 在 `reports` 上加三個可為 null 的欄位：名稱（最多 100 字）、數量（0.1 只的整數 0～9999）、單價（≥ 0 的整數），check 約束要求同時為 null 或同時有值。 | REV-R20 一張回報最多一個自訂工項；T-203 的篩選與匯出需要 | 2026-11-16 | issue #25 選項 2A；T-302 在 M3 規劃時確認是否還需要 migration |
+| D-087 | 匯出 .xlsx 用什麼？ | `openpyxl`，由 T-203 加進 `pyproject.toml`，固定版本範圍。 | 之後 M4 的匯出可以沿用 | 2026-11-16 | issue #25 選項 3A；T-203 `allowed_paths` 加 `pyproject.toml` |
+| D-088 | HTMX 的版本？ | `htmx.org@2.0.11`（npm 的 `latest`）的 `dist/htmx.min.js`，原封不動。 | 4.x 是剛發布的大版本 | 2026-11-16 | issue #25 選項 4A；補充 D-062 |
+| D-089 | T-202 與 T-203 都要改 `tests/implemented.txt`，可以平行嗎？ | 可以；`tests/implemented.txt` 是平行規則的例外。後合併的 ticket 在開 Verifier 前先 merge `milestone/M2`。兩張都不得在 `tests/steps/common/` 新增步驟，新增步驟前先 `grep` 同文字。 | 衝突只是各自加幾行規則 ID | 2026-11-16 | issue #25 選項 5A |
+| D-090 | M2 頁面與端點的路徑？ | T-201 `GET/POST /reports`；T-202 `GET /reports/{id}/edit`、`POST /reports/{id}`、`POST /reports/{id}/delete`（USER 與管理員共用，伺服器依角色判斷）；T-203 `GET /reports/history`、`/reports/history/export`、`/review/history/ordinary`、`/review/history/big-meter` 與各自的 `/export`。 | 依 D-057；平行的 ticket 事先知道彼此的路徑 | 2026-11-16 | issue #25 選項 6A；已寫進各 ticket |
+| D-091 | 怎麼避免 Builder 自己加嚴的斷言擋住後續 ticket（pitfall #29）？ | `.claude/skills/build-ticket/SKILL.md` 的「PR 說明要有」加一條：比規格更嚴格的斷言要逐條列出。 | 每個 milestone 不必再靠 Chief 記得加 | 2026-11-16 | issue #25 選項 7A；Kuei 核准修改 `.claude/**` |
+| D-092 | `docs/pitfalls.md` 滿 30 條，刪哪些？ | 刪 #5（`done-when` 已要求規則的 scenario 都 passed）、#7（`commit-author` 依 `author.login`，D-039）、#11（`evidence` 直接報出缺 `screens`）。其他條目不重新編號，避免既有的引用失效。 | 已被 CI 檢查取代 | 2026-11-16 | issue #25 選項 8A |
 
 ## 待決定
 
