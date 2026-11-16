@@ -1,0 +1,2 @@
+{#- 編輯成功後 HTMX 換進 #result 的片段（不 extends base.html）。autoescape 已開。 -#}
+<p class="saved" role="status">日報已更新（#{{ edited.report_id }}，{{ edited.report_date.isoformat() }}），狀態：待確認（PENDING）。{% if edited.previous_status == "CONFIRMED" %}原本已確認，現在回到待確認，份額作廢。{% elif edited.previous_status == "REJECTED" %}原本已駁回，現在重新待確認。{% endif %}{% if not edited.changed %}內容沒有變更。{% endif %}</p>

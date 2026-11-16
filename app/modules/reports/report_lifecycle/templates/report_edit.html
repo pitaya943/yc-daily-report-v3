@@ -1,0 +1,137 @@
+{#- 編輯日報（RPT-F02；D-057、D-080、D-090）。extends T-200 的共用版型。
+    * 表單用 HTMX 送出（hx-post="/reports/{id}"）；token 由版型 <body> 的 hx-headers 帶上，沒有隱藏欄位。
+    * 回報日期只讀（AD-8：送出後不可修改）；仍隨表單送出，伺服器檢查它等於已存的日期。
+    * 刪除要二次確認：先按「刪除這張回報」才出現確認區，再按「確認刪除」才送出 POST /reports/{id}/delete。
+    * HTMX 2 預設不把 4xx 換進畫面：下面的 htmx:beforeSwap 把拒絕的完整錯誤字串顯示在 #form-error，
+      不修改 base.html。伺服器的拒絕回應是 JSON：{"outcome": ..., "message": ...}（app/core/outcomes.py）。 -#}
+{% extends "base.html" %}
+{% block title %}編輯日報{% endblock %}
+{% block content %}
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, "Noto Sans TC", sans-serif; margin: 0; padding: 16px; max-width: 40rem; margin-inline: auto; line-height: 1.5; }
+  h1 { font-size: 1.25rem; margin: 0 0 .25rem; }
+  .who { margin: 0 0 1rem; opacity: .75; }
+  fieldset { border: 1px solid color-mix(in srgb, currentColor 25%, transparent); border-radius: 8px; margin: 0 0 1rem; padding: .75rem; }
+  legend { font-weight: 600; padding: 0 .25rem; }
+  label { display: block; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .35rem 0; border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent); }
+  .row:last-child { border-bottom: 0; }
+  input, select, button { font: inherit; padding: .5rem .6rem; border-radius: 6px; border: 1px solid color-mix(in srgb, currentColor 35%, transparent); background: transparent; color: inherit; }
+  .row input { width: 6rem; text-align: right; }
+  input[readonly] { opacity: .7; }
+  .crew select { width: 100%; margin: .25rem 0; }
+  button { width: 100%; font-weight: 600; cursor: pointer; }
+  button.primary { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+  button.danger { background: #b91c1c; color: #fff; border-color: #b91c1c; }
+  button[disabled] { opacity: .6; }
+  #form-error { border: 1px solid #b91c1c; background: color-mix(in srgb, #b91c1c 12%, transparent); border-radius: 6px; padding: .6rem .75rem; margin: 0 0 1rem; }
+  #form-error[hidden], #confirm-delete[hidden] { display: none; }
+  .saved { border: 1px solid #15803d; background: color-mix(in srgb, #15803d 12%, transparent); border-radius: 6px; padding: .6rem .75rem; margin: 1rem 0 0; }
+  .notice { border: 1px solid #b45309; background: color-mix(in srgb, #b45309 12%, transparent); border-radius: 6px; padding: .6rem .75rem; margin: 0 0 1rem; }
+  .hint { font-size: .85rem; opacity: .7; margin: 0 0 .5rem; }
+  #confirm-delete { border: 1px solid #b91c1c; border-radius: 8px; padding: .75rem; margin-top: .75rem; }
+  #confirm-delete .buttons { display: flex; gap: .5rem; margin-top: .5rem; }
+  hr { margin: 1.5rem 0; opacity: .3; }
+</style>
+
+<h1>編輯日報 #{{ report.id }}</h1>
+<p class="who">{{ submitter.name }}・{{ report.catalogue }}・目前狀態 {{ report.status }}</p>
+{% if is_admin_edit and report.status == "CONFIRMED" %}
+<p class="notice" role="note">這張回報已確認。儲存後會回到待確認（PENDING），已確認的結果與份額作廢，需要重新確認。</p>
+{% elif report.status == "REJECTED" %}
+<p class="notice" role="note">這張回報已被駁回。儲存後會重新進入待確認（PENDING）。</p>
+{% endif %}
+
+<form id="report-form" hx-post="/reports/{{ report.id }}" hx-target="#result" hx-swap="innerHTML" autocomplete="off">
+  <div id="form-error" role="alert" aria-live="assertive" hidden></div>
+
+  <fieldset>
+    <legend>回報日期</legend>
+    <label for="report_date" class="hint">送出後不可修改；要改日期請刪除後重送</label>
+    <input id="report_date" type="date" name="report_date" value="{{ report.report_date.isoformat() }}" readonly>
+  </fieldset>
+
+  <fieldset class="crew">
+    <legend>共同作業者（最多 {{ max_collaborators }} 人，依選擇順序）</legend>
+    {% for selected in slots %}
+    <select name="collaborator" aria-label="共同作業者 {{ loop.index }}">
+      <option value="">（不選）</option>
+      {% for id, name in collaborators %}<option value="{{ id }}"{% if id == selected %} selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+    {% endfor %}
+  </fieldset>
+
+  <fieldset>
+    <legend>工項數量（只；0～999.9，最小單位 0.1，空白視為 0）</legend>
+    {% for item, value in rows %}
+    <div class="row">
+      <label for="qty-{{ item.code }}">{{ item.display_name }}</label>
+      <input id="qty-{{ item.code }}" type="text" inputmode="decimal" autocomplete="off" name="{{ item.code }}" value="{{ value }}" placeholder="0">
+    </div>
+    {% endfor %}
+  </fieldset>
+
+  <button type="submit" class="primary">儲存</button>
+</form>
+<div id="result" aria-live="polite"></div>
+
+<hr>
+<div id="delete-area">
+  <button type="button" id="ask-delete" class="danger">刪除這張回報</button>
+  <form id="confirm-delete" hx-post="/reports/{{ report.id }}/delete" hx-target="#result" hx-swap="innerHTML" hidden>
+    <strong>確定要永久刪除日報 #{{ report.id }}（{{ report.report_date.isoformat() }}）嗎？</strong>
+    <p class="hint">刪除後無法復原；當天的每日額度會釋放。</p>
+    <div class="buttons">
+      <button type="submit" class="danger">確認刪除</button>
+      <button type="button" id="cancel-delete">取消</button>
+    </div>
+  </form>
+</div>
+
+<script>
+(function () {
+  var form = document.getElementById("report-form");
+  var delForm = document.getElementById("confirm-delete");
+  var errorBox = document.getElementById("form-error");
+  var result = document.getElementById("result");
+  var saveButton = form.querySelector("button[type=submit]");
+
+  function showError(text) { errorBox.textContent = text; errorBox.hidden = false; }
+  function clearError() { errorBox.textContent = ""; errorBox.hidden = true; }
+  function isDelete(evt) { var c = evt.detail.requestConfig; return !!c && /\/delete$/.test(c.path || ""); }
+
+  document.getElementById("ask-delete").addEventListener("click", function () { delForm.hidden = false; this.hidden = true; });
+  document.getElementById("cancel-delete").addEventListener("click", function () { delForm.hidden = true; document.getElementById("ask-delete").hidden = false; });
+
+  document.body.addEventListener("htmx:beforeRequest", function () { clearError(); result.textContent = ""; saveButton.disabled = true; });
+  document.body.addEventListener("htmx:afterRequest", function (evt) {
+    saveButton.disabled = false;
+    // 刪除成功：回報已不存在，收起表單與刪除區，只留成功訊息
+    if (isDelete(evt) && evt.detail.xhr && evt.detail.xhr.status < 400) {
+      form.hidden = true;
+      document.getElementById("delete-area").hidden = true;
+    }
+  });
+
+  // HTMX 2 預設不換進 4xx／5xx。拒絕時使用者必須在畫面上看到完整的錯誤字串，所以在這裡處理。
+  // beforeSwap 的 detail.target 是換入的目標（#result）；這個頁面的兩個表單都以它為目標
+  document.body.addEventListener("htmx:beforeSwap", function (evt) {
+    if (evt.detail.target !== result) { return; }
+    var xhr = evt.detail.xhr;
+    if (xhr.status < 400) { return; }
+    evt.detail.shouldSwap = false;
+    evt.detail.isError = false;
+    if (xhr.status === 401) { window.location.assign("/sign-in"); return; }   // 閒置逾時：回登入頁（IAM-R10）
+    var body = {};
+    try { body = JSON.parse(xhr.responseText); } catch (e) { /* 不是 JSON（例如 404、500）：用下面的備用文字 */ }
+    var verb = isDelete(evt) ? "無法刪除" : "無法儲存";
+    // 有規格字串（附錄 B）就逐字顯示；規格沒有寫字串的拒絕（例如 FORBIDDEN）只顯示結果類別與原因
+    if (body.message) { showError(body.message); }
+    else if (body.outcome === "FORBIDDEN") { showError(verb + "（FORBIDDEN）：這張回報已確認，或你沒有權限修改它"); }
+    else { showError(verb + "（" + (body.outcome || xhr.status) + "）"); }
+  });
+  document.body.addEventListener("htmx:sendError", function () { showError("無法連線，請稍後再試"); });
+})();
+</script>
+{% endblock %}

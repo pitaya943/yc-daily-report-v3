@@ -14,7 +14,6 @@
 """
 from __future__ import annotations
 
-import re
 from urllib.parse import urlencode
 
 import pytest
@@ -209,7 +208,7 @@ def _tries_to(recorder, client, db, lifecycle, name, action):
 
 @when(parsers.re(r'"(?P<name>[^"]+)" edits the PENDING report to "(?P<item>[^"]+)" = (?P<qty>.+)$'))
 def _edits_pending_to(recorder, client, db, lifecycle, name, item, qty):
-    rid = _the_report(db, lifecycle, name)
+    _the_report(db, lifecycle, name)  # 先找出「那張 PENDING 回報」並記下它的日期，才能組出表單
     _edit(recorder, client, db, lifecycle, name, [("report_date", lifecycle["date"]), (item, quantity_text(qty))])
 
 

@@ -1,0 +1,2 @@
+{#- 刪除成功後 HTMX 換進 #result 的片段（不 extends base.html）。autoescape 已開。 -#}
+<p class="saved" role="status">日報 #{{ deleted.id }}（{{ deleted.report_date.isoformat() }}）已永久刪除。</p>
