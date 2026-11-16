@@ -7,6 +7,8 @@ Feature: Inventory import and quarantine
   # 預期更新後的 A：received + x、remaining + x、cumulative 不變。
 
   Rule: MAT-R20 A row is applied only when A is consistent, x ≥ 0, and B equals the expected A
+    # 多個疑點時依序只報第一個：A 不一致 → x < 0（?）→ B 不符（D-074）。
+    # 不變式：實領量 = 累計使用量 + 庫存量，且三者都 ≥ 0（D-076）。
 
     Scenario Outline: Import decision per row
       Given the system has received <a_rec>, cumulative <a_cum>, remaining <a_rem>
@@ -22,6 +24,7 @@ Feature: Inventory import and quarantine
         | 15    | 10    | 5     | 12    | 10    | 2     | quarantined | ?     | 15  | 10  | 5   | x < 0                |
         | 15    | 10    | 4     | 20    | 10    | 10    | quarantined | A     | 15  | 10  | 4   | A breaks invariant   |
         | 15    | 10    | 5     | 20    | 12    | 7     | quarantined | B     | 15  | 10  | 5   | B differs from expected |
+        | 15    | 10    | 4     | 12    | 10    | 2     | quarantined | A     | 15  | 10  | 4   | A broken and x < 0   |
 
     Scenario Outline: File validation
       When "Admin1" imports "<file>"
@@ -54,4 +57,18 @@ Feature: Inventory import and quarantine
       Given a quarantined row with B (20, 12, 7)
       When "Admin1" resolves it with "trust B"
       Then the request is rejected as CONFLICT with message "B 系統數值不一致，無法採用"
+      And the row stays quarantined
+
+    # D-076：三值都須 ≥ 0
+    Scenario: Trust B is refused when B has a negative value
+      Given a quarantined row with B (5, 10, -5)
+      When "Admin1" resolves it with "trust B"
+      Then the request is rejected as CONFLICT with message "B 系統數值不一致，無法採用"
+      And the row stays quarantined
+
+    # D-075：比照 AD-6，「信任 A」的結果不合不變式時拒絕
+    Scenario: Trust A is refused when the result breaks the invariant
+      Given a quarantined row with A (15, 10, 4), B (20, 10, 10), x = 5
+      When "Admin1" resolves it with "trust A"
+      Then the request is rejected as CONFLICT with message "A 系統數值不一致，無法採用"
       And the row stays quarantined
