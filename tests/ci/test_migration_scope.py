@@ -44,7 +44,8 @@ def test_sql_that_touches_another_schema_is_rejected(sql):
     "create extension pgcrypto schema yc_v3;",
 ])
 def test_sql_inside_yc_v3_is_accepted(sql):
-    assert checks.sql_violations(sql) == [], sql
+    # D-045：定義 trigger／函式要 ticket 的 allow_functions: true；這裡驗證的是「只碰 yc_v3」那一部分
+    assert checks.sql_violations(sql, allow_functions=True) == [], sql
 
 
 def test_migration_scope_fails_for_a_migration_touching_public(repo):
@@ -198,4 +199,5 @@ def test_round1_sql_that_must_be_rejected(sql):
     "create table yc_v3.t (n numeric default 1.5, r text default E'it\\'s');",
 ])
 def test_round1_sql_that_must_still_be_accepted(sql):
-    assert checks.sql_violations(sql) == [], (sql, checks.sql_violations(sql))
+    # D-045：見 test_sql_inside_yc_v3_is_accepted；函式定義在 allow_functions: false 時的拒絕見 test_fix_round2.py
+    assert checks.sql_violations(sql, allow_functions=True) == [], (sql, checks.sql_violations(sql, allow_functions=True))
