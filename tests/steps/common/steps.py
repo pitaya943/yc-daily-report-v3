@@ -70,6 +70,9 @@ class Recorder:
     response: object = None
     before: Snapshot | None = None
     after: Snapshot | None = None
+    # 同一個 scenario 前面的步驟「明確斷言過」的新增列（目前只有稽核列）。只有這些能被
+    # `nothing else is written` 扣掉；一列只能被扣一次。
+    claimed: list[str] = field(default_factory=list)
     _performed: bool = field(default=False, repr=False)
 
     def perform(self, action):
@@ -126,9 +129,28 @@ def check_nothing_written(recorder: Recorder) -> None:
 
 
 @then("nothing is written")
-@then("nothing else is written")
 def _nothing_written(recorder):
+    # 嚴格：整個資料庫完全沒有變動，連被斷言過的列也不能有（AGENTS.md 不可違反 #5）。
     check_nothing_written(recorder)
+
+
+def check_nothing_else_written(recorder: Recorder) -> None:
+    """AUD-R03 的「nothing else is written」：扣掉前面步驟明確斷言過的列之後，不得有其他變動。
+
+    只有 `claim_audit_row` 認領過的新增稽核列會被扣掉（一次斷言扣一列）；
+    其他表的新增、既有資料的修改或刪除、沒被斷言過的稽核列，一律算違規。
+    """
+    changes = recorder.changes()
+    remaining: dict[str, dict[str, list[str]]] = {t: {"added": list(c["added"]), "removed": list(c["removed"])} for t, c in changes.items()}
+    for row in recorder.claimed:
+        remaining["audit_log"]["added"].remove(row)  # claim_audit_row 保證它存在
+    remaining = {t: c for t, c in remaining.items() if c["added"] or c["removed"]}
+    assert not remaining, f"除了已斷言的寫入 {recorder.claimed} 之外，資料庫還有其他變動：{remaining}"
+
+
+@then("nothing else is written")
+def _nothing_else_written(recorder):
+    check_nothing_else_written(recorder)
 
 
 def new_audit_rows(recorder: Recorder) -> list[str]:
@@ -145,12 +167,23 @@ def audit_rows_matching(recorder: Recorder, db, type_: str, actor: str | None = 
     return [r for r in rows if r[1] == type_ and (actor is None or r[2] == actor)]
 
 
+def claim_audit_row(recorder: Recorder, db, type_: str, actor: str) -> None:
+    """斷言動作新增了（actor、類型）相符的稽核列，並把其中一列記為「已斷言」，供 `nothing else is written` 扣除。"""
+    assert recorder.changes().get("audit_log", {}).get("removed", []) == [], "稽核紀錄不可被刪除或修改"
+    unclaimed = list(new_audit_rows(recorder))
+    for row in recorder.claimed:
+        unclaimed.remove(row)
+    matching = {r[0] for r in audit_rows_matching(recorder, db, type_, actor)}
+    for row in unclaimed:
+        if row in matching:
+            recorder.claimed.append(row)
+            return
+    raise AssertionError(f'沒有新增 actor 為 "{actor}" 的 "{type_}" 稽核列（或都已被前面的步驟斷言過）；新增的列：{new_audit_rows(recorder)}')
+
+
 @then(parsers.re(r'an audit row "(?P<type_>[A-Z_]+)" is written with actor "(?P<actor>[^"]+)"'))
 def _audit_row_with_actor(recorder, db, type_, actor):
-    assert recorder.changes().get("audit_log", {}).get("removed", []) == [], "稽核紀錄不可被刪除或修改"
-    assert audit_rows_matching(recorder, db, type_, actor), (
-        f'沒有新增 actor 為 "{actor}" 的 "{type_}" 稽核列；新增的列：{new_audit_rows(recorder)}'
-    )
+    claim_audit_row(recorder, db, type_, actor)
 
 
 @then("no audit row is written")
