@@ -1,0 +1,12 @@
+$ python3 scripts/measure.py <port>   # 4 個 POST /sign-in 同時進行時量 GET /health（4 核心容器）
+--- 修改前（async def + 同步 scrypt／DB）
+idle GET /health: 85 ms
+GET /health during 4 concurrent sign-ins: 1397 ms
+4 sign-ins finished in 1.50 s
+--- 修改後（def，threadpool；scrypt 同時最多 4 條）
+idle GET /health: 47 ms
+GET /health during 4 concurrent sign-ins: 25 ms
+4 sign-ins finished in 0.47 s
+idle GET /health: 23 ms
+GET /health during 4 concurrent sign-ins: 15 ms
+4 sign-ins finished in 0.57 s

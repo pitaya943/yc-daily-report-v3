@@ -17,7 +17,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.core.db import get_db
 from app.core.outcomes import Outcome, OutcomeError
-from app.core.session import set_session_cookie
+from app.core.session import SESSION_COOKIE, actor_for_token, landing_path_for, set_session_cookie
 from app.modules.iam.sign_in import service
 
 router = APIRouter()
@@ -30,6 +30,10 @@ _MAX_BODY_BYTES = 16 * 1024
 
 @router.get("/sign-in")
 def sign_in_page(request: Request, group: str | None = None, conn: psycopg.Connection = Depends(get_db)):
+    token = request.cookies.get(SESSION_COOKIE)
+    actor = actor_for_token(conn, token) if token else None
+    if actor is not None:  # IAM-R11：已登入的人打開登入頁，直接去落地頁
+        return RedirectResponse(landing_path_for(actor.role), status_code=303)
     names = service.names_for_group(conn, group) if group else []
     return templates.TemplateResponse(
         request,
@@ -38,12 +42,17 @@ def sign_in_page(request: Request, group: str | None = None, conn: psycopg.Conne
     )
 
 
-@router.post("/sign-in")
-async def sign_in(request: Request, conn: psycopg.Connection = Depends(get_db)):
+async def _read_form(request: Request) -> dict[str, str]:
+    """只有這一步是 async（讀請求主體不阻塞）；後面的端點是同步函式，scrypt 與資料庫呼叫在 threadpool 執行。"""
     raw = await request.body()
     if len(raw) > _MAX_BODY_BYTES:
         raise OutcomeError(Outcome.INVALID)
-    form = {k: v[-1] for k, v in parse_qs(raw.decode("utf-8", errors="replace"), keep_blank_values=True).items()}
+    return {k: v[-1] for k, v in parse_qs(raw.decode("utf-8", errors="replace"), keep_blank_values=True).items()}
+
+
+@router.post("/sign-in")
+def sign_in(form: dict[str, str] = Depends(_read_form), conn: psycopg.Connection = Depends(get_db)):
+    # `def` 不是 `async def`：scrypt（約零點幾秒的 CPU）與同步 DB 若直接跑在 event loop 上，會讓整個應用程式停住（完成條件 11）
     issued, landing = service.sign_in(conn, form.get("name"), form.get("password"), form.get("group") or None)
     response = RedirectResponse(landing, status_code=303)
     set_session_cookie(response, issued.token)

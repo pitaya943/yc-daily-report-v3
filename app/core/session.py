@@ -1,4 +1,4 @@
-"""密碼雜湊與 session（IAM-F01；閒置逾時、登出、anti-forgery 由 T-103 補在這個檔案）。
+"""密碼雜湊與 session（IAM-F01 登入；IAM-F03 閒置逾時、登出、anti-forgery）。
 
 這個檔案是「誰登入了」的單一出口：其他模組不自己讀 cookie、不自己查 sessions 表，
 一律用 `get_current_actor` 這個 FastAPI dependency 取得行為者。
@@ -21,6 +21,21 @@
   資料庫外洩時，攻擊者拿到的雜湊不能直接當憑證用（憑證本身已有 256 位元的熵，所以不需要慢雜湊）。
 - cookie 不設 Max-Age／Expires：關掉瀏覽器就消失，沒有「記住我」（Q-011）。
 - 時間一律來自 `app/core/clock.py`。
+
+## 閒置逾時、登出、anti-forgery（IAM-R10～R12）
+
+`get_current_actor` 依序檢查（順序有意義）：
+1. 有 session、帳戶未封存、距離最後使用**未滿** 30 分鐘（剛好 30 分鐘就逾時）→ 否則 `UNAUTHENTICATED`。
+2. 不安全的方法（POST／PUT／PATCH／DELETE）要帶 `X-CSRF-Token`，且等於這個 session 的 anti-forgery token
+   （`hmac.compare_digest`）→ 否則寫 `ACCESS_DENIED` 並丟 `FORBIDDEN`（D-053）。
+3. 全部通過才把最後使用時間更新為現在（活動重新計時）。
+
+被拒絕的請求除了 ACCESS_DENIED 之外不寫任何東西：不更新最後使用時間、也不順手刪掉逾時的 session 列。
+取捨：逾時的列會留在表裡（M5 的清理排程可以處理）；換來的是「拒絕不改變狀態」這條規則沒有例外。
+
+anti-forgery 用「每個 session 一個 token、放在標頭」而不是表單欄位：dependency 不必讀請求主體
+（讀主體要 async，會把每個 DB 查詢放回 event loop），HTMX 以 `hx-headers` 帶上即可；
+token 由 `GET /session`（或日後的版型）取得。cookie 的 SameSite=Lax 是第一道防線，token 是第二道。
 """
 from __future__ import annotations
 
@@ -30,17 +45,24 @@ import hashlib
 import hmac
 import os
 import secrets
+import threading
 from dataclasses import dataclass
+from datetime import timedelta
 
 import psycopg
 from fastapi import Depends, Request, Response
 
+from app.core import audit
 from app.core.actor import Actor, Role
 from app.core.clock import clock
 from app.core.db import get_db
 from app.core.outcomes import Outcome, OutcomeError
 
 SESSION_COOKIE = "yc_session"
+CSRF_HEADER = "X-CSRF-Token"
+# IAM-R10：距離最後使用滿這段時間就逾時（剛好滿也算）
+IDLE_TIMEOUT = timedelta(minutes=30)
+_SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 
 # ───────────────────────── 密碼雜湊（D-056）─────────────────────────
 
@@ -58,9 +80,15 @@ def _b64(raw: bytes) -> str:
     return base64.b64encode(raw).decode("ascii")
 
 
+# 登入端點改在 threadpool 執行（不阻塞 event loop）後，同時進行的 scrypt 最多有 threadpool 大小那麼多條（預設 40），
+# 每條約 128 MiB；用號誌限制同時進行的數量，記憶體上限約 4 × 128 MiB，其餘的請求排隊。
+_SCRYPT_SLOTS = threading.BoundedSemaphore(4)
+
+
 def _scrypt(password: str, salt: bytes, n: int, r: int, p: int) -> bytes:
     # OpenSSL 的記憶體上限預設 32 MiB，N=2^17、r=8 需要約 128 MiB；給 2 倍的餘裕
-    return hashlib.scrypt(password.encode("utf-8"), salt=salt, n=n, r=r, p=p, maxmem=2 * 128 * n * r, dklen=_KEY_BYTES)
+    with _SCRYPT_SLOTS:
+        return hashlib.scrypt(password.encode("utf-8"), salt=salt, n=n, r=r, p=p, maxmem=2 * 128 * n * r, dklen=_KEY_BYTES)
 
 
 def hash_password(password: str) -> str:
@@ -144,29 +172,68 @@ def set_session_cookie(response: Response, token: str) -> None:
     response.set_cookie(SESSION_COOKIE, token, httponly=True, samesite="lax", secure=os.environ.get("APP_ENV") == "production", path="/")
 
 
-def actor_for_token(conn: psycopg.Connection, token: str) -> Actor | None:
-    """session 憑證 → 行為者；沒有這個 session、或帳戶已封存（封存的帳戶不能登入）回傳 None。
+def clear_session_cookie(response: Response) -> None:
+    response.delete_cookie(SESSION_COOKIE, path="/", httponly=True, samesite="lax", secure=os.environ.get("APP_ENV") == "production")
 
-    T-103 會在這裡加閒置逾時（last_used_at）與更新最後使用時間。
-    """
+
+@dataclass(frozen=True)
+class _SessionRow:
+    id: int
+    actor: Actor
+    anti_forgery_token: str
+    last_used_at: object
+
+
+def _load(conn: psycopg.Connection, token: str) -> _SessionRow | None:
+    """憑證 → session 列與行為者，只讀不寫。沒有這個 session、帳戶已封存（封存的帳戶不能登入）、
+    或閒置滿 IDLE_TIMEOUT 都回傳 None。"""
     row = conn.execute(
-        "select a.id, a.name, a.role from yc_v3.sessions s join yc_v3.accounts a on a.id = s.account_id "
+        "select s.id, a.id, a.name, a.role, s.anti_forgery_token, s.last_used_at "
+        "from yc_v3.sessions s join yc_v3.accounts a on a.id = s.account_id "
         "where s.token_hash = %s and not a.archived",
         (_token_hash(token),),
     ).fetchone()
-    return None if row is None else Actor(id=row[0], name=row[1], role=Role(row[2]))
+    if row is None or clock.now() - row[5] >= IDLE_TIMEOUT:
+        return None
+    return _SessionRow(id=row[0], actor=Actor(id=row[1], name=row[2], role=Role(row[3])), anti_forgery_token=row[4], last_used_at=row[5])
+
+
+def actor_for_token(conn: psycopg.Connection, token: str) -> Actor | None:
+    """session 憑證 → 行為者（含閒置逾時檢查）；不更新最後使用時間，所以登入頁之類的唯讀查詢可以用。"""
+    loaded = _load(conn, token)
+    return None if loaded is None else loaded.actor
+
+
+def anti_forgery_token_for(conn: psycopg.Connection, token: str) -> str | None:
+    """目前有效 session 的 anti-forgery token；給頁面／HTMX 放進 `X-CSRF-Token`。"""
+    loaded = _load(conn, token)
+    return None if loaded is None else loaded.anti_forgery_token
+
+
+def end_session(conn: psycopg.Connection, token: str) -> None:
+    """登出：立刻刪除這個 session（只這一個；同一個人在別處的 session 不受影響）。由呼叫端提交。"""
+    conn.execute("delete from yc_v3.sessions where token_hash = %s", (_token_hash(token),))
 
 
 def get_current_actor(request: Request, conn: psycopg.Connection = Depends(get_db)) -> Actor:
-    """FastAPI dependency：其他模組由這裡取得目前的行為者。沒有有效 session 就丟 UNAUTHENTICATED。
+    """FastAPI dependency：其他模組由這裡取得目前的行為者（IAM-R10～R12 的檢查都在這裡）。
 
         @router.get("/x")
         def x(actor: Actor = Depends(get_current_actor)): ...
 
-    UNAUTHENTICATED 沒有 spec 規定的錯誤字串（見 outcomes.py），所以 message 為 None。
+    請用 `def`（不是 `async def`）寫端點：同步的資料庫呼叫才會在 threadpool 執行，不阻塞 event loop。
+    UNAUTHENTICATED 與 FORBIDDEN 沒有 spec 規定的錯誤字串（見 outcomes.py），所以 message 為 None。
     """
     token = request.cookies.get(SESSION_COOKIE)
-    actor = actor_for_token(conn, token) if token else None
-    if actor is None:
+    loaded = _load(conn, token) if token else None
+    if loaded is None:
         raise OutcomeError(Outcome.UNAUTHENTICATED)
-    return actor
+    if request.method not in _SAFE_METHODS:
+        sent = request.headers.get(CSRF_HEADER)
+        if not sent or not hmac.compare_digest(sent.encode("utf-8"), loaded.anti_forgery_token.encode("utf-8")):
+            # 先寫稽核（獨立連線、立刻提交），再拒絕；除此之外不寫任何東西（D-053）
+            audit.write(loaded.actor, "ACCESS_DENIED", f"沒有有效的 anti-forgery token：{request.method} {request.url.path}")
+            raise OutcomeError(Outcome.FORBIDDEN)
+    conn.execute("update yc_v3.sessions set last_used_at = %s where id = %s", (clock.now(), loaded.id))
+    conn.commit()
+    return loaded.actor

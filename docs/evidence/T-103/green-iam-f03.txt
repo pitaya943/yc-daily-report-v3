@@ -1,0 +1,26 @@
+tests/unit/iam/test_session_rules.py ....................                [ 93%]
+PASSED tests/test_spec.py::test_signout
+PASSED tests/test_spec.py::test_a_signedin_person_who_opens_the_signin_page_goes_to_their_landing_page
+PASSED tests/test_spec.py::test_cookie_attributes
+PASSED tests/test_spec.py::test_a_statechanging_request_without_an_antiforgery_token_is_refused
+PASSED tests/unit/iam/test_session_rules.py::test_idle_boundary[idle0-True]
+PASSED tests/unit/iam/test_session_rules.py::test_idle_boundary[idle1-True]
+PASSED tests/unit/iam/test_session_rules.py::test_idle_boundary[idle2-False]
+PASSED tests/unit/iam/test_session_rules.py::test_idle_boundary[idle3-False]
+PASSED tests/unit/iam/test_session_rules.py::test_idle_boundary[idle4-False]
+PASSED tests/unit/iam/test_session_rules.py::test_use_restarts_the_idle_window
+PASSED tests/unit/iam/test_session_rules.py::test_a_session_is_not_capped_by_its_age
+PASSED tests/unit/iam/test_session_rules.py::test_no_cookie_or_unknown_token_is_unauthenticated
+PASSED tests/unit/iam/test_session_rules.py::test_archived_account_session_is_rejected
+PASSED tests/unit/iam/test_session_rules.py::test_sign_out_ends_the_session_immediately
+PASSED tests/unit/iam/test_session_rules.py::test_sign_out_only_ends_that_session
+PASSED tests/unit/iam/test_session_rules.py::test_state_changing_request_needs_a_valid_anti_forgery_token[None]
+PASSED tests/unit/iam/test_session_rules.py::test_state_changing_request_needs_a_valid_anti_forgery_token[]
+PASSED tests/unit/iam/test_session_rules.py::test_state_changing_request_needs_a_valid_anti_forgery_token[wrong]
+PASSED tests/unit/iam/test_session_rules.py::test_state_changing_request_needs_a_valid_anti_forgery_token[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx]
+PASSED tests/unit/iam/test_session_rules.py::test_read_requests_do_not_need_a_token
+PASSED tests/unit/iam/test_session_rules.py::test_an_expired_session_is_unauthenticated_before_forbidden
+PASSED tests/unit/iam/test_session_rules.py::test_cookie_is_http_only_lax_and_has_no_lifetime
+PASSED tests/unit/iam/test_session_rules.py::test_signed_in_person_opening_the_sign_in_page_is_redirected
+PASSED tests/unit/iam/test_session_rules.py::test_expired_session_still_sees_the_sign_in_page
+685 passed, 479 skipped in 49.76s
