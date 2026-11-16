@@ -54,6 +54,10 @@
 | D-048 | 怎麼修改 `tests/support/**`？ | 只有 ticket 的 `allowed_paths` 明確列出該檔案時才能修改，由 Verifier 審查。 | 比照 D-031 | 2026-11-15 | issue #7 選項 6A |
 | D-049 | 不是 `ticket/*` 分支的 PR？ | 目標是 `milestone/*` 的 PR，來源分支必須是 `ticket/T-xxx` 且有對應的 ticket 檔，否則判為失敗。 | fail-closed | 2026-11-15 | issue #7 選項 7A |
 | D-050 | Migration 什麼時候套用到 Supabase？agent 能不能用 Supabase？ | 延到部署時。agent 與 CI 仍只用拋棄式資料庫，不碰任何 Supabase 專案（不可違反第 7 條不變）。部署前新增「部署準備」ticket：建立 v3 專用的 staging Supabase 專案，由 CI 以權限受限的帳號套用 migration 並跑冒煙測試，處理 pooler 的 prepared statement、SSL、`schema_migrations` 追蹤、角色權限等差異；通過後 Kuei 套用到正式環境。 | 改規則的成本（機密管理、放寬本機防線）現在就要付，好處要到有東西可部署時才出現；共用專案有舊系統的正式資料，不能當拋棄式使用 | 2026-11-16 | Kuei 在 Chief session 選 A；取代 `docs/workflow.md` 原本「每個 milestone 合併後套用」的做法 |
+| D-051 | 新增 `tests/support/` 的檔案，算不算 D-048 說的「修改」？ | 不算。只有修改目標分支上已經存在的 `tests/support/` 檔案，才需要 ticket 的 `allowed_paths` 明確列出；新增的檔案由 Verifier 審查內容。 | 新增 helper 不會讓既有的測試變弱，弱化的風險在修改既有檔案；也不必由 Chief 事先預測檔名 | 2026-11-16 | issue #8 選項 1A；`docs/ci-checks.md` 的 `no-weakened-tests` 同步寫明 |
+| D-052 | 測試可以改名嗎？ | 不可以。結果比對看測試 ID，改名會被判為原測試消失而失敗，CI 不提供例外。真的需要改名時，由 Chief 在 ticket 寫明舊名對新名的對應，並記錄在本檔。 | 改名很少見，而且正是讓測試悄悄消失的常見方式；PR 說明不能成為繞過的管道 | 2026-11-16 | issue #8 選項 2A；`docs/ci-checks.md` 的 `no-weakened-tests` 同步寫明 |
+| D-053 | 沒有有效 anti-forgery token 的請求被拒絕為 `FORBIDDEN` 時，要不要寫 `ACCESS_DENIED`？ | 要。與 `spec/README.md` 的結果類別表、AUD-R03 一致：所有 `FORBIDDEN` 都寫 `ACCESS_DENIED`，沒有例外。 | 規則保持一致，T-003 的自動寫入不必改；偽造請求也留下紀錄 | 2026-11-16 | issue #9 選項 A；`spec/features/IAM-F03-session-and-sign-out.feature` 該 scenario 改為斷言 `ACCESS_DENIED` 與 `nothing else is written`；T-103 完成條件同步更新 |
+| D-054 | Branch protection 的必要檢查放在哪些分支？ | 只在 `main` 要求 `docs/ci-checks.md` 的 10 個必要檢查；`milestone/*` 不要求。Ticket PR 合併進 `milestone/*` 的條件不變（D-003：CI 全綠且 Verifier PASS，由 Chief 確認）。 | Kuei 指定 | 2026-11-16 | 方案 A；Kuei 在 M1 的 Chief session 交接事項中指定 |
 
 ## 待決定
 

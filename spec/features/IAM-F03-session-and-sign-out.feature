@@ -57,4 +57,5 @@ Feature: Session and sign-out
       Given "Wen" is signed in
       When a state-changing request arrives with the session but without a valid anti-forgery token
       Then the request is rejected as FORBIDDEN
-      And nothing is written
+      And an audit row "ACCESS_DENIED" is written with actor "Wen"
+      And nothing else is written
