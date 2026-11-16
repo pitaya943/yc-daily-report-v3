@@ -1,0 +1,47 @@
+$ python3 -m pytest   # 全部測試
+sssssssssssssssssssssssssssssssssssssssssssssssssss..................... [ 92%]
+........................................................................ [ 99%]
+.......                                                                  [100%]
+608 passed, 479 skipped in 35.59s
+
+$ python3 -m pytest -v -k "group_picker or owner_is_listed or landing_page_by_role or failed_signin"
+tests/test_spec.py::test_group_picker_lists_the_right_accounts[admin-Admin1, Admin2, Kuei] PASSED
+tests/test_spec.py::test_group_picker_lists_the_right_accounts[west-Big, Wan, Wei, Wen] PASSED
+tests/test_spec.py::test_group_picker_lists_the_right_accounts[south-Nan] PASSED
+tests/test_spec.py::test_the_owner_is_listed_under_the_admin_group PASSED
+tests/test_spec.py::test_landing_page_by_role[Wen-daily report] PASSED
+tests/test_spec.py::test_landing_page_by_role[Admin1-confirmation] PASSED
+tests/test_spec.py::test_landing_page_by_role[Kuei-confirmation] PASSED
+tests/test_spec.py::test_failed_signin_reveals_nothing_about_the_account[Wen-wrong-wrong password] PASSED
+tests/test_spec.py::test_failed_signin_reveals_nothing_about_the_account[Nobody-any-unknown account] PASSED
+tests/test_spec.py::test_failed_signin_reveals_nothing_about_the_account[Old-correct-archived account] PASSED
+===================== 10 passed, 1077 deselected in 4.51s ======================
+
+$ python3 -m pytest -v tests/steps/IAM-F01/test_sign_in_details.py
+tests/steps/IAM-F01/test_sign_in_details.py::test_hash_has_algorithm_and_parameter_prefix_and_random_salt PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_verify_accepts_the_right_password_and_rejects_others PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_verify_rejects_missing_or_malformed_hashes_without_raising[None] PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_verify_rejects_missing_or_malformed_hashes_without_raising[] PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_verify_rejects_missing_or_malformed_hashes_without_raising[plain-text] PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_verify_rejects_missing_or_malformed_hashes_without_raising[bcrypt$x$y$z] PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_verify_rejects_missing_or_malformed_hashes_without_raising[scrypt$n=3,r=8,p=1$AAAA$AAAA] PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_verify_rejects_missing_or_malformed_hashes_without_raising[scrypt$n=1073741824,r=8,p=1$AAAA$AAAA] PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_verify_rejects_missing_or_malformed_hashes_without_raising[scrypt$n=131072$AAAA$AAAA] PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_verify_rejects_missing_or_malformed_hashes_without_raising[scrypt$n=131072,r=8,p=1$!!$!!] PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_verify_uses_the_parameters_stored_in_the_string PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_stored_password_is_a_hash_not_the_password PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_missing_name_is_invalid_with_the_exact_message PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_missing_password_is_indistinguishable_from_a_wrong_password PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_empty_request_body_is_invalid PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_account_outside_the_chosen_group_is_invalid PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_unknown_group_is_invalid_on_page_and_on_sign_in PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_sign_in_with_matching_group_succeeds PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_account_without_a_password_cannot_sign_in PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_session_cookie_attributes_and_stored_token PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_session_cookie_is_secure_in_production PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_each_sign_in_gets_a_new_independent_session PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_get_current_actor_rejects_requests_without_a_valid_session PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_get_current_actor_returns_the_signed_in_actor PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_an_archived_account_has_no_valid_session PASSED
+tests/steps/IAM-F01/test_sign_in_details.py::test_landing_path_by_role PASSED
+============================= 26 passed in 12.14s ==============================
