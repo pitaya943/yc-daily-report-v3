@@ -35,8 +35,8 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 | T-114 | M1 | 純函式：庫存比對 | merged | [#16](https://github.com/pitaya943/yc-daily-report-v3/pull/16) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS）；規格問題見 issue #19 |
 | T-200 | M2 | 固定版本的 HTMX 與共用頁面版型 | merged | [#26](https://github.com/pitaya943/yc-daily-report-v3/pull/26) | 0 | Builder 第一輪：claude-sonnet-5-5；CI 第一次因 runner 網路錯誤失敗（install-postgres 的失敗被 `|| true` 吞掉），重跑全綠；Verifier 第 1 輪：claude-opus-5-5（PASS，9 個變異全抓到） |
 | T-201 | M2 | 送出日報 | merged | [#28](https://github.com/pitaya943/yc-daily-report-v3/pull/28) | 0 | Builder 第一輪：claude-sonnet-5-5；共用步驟 `the outcome is` 與 RPT-R02／R03 的字串衝突 → issue #27 → D-093（同一個 session 繼續）；Verifier 第 1 輪：claude-opus-5-5（PASS，22 個變異全抓到；拿掉並行鎖的變異是機率性抓到，15 次中 10 次）；規格問題 → issue #29 |
-| T-202 | M2 | 回報生命週期 | escalated | — | — | Builder 第一輪：claude-sonnet-5-5；20:41 碰到 usage 上限，22:01 請它繼續；共用步驟衝突 → issue #30（audit description）、#31（FORBIDDEN 與 ACCESS_DENIED） |
-| T-203 | M2 | 歷史與匯出 | building | — | — | Builder 第一輪：claude-sonnet-5-5；20:42 碰到 usage 上限，22:01 請它繼續 |
+| T-202 | M2 | 回報生命週期 | building | — | — | Builder 第一輪：claude-sonnet-5-5；20:41 碰到 usage 上限，22:01 請它繼續；共用步驟衝突 → issue #30（audit description）、#31（FORBIDDEN 與 ACCESS_DENIED） → D-094、D-095 |
+| T-203 | M2 | 歷史與匯出 | merged | [#32](https://github.com/pitaya943/yc-daily-report-v3/pull/32) | 0 | Builder 第一輪：claude-sonnet-5-5（20:42 碰到 usage 上限，22:01 繼續）；Verifier 第 1 輪：claude-opus-5-5（PASS，14 個變異全抓到）；規格問題併入 issue #29；加嚴斷言「匯出只寫一列稽核」「一律斷言順序」可能影響 M4 匯出 |
 | T-301 | M3 | 確認或駁回回報，保存份額 | todo | — | — | — |
 | T-302 | M3 | 自訂工項 | todo | — | — | — |
 | T-303 | M3 | 帳戶生命週期與薪資設定 | todo | — | — | — |

@@ -97,6 +97,8 @@
 | D-091 | 怎麼避免 Builder 自己加嚴的斷言擋住後續 ticket（pitfall #29）？ | `.claude/skills/build-ticket/SKILL.md` 的「PR 說明要有」加一條：比規格更嚴格的斷言要逐條列出。 | 每個 milestone 不必再靠 Chief 記得加 | 2026-11-16 | issue #25 選項 7A；Kuei 核准修改 `.claude/**` |
 | D-092 | `docs/pitfalls.md` 滿 30 條，刪哪些？ | 刪 #5（`done-when` 已要求規則的 scenario 都 passed）、#7（`commit-author` 依 `author.login`，D-039）、#11（`evidence` 直接報出缺 `screens`）。其他條目不重新編號，避免既有的引用失效。 | 已被 CI 檢查取代 | 2026-11-16 | issue #25 選項 8A |
 | D-093 | 共用步驟 `the outcome is <OUTCOME>` 對 `LOCKED` 以外一律斷言 message 為 null，與 RPT-R02、R03 等附錄 B 有字串的拒絕衝突？ | 所有拒絕類別改為：message 必須是附錄 B「錯誤訊息」欄逐字存在的字串，或為 null；`LOCKED` 維持只接受它自己的那一句；資料沒有任何變動的斷言照舊。加單元測試證明附錄 B 沒有的字串會失敗。由 T-201 修改 `tests/steps/common/outcome.py`。 | 之後的 CFG、IAM-F04、MAT、LED 也會用這個步驟判定 `CONFLICT`、`INVALID`；逐字對到正確的句子由各 feature 的 `… with message "…"` scenario 負責 | 2026-11-16 | issue #27 選項 A′；T-201 `allowed_paths` 加 `tests/steps/common/outcome.py`、完成條件 8 |
+| D-094 | T-201 的步驟 `the audit description contains "{text}"` 只看 `REPORT_CREATE`，RPT-R11 會失敗？ | 由 T-202 把這個步驟搬到 `tests/steps/common/audit_description.py`，從 `tests/steps/RPT-F01/rpt_f01_steps.py` 移除。新定義：這個動作恰新增 1 列稽核，而且那一列的說明包含指定文字，不限類型。拿掉 T-201 加嚴的「全庫恰 1 列 `REPORT_CREATE`」。 | 對 RPT-R07 檢查的是同一件事；RPT-R11 與 M3 的 IAM-F06 才用得了同一句 | 2026-11-16 | issue #30 選項 A；T-202 `allowed_paths` 與完成條件 8 |
+| D-095 | 共用步驟 `the outcome is FORBIDDEN` 要求資料庫完全不變，但規格規定 FORBIDDEN 要寫 `ACCESS_DENIED`？ | 由 T-202 修改 `tests/steps/common/outcome.py`：`FORBIDDEN` 的資料斷言改為「恰好新增 1 列 `ACCESS_DENIED`、行為者是被拒絕的人，其他資料表完全不變」；其他類別維持「完全沒有變動」。加反例單元測試。 | 把 `spec/README.md` 結果類別表與 AUD-R03 寫明的行為變成斷言；AUD-R02（M5）等一併適用 | 2026-11-16 | issue #31 選項 A；T-202 `allowed_paths` 與完成條件 8 |
 
 ## 待決定
 
