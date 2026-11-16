@@ -96,6 +96,7 @@
 | D-090 | M2 頁面與端點的路徑？ | T-201 `GET/POST /reports`；T-202 `GET /reports/{id}/edit`、`POST /reports/{id}`、`POST /reports/{id}/delete`（USER 與管理員共用，伺服器依角色判斷）；T-203 `GET /reports/history`、`/reports/history/export`、`/review/history/ordinary`、`/review/history/big-meter` 與各自的 `/export`。 | 依 D-057；平行的 ticket 事先知道彼此的路徑 | 2026-11-16 | issue #25 選項 6A；已寫進各 ticket |
 | D-091 | 怎麼避免 Builder 自己加嚴的斷言擋住後續 ticket（pitfall #29）？ | `.claude/skills/build-ticket/SKILL.md` 的「PR 說明要有」加一條：比規格更嚴格的斷言要逐條列出。 | 每個 milestone 不必再靠 Chief 記得加 | 2026-11-16 | issue #25 選項 7A；Kuei 核准修改 `.claude/**` |
 | D-092 | `docs/pitfalls.md` 滿 30 條，刪哪些？ | 刪 #5（`done-when` 已要求規則的 scenario 都 passed）、#7（`commit-author` 依 `author.login`，D-039）、#11（`evidence` 直接報出缺 `screens`）。其他條目不重新編號，避免既有的引用失效。 | 已被 CI 檢查取代 | 2026-11-16 | issue #25 選項 8A |
+| D-093 | 共用步驟 `the outcome is <OUTCOME>` 對 `LOCKED` 以外一律斷言 message 為 null，與 RPT-R02、R03 等附錄 B 有字串的拒絕衝突？ | 所有拒絕類別改為：message 必須是附錄 B「錯誤訊息」欄逐字存在的字串，或為 null；`LOCKED` 維持只接受它自己的那一句；資料沒有任何變動的斷言照舊。加單元測試證明附錄 B 沒有的字串會失敗。由 T-201 修改 `tests/steps/common/outcome.py`。 | 之後的 CFG、IAM-F04、MAT、LED 也會用這個步驟判定 `CONFLICT`、`INVALID`；逐字對到正確的句子由各 feature 的 `… with message "…"` scenario 負責 | 2026-11-16 | issue #27 選項 A′；T-201 `allowed_paths` 加 `tests/steps/common/outcome.py`、完成條件 8 |
 
 ## 待決定
 
