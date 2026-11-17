@@ -389,3 +389,14 @@ def test_every_endpoint_goes_through_the_single_authorization_function():
     for name in ("router.py", "service.py", "repo.py"):
         text = (base / name).read_text(encoding="utf-8")
         assert "Role." not in text and "authorize(" not in text, f"{name} 不得自己判斷角色：權限只在 access.py"
+
+
+def test_the_create_form_posts_even_without_javascript():
+    """含密碼欄位的表單必須明確 POST：沒有 JavaScript 時瀏覽器不能把密碼用 GET 送進網址（與 IAM-F06 的守門測試同一個理由）。"""
+    import pathlib
+    import re
+
+    html = (pathlib.Path(__file__).resolve().parents[3] / "app/modules/iam/account_lifecycle_and_pay_settings/templates/accounts.html").read_text(encoding="utf-8")
+    forms = [m for m in re.finditer(r"(<form\b[^>]*>)(.*?)</form>", html, re.S) if 'type="password"' in m.group(2)]
+    assert len(forms) == 1, "應恰有一個含密碼欄位的表單（防空轉）"
+    assert 'method="post"' in forms[0].group(1) and 'action="/accounts"' in forms[0].group(1), forms[0].group(1)

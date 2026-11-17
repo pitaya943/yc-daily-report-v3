@@ -22,7 +22,7 @@
 
 <section class="card">
   <h2>新增員工帳戶</h2>
-  <form hx-post="/accounts" hx-target="#create-result" hx-swap="innerHTML" autocomplete="off">
+  <form method="post" action="/accounts" hx-post="/accounts" hx-target="#create-result" hx-swap="innerHTML" autocomplete="off">
     <div class="form-error" role="alert" aria-live="assertive" hidden></div>
     <input type="hidden" name="role" value="USER">
     <label for="name">顯示名稱</label>
