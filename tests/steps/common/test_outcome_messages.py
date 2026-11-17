@@ -276,3 +276,51 @@ def test_other_outcomes_still_require_nothing_to_be_written(db, outcome):
     r.perform(action)
     with pytest.raises(AssertionError):
         _check(db, r, outcome, client)
+
+
+# ───────── D-094：`the audit description contains` ─────────
+#
+# 「這個動作恰新增 1 列稽核，而且那一列的說明含指定文字，不限類型」。多列、沒有列、文字不對都必須失敗，
+# 否則步驟會變成「任何有稽核的動作都通過」（Verifier 的變異：把 `len(added) == 1` 改成 `>= 1` 不能存活）。
+
+
+def _audit_action(db, *descriptions: str, type_: str = "REPORT_UPDATE") -> Recorder:
+    actor = _actor(db, "Wen")  # 先查（_actor 會 rollback，不能夾在待提交的寫入中間）
+    r = Recorder(db)
+
+    def action():
+        for description in descriptions:
+            audit.write(actor, type_, description, conn=db)
+        db.commit()
+        return _Response(200, None)
+
+    r.perform(action)
+    return r
+
+
+def test_audit_description_passes_for_exactly_one_new_row_of_any_type(db):
+    from tests.steps.common import audit_description as shared
+
+    shared._audit_description_contains(_audit_action(db, "編輯日報 #1：無變更"), db, "無變更")
+    shared._audit_description_contains(_audit_action(db, "送出日報 #2，共 3 人作業", type_="REPORT_CREATE"), db, "共 3 人作業")
+
+
+def test_audit_description_fails_when_two_rows_are_added_even_if_one_matches(db):
+    from tests.steps.common import audit_description as shared
+
+    with pytest.raises(AssertionError, match="恰好新增 1 列|應該恰新增 1 列"):
+        shared._audit_description_contains(_audit_action(db, "編輯日報 #1：無變更", "另一列"), db, "無變更")
+
+
+def test_audit_description_fails_when_no_row_is_added(db):
+    from tests.steps.common import audit_description as shared
+
+    with pytest.raises(AssertionError, match="應該恰新增 1 列"):
+        shared._audit_description_contains(_audit_action(db), db, "無變更")
+
+
+def test_audit_description_fails_when_the_text_is_not_in_the_new_row(db):
+    from tests.steps.common import audit_description as shared
+
+    with pytest.raises(AssertionError, match="應含"):
+        shared._audit_description_contains(_audit_action(db, "編輯日報 #1：有變更"), db, "無變更")

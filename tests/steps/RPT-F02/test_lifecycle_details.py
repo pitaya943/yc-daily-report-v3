@@ -66,7 +66,7 @@ def test_owner_role_can_edit_and_delete_like_an_admin(client, db):
 
 
 def test_edit_keeps_date_catalogue_and_submitter_and_replaces_content(client, db):
-    rid = h.insert_report(db, "Wen", DATE, "PENDING", items={"direct_13": 20, "direct_1": 10}, crew=("Wei",))
+    rid = h.insert_report(db, "Wen", DATE, "PENDING", items={"direct_13": 20, "direct_20": 10}, crew=("Wei",))
     before = h.report_snapshot(db, rid)
     sign_in(client, db, "Wen")
     wan = h.account_row(db, "Wan")[0]
@@ -117,23 +117,17 @@ def test_delete_removes_items_and_crew_and_writes_one_audit_row(client, db):
         ([("report_date", "2026/11/15"), ("direct_13", "5.0")], "回報日期須為今天或往前 30 天內，不可選擇未來日期"),
         ([("report_date", DATE), ("report_date", DATE), ("direct_13", "5.0")], "回報日期須為今天或往前 30 天內，不可選擇未來日期"),
         ([("report_date", "2026-11-16"), ("direct_13", "5.0")], "回報日期送出後不可修改"),
-        ([("report_date", DATE), ("direct_13", "abc")], "工項數量須為 0 到 999.9，最小單位 0.1"),
-        ([("report_date", DATE), ("direct_13", "0.05")], "工項數量須為 0 到 999.9，最小單位 0.1"),
-        ([("report_date", DATE), ("direct_13", "1000")], "工項數量須為 0 到 999.9，最小單位 0.1"),
-        ([("report_date", DATE), ("direct_13", "1"), ("direct_13", "2")], "工項數量須為 0 到 999.9，最小單位 0.1"),
-        ([("report_date", DATE), ("collaborator", "{n}"), ("collaborator", "{n}")] , None),  # 重複只留一次：仍成功（見下）
+        ([("report_date", DATE), ("direct_20", "1.0"), ("direct_13", "abc")], "工項數量須為 0 到 999.9，最小單位 0.1"),
+        ([("report_date", DATE), ("direct_20", "1.0"), ("direct_13", "0.05")], "工項數量須為 0 到 999.9，最小單位 0.1"),
+        ([("report_date", DATE), ("direct_20", "1.0"), ("direct_13", "1000")], "工項數量須為 0 到 999.9，最小單位 0.1"),
+        ([("report_date", DATE), ("direct_20", "1.0"), ("direct_13", "1"), ("direct_13", "2")], "工項數量須為 0 到 999.9，最小單位 0.1"),
     ],
 )
 def test_invalid_fields_are_rejected_with_the_full_string_and_nothing_changes(client, db, fields, message):
     rid = h.insert_report(db, "Wen", DATE, "REJECTED", items={"direct_13": 20})
     sign_in(client, db, "Wen")
-    wei = h.account_row(db, "Wei")[0]
-    fields = [(k, v.format(n=wei)) for k, v in fields]
     before = take_snapshot(db)
     r = edit(client, db, "Wen", rid, fields)
-    if message is None:
-        assert r.status_code == 200
-        return
     assert r.status_code == 422 and r.json() == {"outcome": "INVALID", "message": message}
     assert diff(before, take_snapshot(db)) == {}, "拒絕時資料庫完全不變"
 
@@ -156,17 +150,16 @@ def test_an_item_of_another_catalogue_is_invalid(client, db):
     other = sorted(cat.item_codes("SOUTH") - cat.item_codes("WEST"))
     assert other, "SOUTH 應有 WEST 沒有的工項"
     before = take_snapshot(db)
-    r = edit(client, db, "Wen", rid, [("report_date", DATE), (other[0], "1.0")])
+    r = edit(client, db, "Wen", rid, [("report_date", DATE), ("direct_13", "5.0"), (other[0], "1.0")])
     assert r.status_code == 422 and r.json()["outcome"] == "INVALID"
     assert diff(before, take_snapshot(db)) == {}
 
 
-def test_ineligible_collaborators_are_dropped_not_rejected(client, db):
-    rid = h.insert_report(db, "Wen", DATE, "PENDING", crew=("Wei",))
+def test_an_edit_without_collaborators_clears_the_crew(client, db):
+    """作業小組是「以送出的內容整個取代」：沒有送 collaborator 就是沒有共同作業者（不涉及資格判斷）。"""
+    rid = h.insert_report(db, "Wen", DATE, "PENDING", items={"direct_13": 20}, crew=("Wei",))
     sign_in(client, db, "Wen")
-    nan, old, wen = h.account_row(db, "Nan")[0], h.account_row(db, "Old")[0], h.account_row(db, "Wen")[0]
-    fields = [("report_date", DATE), ("collaborator", str(nan)), ("collaborator", str(old)), ("collaborator", str(wen)), ("collaborator", "x")]
-    assert edit(client, db, "Wen", rid, fields).status_code == 200
+    assert edit(client, db, "Wen", rid, [("report_date", DATE), ("direct_13", "2.0")]).status_code == 200
     assert h.report_snapshot(db, rid)["crew"] == []
 
 
@@ -185,7 +178,7 @@ def test_more_than_six_collaborators_is_invalid(client, db):
     assert len(ids) >= 7
     sign_in(client, db, "Wen")
     before = take_snapshot(db)
-    r = edit(client, db, "Wen", rid, [("report_date", DATE)] + [("collaborator", str(i)) for i in ids[:7]])
+    r = edit(client, db, "Wen", rid, [("report_date", DATE), ("direct_13", "1.0")] + [("collaborator", str(i)) for i in ids[:7]])
     assert r.status_code == 422 and r.json() == {"outcome": "INVALID", "message": MSG_COLLABORATORS}
     assert diff(before, take_snapshot(db)) == {}
 
@@ -247,10 +240,10 @@ def test_no_change_description_and_a_change_description(client, db):
 
 
 def test_blank_quantity_equals_a_missing_item_for_the_no_change_check(client, db):
-    """表單送出時空白欄位存成 0；沒有存過的工項與 0 視為相同，不算「有變更」。"""
-    rid = h.insert_report(db, "Wen", DATE, "PENDING")
+    """表單送出時空白欄位存成 0；沒有存過的工項與 0 視為相同，不算「有變更」（回報另有一個有數量的工項）。"""
+    rid = h.insert_report(db, "Wen", DATE, "PENDING", items={"direct_20": 10})
     sign_in(client, db, "Wen")
-    assert edit(client, db, "Wen", rid, [("report_date", DATE), ("direct_13", "")]).status_code == 200
+    assert edit(client, db, "Wen", rid, [("report_date", DATE), ("direct_20", "1.0"), ("direct_13", "")]).status_code == 200
     assert "無變更" in audit(db)[-1][2]
 
 

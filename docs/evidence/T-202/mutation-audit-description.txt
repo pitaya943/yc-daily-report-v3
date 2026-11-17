@@ -1,0 +1,5 @@
+# 變異：把 audit_description.py 的 len(added) == 1 改成 >= 1，再跑新增的反例；然後還原再跑
+=========================== short test summary info ============================
+FAILED tests/steps/common/test_outcome_messages.py::test_audit_description_fails_when_two_rows_are_added_even_if_one_matches
+1 failed, 3 passed, 57 deselected in 0.14s
+4 passed, 57 deselected in 0.11s
