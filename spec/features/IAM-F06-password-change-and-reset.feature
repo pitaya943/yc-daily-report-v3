@@ -46,3 +46,34 @@ Feature: Password change and reset
       When a visitor asks to recover the password of "Wen"
       Then no such action exists
       # 員工請管理員重設；owner 的密碼在系統外重設（Q-046）。
+
+  Rule: IAM-R33 A password change ends the account's other sessions; a reset ends all of them
+
+    # D-123：自己改密碼時保留目前這個 session；被管理員重設時，該帳戶全部的 session 都結束。
+    Scenario: Changing one's own password keeps only the current session
+      Given "Wen" is signed in on two devices
+      When "Wen" changes their password successfully on the first device
+      Then the first device of "Wen" can still make protected requests
+      And a protected request from the second device of "Wen" is rejected as UNAUTHENTICATED
+
+    Scenario: A reset ends every session of the account
+      Given "Wen" is signed in on two devices
+      When "Admin1" resets the password of "Wen" to "newpass1"
+      Then a protected request from either device of "Wen" is rejected as UNAUTHENTICATED
+
+  Rule: IAM-R34 A wrong current password counts toward the sign-in lockout
+
+    # D-124：改密碼時輸入錯誤的目前密碼，與登入共用同一個失敗計數與鎖定（IAM-R04、R05）。
+    Scenario: The fifth wrong password across sign-in and password change locks the account
+      Given "Wen" is signed in
+      And "Wen" has 4 failed sign-ins in the last 15 minutes
+      When "Wen" changes their password with a wrong current password
+      Then the request is rejected as LOCKED with message "密碼錯誤次數過多，請在 15 分鐘後再試"
+      And an audit row "ACCOUNT_LOCKOUT" is written with actor SYSTEM
+
+    Scenario: A locked account cannot change its password
+      Given "Wen" is signed in
+      And "Wen" was locked 5 minutes ago
+      When "Wen" changes their password with current "correct", new "newpass1", confirmation "newpass1"
+      Then the request is rejected as LOCKED with message "密碼錯誤次數過多，請在 15 分鐘後再試"
+      And nothing is written
