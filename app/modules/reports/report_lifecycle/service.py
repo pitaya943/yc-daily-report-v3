@@ -155,6 +155,7 @@ def edit_report(conn: psycopg.Connection, actor: Actor, report_id: int, form: di
         check_report_date_unchanged(form, report.report_date)
         # 工項組沿用送出時記下的（AD-4）：之後帳戶改區域，這張回報的工項組不變
         items = submit.parse_quantities({k: v for k, v in form.items() if k != FIELD_DATE}, report.catalogue)
+        submit.require_a_quantity(items, report.custom_tenths)  # RPT-R14：與送出同一份判斷；已存的自訂工項數量也算
         submitter = repo.get_account(conn, report.submitter_id)
         crew_ids = submit.resolve_collaborators(conn, submitter, form.get(submit.FIELD_COLLABORATOR, []))
 

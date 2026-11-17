@@ -265,3 +265,86 @@ def test_the_date_message_is_the_same_string_as_the_submit_form_uses():
     from app.modules.reports.submit_a_daily_report import service as submit
 
     assert service.MSG_DATE == submit.MSG_DATE
+
+
+# ───────────────────────── T-204：編輯時至少一個工項（RPT-R14）與共同作業者資格（RPT-R05，D-096、D-097）─────────────────────────
+
+MSG_NO_QUANTITY = "請至少填寫一個工項數量"  # spec/appendix-b-fields.md
+MSG_COLLAB_TEXT = "共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工"
+
+
+def _account_id(db, name):
+    return h.account_row(db, name)[0]
+
+
+@pytest.mark.parametrize("fields_after_date", [[], [("direct_13", "0")], [("direct_13", ""), ("direct_20", "0.0")]])
+def test_an_edit_that_leaves_no_quantity_is_invalid_and_changes_nothing(client, db, fields_after_date):
+    rid = h.insert_report(db, "Wen", DATE, "PENDING", items={"direct_13": 20})
+    sign_in(client, db, "Wen")
+    before = take_snapshot(db)
+    r = edit(client, db, "Wen", rid, [("report_date", DATE)] + fields_after_date)
+    assert r.status_code == 422 and r.json() == {"outcome": "INVALID", "message": MSG_NO_QUANTITY}
+    assert diff(before, take_snapshot(db)) == {}
+
+
+@pytest.mark.parametrize("state", ["PENDING", "REJECTED", "CONFIRMED"])
+def test_the_admin_edit_of_every_state_also_needs_a_quantity(client, db, state):
+    rid = h.insert_report(db, "Wen", DATE, state, items={"direct_13": 20})
+    sign_in(client, db, "Admin1")
+    before = take_snapshot(db)
+    r = edit(client, db, "Admin1", rid, [("report_date", DATE), ("direct_13", "0")])
+    assert r.status_code == 422 and r.json() == {"outcome": "INVALID", "message": MSG_NO_QUANTITY}
+    assert diff(before, take_snapshot(db)) == {}  # CONFIRMED 也不會退回 PENDING、不寫 REPORT_UNCONFIRM
+
+
+def test_a_custom_item_quantity_of_zero_does_not_count(client, db):
+    rid = h.insert_report(db, "Wen", DATE, "PENDING", custom=("夜間加班", 0, 500))
+    sign_in(client, db, "Admin1")
+    before = take_snapshot(db)
+    r = edit(client, db, "Admin1", rid, [("report_date", DATE), ("direct_13", "0")])
+    assert r.status_code == 422 and r.json() == {"outcome": "INVALID", "message": MSG_NO_QUANTITY}
+    assert diff(before, take_snapshot(db)) == {}
+
+
+def test_an_edit_keeps_the_custom_item_when_the_catalogue_quantities_are_cleared(client, db):
+    rid = h.insert_report(db, "Wen", DATE, "PENDING", items={"direct_13": 20}, custom=("夜間加班", 20, 500))
+    sign_in(client, db, "Wen")
+    assert edit(client, db, "Wen", rid, [("report_date", DATE), ("direct_13", "0")]).status_code == 200
+    row = db.execute("select custom_name, custom_tenths, custom_price from yc_v3.reports where id = %s", (rid,)).fetchone()
+    db.rollback()
+    assert row == ("夜間加班", 20, 500)
+
+
+def _edit_with_collaborators(client, db, ids):
+    rid = h.insert_report(db, "Wen", DATE, "PENDING", items={"direct_13": 20})
+    sign_in(client, db, "Wen")
+    before = take_snapshot(db)
+    r = edit(client, db, "Wen", rid, [("report_date", DATE), ("direct_13", "2.0")] + [("collaborator", str(i)) for i in ids])
+    return rid, before, r
+
+
+@pytest.mark.parametrize("who", ["Nan", "Big", "Old", "Admin1", "Wen"])
+def test_an_edit_naming_an_ineligible_collaborator_is_invalid_and_changes_nothing(client, db, who):
+    _, before, r = _edit_with_collaborators(client, db, [_account_id(db, who)])
+    assert r.status_code == 422 and r.json() == {"outcome": "INVALID", "message": MSG_COLLAB_TEXT}
+    assert diff(before, take_snapshot(db)) == {}
+
+
+def test_an_edit_naming_the_same_collaborator_twice_is_invalid_and_changes_nothing(client, db):
+    wei = _account_id(db, "Wei")
+    _, before, r = _edit_with_collaborators(client, db, [wei, wei])
+    assert r.status_code == 422 and r.json() == {"outcome": "INVALID", "message": MSG_COLLAB_TEXT}
+    assert diff(before, take_snapshot(db)) == {}
+
+
+def test_an_edit_with_a_stale_collaborator_who_was_archived_after_submit_is_refused(client, db):
+    """原本在作業小組裡、之後被封存的人：表單不再提供；用舊的表單送出會被拒絕（D-097），不是默默拿掉。"""
+    rid = h.insert_report(db, "Wen", DATE, "PENDING", items={"direct_13": 20}, crew=("Wei",))
+    db.execute("update yc_v3.accounts set archived = true where name = 'Wei'")
+    db.commit()
+    wei = _account_id(db, "Wei")
+    sign_in(client, db, "Wen")
+    before = take_snapshot(db)
+    r = edit(client, db, "Wen", rid, [("report_date", DATE), ("direct_13", "2.0"), ("collaborator", str(wei))])
+    assert r.status_code == 422 and r.json() == {"outcome": "INVALID", "message": MSG_COLLAB_TEXT}
+    assert diff(before, take_snapshot(db)) == {}

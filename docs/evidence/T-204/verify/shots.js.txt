@@ -1,0 +1,56 @@
+// Verifier 自己的 Playwright 操作（T-204 第 1 輪）。
+const { chromium } = require('playwright');
+const OUT = '/home/user/yc-daily-report-v3/docs/evidence/T-204/verify';
+const BASE = 'http://127.0.0.1:8010';
+(async () => {
+  const browser = await chromium.launch();
+  const ctx = await browser.newContext({ viewport: { width: 520, height: 900 }, deviceScaleFactor: 2 });
+  const page = await ctx.newPage();
+  const log = [];
+  async function signIn(group, name) {
+    await page.goto(`${BASE}/sign-in?group=${group}`);
+    await page.selectOption('#name', name);
+    await page.fill('#password', 'correct');
+    await Promise.all([page.waitForNavigation(), page.click('#sign-in-form button[type=submit]')]);
+  }
+  async function submitAndRead(file, label) {
+    const [resp] = await Promise.all([
+      page.waitForResponse(r => r.request().method() === 'POST'),
+      page.click('#report-form button[type=submit]'),
+    ]);
+    await page.waitForTimeout(300);
+    const err = await page.locator('#form-error').evaluate(e => e.hidden ? '' : e.textContent);
+    const res = (await page.locator('#result').textContent()).trim();
+    log.push(`${label}: HTTP ${resp.status()} body=${await resp.text()} | #form-error="${err}" | #result="${res}"`);
+    await page.locator('#form-error').scrollIntoViewIfNeeded().catch(() => {});
+    await page.screenshot({ path: `${OUT}/${file}` });
+  }
+  // 1. 送出：全部為 0（每一個工項填 0）
+  await signIn('west', 'Wen');
+  await page.goto(`${BASE}/reports`);
+  for (const el of await page.locator('[data-item-code]').all()) await el.fill('0');
+  await submitAndRead('v01-submit-all-zero-rejected.png', 'submit all zero');
+  // 2. 送出：選了不符資格的共同作業者（Old，封存；用 DevTools 方式在下拉選單加一個選項，模擬繞過介面）
+  await page.goto(`${BASE}/reports`);
+  const oldId = process.env.OLD_ID;
+  await page.evaluate(id => { const s = document.querySelector('select[name=collaborator]'); const o = new Option('Old（封存，手動加入）', id); s.add(o); s.value = id; }, oldId);
+  await page.fill('[data-item-code="direct_13"]', '1.0');
+  await submitAndRead('v02-submit-ineligible-collaborator-rejected.png', 'submit archived collaborator Old');
+  // 3. 送出：一個有數量 → 成功（建立之後要編輯的回報）
+  await page.goto(`${BASE}/reports`);
+  await page.fill('[data-item-code="direct_13"]', '2.0');
+  await submitAndRead('v03-submit-one-quantity-accepted.png', 'submit ok');
+  // 4. 編輯成全部為 0（Wen 編輯自己的 PENDING）
+  const rid = process.env.RID || '1';
+  await page.goto(`${BASE}/reports/${rid}/edit`);
+  for (const el of await page.locator('#report-form input[type=text]').all()) await el.fill('0');
+  await submitAndRead('v04-edit-all-zero-rejected.png', 'edit all zero');
+  // 5. 編輯：重複的共同作業者（Wei 兩次）
+  await page.goto(`${BASE}/reports/${rid}/edit`);
+  const sels = page.locator('#report-form select[name=collaborator]');
+  await sels.nth(0).selectOption({ label: 'Wei' });
+  await sels.nth(1).selectOption({ label: 'Wei' });
+  await submitAndRead('v05-edit-duplicate-collaborator-rejected.png', 'edit duplicate collaborator Wei,Wei');
+  console.log(log.join('\n'));
+  await browser.close();
+})();

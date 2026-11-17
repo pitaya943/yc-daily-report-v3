@@ -331,3 +331,88 @@ def test_database_accepts_a_whole_custom_item_or_none(db, custom):
     r = repo.get_report(db, rid)
     assert (r.custom_name, r.custom_tenths, r.custom_price) == custom
     db.rollback()
+
+
+# ───────────────────────── T-204：至少一個工項（RPT-R08）與共同作業者資格（RPT-R05，D-096、D-097）─────────────────────────
+
+MSG_NO_QUANTITY = "請至少填寫一個工項數量"  # spec/appendix-b-fields.md
+
+
+@pytest.mark.parametrize(
+    "items, custom, ok",
+    [
+        ({}, None, False),
+        ({"direct_13": 0}, None, False),
+        ({"direct_13": 0, "direct_20": 0}, 0, False),
+        ({"direct_13": 1}, None, True),
+        ({"direct_13": 0, "direct_20": 9999}, None, True),
+        ({}, 20, True),  # D-096 B1：自訂工項有數量也算
+        ({"direct_13": 0}, 1, True),
+    ],
+)
+def test_require_a_quantity_is_one_judgement_shared_by_submit_and_edit(items, custom, ok):
+    if ok:
+        service.require_a_quantity(items, custom)
+    else:
+        e = _raises(service.require_a_quantity, items, custom)
+        assert (e.outcome, e.message) == (Outcome.INVALID, MSG_NO_QUANTITY)
+
+
+@pytest.mark.parametrize(
+    "fields",
+    [
+        [("report_date", "2026-11-15")],  # 什麼都不送
+        [("report_date", "2026-11-15"), ("direct_13", "0")],
+        [("report_date", "2026-11-15"), ("direct_13", ""), ("direct_20", "0.0")],
+    ],
+)
+def test_a_submit_with_no_quantity_above_zero_is_invalid_and_writes_nothing(db, fields):
+    client, token = _client_for(db, "Wen")
+    before = take_snapshot(db)
+    _assert_rejected_and_unchanged(db, before, _post(client, token, fields), Outcome.INVALID, MSG_NO_QUANTITY)
+
+
+def test_the_no_quantity_rule_does_not_hide_a_quantity_format_error(db):
+    client, token = _client_for(db, "Wen")
+    before = take_snapshot(db)
+    r = _post(client, token, [("report_date", "2026-11-15"), ("direct_13", "abc")])
+    _assert_rejected_and_unchanged(db, before, r, Outcome.INVALID, service.MSG_QUANTITY)
+
+
+def _collab_fields(*ids):
+    return [("report_date", "2026-11-15"), ("direct_13", "1.0")] + [("collaborator", str(i)) for i in ids]
+
+
+@pytest.mark.parametrize("bad", ["abc", "1.5", "-1", "１", "0", "99999999999", "1e2", "9" * 30])
+def test_a_collaborator_that_is_not_a_real_account_id_is_invalid_and_writes_nothing(db, bad):
+    client, token = _client_for(db, "Wen")
+    before = take_snapshot(db)
+    r = _post(client, token, [("report_date", "2026-11-15"), ("direct_13", "1.0"), ("collaborator", bad)])
+    _assert_rejected_and_unchanged(db, before, r, Outcome.INVALID, service.MSG_COLLABORATORS)
+
+
+def test_one_ineligible_collaborator_among_eligible_ones_refuses_the_whole_report(db):
+    wei = db.execute("select id from yc_v3.accounts where name = 'Wei'").fetchone()[0]
+    nan = db.execute("select id from yc_v3.accounts where name = 'Nan'").fetchone()[0]
+    db.rollback()
+    client, token = _client_for(db, "Wen")
+    before = take_snapshot(db)
+    r = _post(client, token, _collab_fields(wei, nan))  # 不是「只存 Wei」
+    _assert_rejected_and_unchanged(db, before, r, Outcome.INVALID, service.MSG_COLLABORATORS)
+
+
+def test_a_blank_collaborator_slot_is_not_a_chosen_collaborator(db):
+    client, token = _client_for(db, "Wen")
+    r = _post(client, token, [("report_date", "2026-11-15"), ("direct_13", "1.0"), ("collaborator", ""), ("collaborator", " ")])
+    assert r.status_code == 200, r.text
+    report = repo.list_reports(db)[0]
+    db.rollback()
+    assert report.crew == []
+
+
+def test_a_duplicate_is_refused_even_when_it_is_the_only_problem_among_seven_slots(db):
+    ids = _add_users(db, 3)
+    client, token = _client_for(db, "Wen")
+    before = take_snapshot(db)
+    r = _post(client, token, _collab_fields(ids[0], ids[1], ids[0], ids[2]))
+    _assert_rejected_and_unchanged(db, before, r, Outcome.INVALID, service.MSG_COLLABORATORS)

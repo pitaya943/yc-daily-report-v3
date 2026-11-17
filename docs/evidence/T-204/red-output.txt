@@ -1,0 +1,370 @@
+........................................................................ [  4%]
+........................................................................ [  9%]
+........................................................................ [ 13%]
+........................................................................ [ 18%]
+........................................................................ [ 22%]
+........................................................................ [ 27%]
+........................................................................ [ 31%]
+........................................................................ [ 36%]
+........................................................................ [ 40%]
+........................................................................ [ 45%]
+........................................................................ [ 49%]
+...........................sssssssssssssssssssssssssssssssssssssssssssss [ 54%]
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 58%]
+sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss... [ 63%]
+...........sssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 68%]
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.. [ 72%]
+.........s.F.sssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 77%]
+sssssssssssssssss....................................................FFF [ 81%]
+FFF.....Fssssssssssssssss............................................... [ 86%]
+........................................................................ [ 90%]
+........................................................................ [ 95%]
+........................................................................ [ 99%]
+....                                                                     [100%]
+=================================== FAILURES ===================================
+______________ test_an_edit_that_clears_every_quantity_is_refused ______________
+
+fixturefunc = <function _rejected_with_message at 0x7fb519e5ed40>
+request = <FixtureRequest for <Function test_an_edit_that_clears_every_quantity_is_refused>>
+kwargs = {'outcome': 'INVALID', 'message': '請至少填寫一個工項數量', 'recorder': Recorder(db=<psycopg.Connection [IDLE] (host=127.0.0.1 po...10:00:00+08")'], 'sign_in_attempts': ['(1,testclient,"2026-11-15 10:00:00+08")'], 'sign_in_failures': []}, claimed=[])}
+
+    def call_fixture_func(
+        fixturefunc: _FixtureFunc[FixtureValue], request: FixtureRequest, kwargs
+    ) -> FixtureValue:
+        if inspect.isgeneratorfunction(fixturefunc):
+            fixturefunc = cast(Callable[..., Generator[FixtureValue]], fixturefunc)
+            generator = fixturefunc(**kwargs)
+            try:
+                fixture_result = next(generator)
+            except StopIteration:
+                raise ValueError(f"{request.fixturename} did not yield a value") from None
+            finalizer = functools.partial(_teardown_yield_fixture, fixturefunc, generator)
+            request.addfinalizer(finalizer)
+        else:
+            fixturefunc = cast(Callable[..., FixtureValue], fixturefunc)
+>           fixture_result = fixturefunc(**kwargs)
+                             ^^^^^^^^^^^^^^^^^^^^^
+
+/usr/local/lib/python3.13/site-packages/_pytest/fixtures.py:1074: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/steps/common/steps.py:117: in _rejected_with_message
+    check_rejected(recorder, outcome, message)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+recorder = Recorder(db=<psycopg.Connection [IDLE] (host=127.0.0.1 port=5433 user=postgres database=yc) at 0x7fb5192968a0>, respon... 10:00:00+08")'], 'sign_in_attempts': ['(1,testclient,"2026-11-15 10:00:00+08")'], 'sign_in_failures': []}, claimed=[])
+outcome = 'INVALID', message = '請至少填寫一個工項數量'
+
+    def check_rejected(recorder: Recorder, outcome: str, message: str | None) -> None:
+        table = outcome_http_table()
+        assert outcome in table, f"{outcome} 不是 spec/README.md 的結果類別"
+        r = recorder.response
+        assert r is not None, "沒有回應可檢查"
+>       assert r.status_code == table[outcome], f"HTTP status 應為 {table[outcome]}，實際 {r.status_code}"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: HTTP status 應為 422，實際 200
+
+tests/steps/common/steps.py:109: AssertionError
+________ test_an_ineligible_collaborator_is_refused[Nan-different zone] ________
+
+fixturefunc = <function _rejected_with_message at 0x7fb519e5ed40>
+request = <FixtureRequest for <Function test_an_ineligible_collaborator_is_refused[Nan-different zone]>>
+kwargs = {'outcome': 'INVALID', 'message': '共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工', 'recorder': Recorder(db=<psycopg.Connection [IDLE] ...10:00:00+08")'], 'sign_in_attempts': ['(1,testclient,"2026-11-15 10:00:00+08")'], 'sign_in_failures': []}, claimed=[])}
+
+    def call_fixture_func(
+        fixturefunc: _FixtureFunc[FixtureValue], request: FixtureRequest, kwargs
+    ) -> FixtureValue:
+        if inspect.isgeneratorfunction(fixturefunc):
+            fixturefunc = cast(Callable[..., Generator[FixtureValue]], fixturefunc)
+            generator = fixturefunc(**kwargs)
+            try:
+                fixture_result = next(generator)
+            except StopIteration:
+                raise ValueError(f"{request.fixturename} did not yield a value") from None
+            finalizer = functools.partial(_teardown_yield_fixture, fixturefunc, generator)
+            request.addfinalizer(finalizer)
+        else:
+            fixturefunc = cast(Callable[..., FixtureValue], fixturefunc)
+>           fixture_result = fixturefunc(**kwargs)
+                             ^^^^^^^^^^^^^^^^^^^^^
+
+/usr/local/lib/python3.13/site-packages/_pytest/fixtures.py:1074: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/steps/common/steps.py:117: in _rejected_with_message
+    check_rejected(recorder, outcome, message)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+recorder = Recorder(db=<psycopg.Connection [IDLE] (host=127.0.0.1 port=5433 user=postgres database=yc) at 0x7fb5192964e0>, respon... 10:00:00+08")'], 'sign_in_attempts': ['(1,testclient,"2026-11-15 10:00:00+08")'], 'sign_in_failures': []}, claimed=[])
+outcome = 'INVALID', message = '共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工'
+
+    def check_rejected(recorder: Recorder, outcome: str, message: str | None) -> None:
+        table = outcome_http_table()
+        assert outcome in table, f"{outcome} 不是 spec/README.md 的結果類別"
+        r = recorder.response
+        assert r is not None, "沒有回應可檢查"
+>       assert r.status_code == table[outcome], f"HTTP status 應為 {table[outcome]}，實際 {r.status_code}"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: HTTP status 應為 422，實際 200
+
+tests/steps/common/steps.py:109: AssertionError
+________ test_an_ineligible_collaborator_is_refused[Big-different type] ________
+
+fixturefunc = <function _rejected_with_message at 0x7fb519e5ed40>
+request = <FixtureRequest for <Function test_an_ineligible_collaborator_is_refused[Big-different type]>>
+kwargs = {'outcome': 'INVALID', 'message': '共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工', 'recorder': Recorder(db=<psycopg.Connection [IDLE] ...10:00:00+08")'], 'sign_in_attempts': ['(1,testclient,"2026-11-15 10:00:00+08")'], 'sign_in_failures': []}, claimed=[])}
+
+    def call_fixture_func(
+        fixturefunc: _FixtureFunc[FixtureValue], request: FixtureRequest, kwargs
+    ) -> FixtureValue:
+        if inspect.isgeneratorfunction(fixturefunc):
+            fixturefunc = cast(Callable[..., Generator[FixtureValue]], fixturefunc)
+            generator = fixturefunc(**kwargs)
+            try:
+                fixture_result = next(generator)
+            except StopIteration:
+                raise ValueError(f"{request.fixturename} did not yield a value") from None
+            finalizer = functools.partial(_teardown_yield_fixture, fixturefunc, generator)
+            request.addfinalizer(finalizer)
+        else:
+            fixturefunc = cast(Callable[..., FixtureValue], fixturefunc)
+>           fixture_result = fixturefunc(**kwargs)
+                             ^^^^^^^^^^^^^^^^^^^^^
+
+/usr/local/lib/python3.13/site-packages/_pytest/fixtures.py:1074: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/steps/common/steps.py:117: in _rejected_with_message
+    check_rejected(recorder, outcome, message)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+recorder = Recorder(db=<psycopg.Connection [IDLE] (host=127.0.0.1 port=5433 user=postgres database=yc) at 0x7fb5193009b0>, respon... 10:00:00+08")'], 'sign_in_attempts': ['(1,testclient,"2026-11-15 10:00:00+08")'], 'sign_in_failures': []}, claimed=[])
+outcome = 'INVALID', message = '共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工'
+
+    def check_rejected(recorder: Recorder, outcome: str, message: str | None) -> None:
+        table = outcome_http_table()
+        assert outcome in table, f"{outcome} 不是 spec/README.md 的結果類別"
+        r = recorder.response
+        assert r is not None, "沒有回應可檢查"
+>       assert r.status_code == table[outcome], f"HTTP status 應為 {table[outcome]}，實際 {r.status_code}"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: HTTP status 應為 422，實際 200
+
+tests/steps/common/steps.py:109: AssertionError
+___________ test_an_ineligible_collaborator_is_refused[Old-archived] ___________
+
+fixturefunc = <function _rejected_with_message at 0x7fb519e5ed40>
+request = <FixtureRequest for <Function test_an_ineligible_collaborator_is_refused[Old-archived]>>
+kwargs = {'outcome': 'INVALID', 'message': '共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工', 'recorder': Recorder(db=<psycopg.Connection [IDLE] ...10:00:00+08")'], 'sign_in_attempts': ['(1,testclient,"2026-11-15 10:00:00+08")'], 'sign_in_failures': []}, claimed=[])}
+
+    def call_fixture_func(
+        fixturefunc: _FixtureFunc[FixtureValue], request: FixtureRequest, kwargs
+    ) -> FixtureValue:
+        if inspect.isgeneratorfunction(fixturefunc):
+            fixturefunc = cast(Callable[..., Generator[FixtureValue]], fixturefunc)
+            generator = fixturefunc(**kwargs)
+            try:
+                fixture_result = next(generator)
+            except StopIteration:
+                raise ValueError(f"{request.fixturename} did not yield a value") from None
+            finalizer = functools.partial(_teardown_yield_fixture, fixturefunc, generator)
+            request.addfinalizer(finalizer)
+        else:
+            fixturefunc = cast(Callable[..., FixtureValue], fixturefunc)
+>           fixture_result = fixturefunc(**kwargs)
+                             ^^^^^^^^^^^^^^^^^^^^^
+
+/usr/local/lib/python3.13/site-packages/_pytest/fixtures.py:1074: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/steps/common/steps.py:117: in _rejected_with_message
+    check_rejected(recorder, outcome, message)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+recorder = Recorder(db=<psycopg.Connection [IDLE] (host=127.0.0.1 port=5433 user=postgres database=yc) at 0x7fb519301130>, respon... 10:00:00+08")'], 'sign_in_attempts': ['(1,testclient,"2026-11-15 10:00:00+08")'], 'sign_in_failures': []}, claimed=[])
+outcome = 'INVALID', message = '共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工'
+
+    def check_rejected(recorder: Recorder, outcome: str, message: str | None) -> None:
+        table = outcome_http_table()
+        assert outcome in table, f"{outcome} 不是 spec/README.md 的結果類別"
+        r = recorder.response
+        assert r is not None, "沒有回應可檢查"
+>       assert r.status_code == table[outcome], f"HTTP status 應為 {table[outcome]}，實際 {r.status_code}"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: HTTP status 應為 422，實際 200
+
+tests/steps/common/steps.py:109: AssertionError
+________ test_an_ineligible_collaborator_is_refused[Admin1-not a USER] _________
+
+fixturefunc = <function _rejected_with_message at 0x7fb519e5ed40>
+request = <FixtureRequest for <Function test_an_ineligible_collaborator_is_refused[Admin1-not a USER]>>
+kwargs = {'outcome': 'INVALID', 'message': '共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工', 'recorder': Recorder(db=<psycopg.Connection [IDLE] ...10:00:00+08")'], 'sign_in_attempts': ['(1,testclient,"2026-11-15 10:00:00+08")'], 'sign_in_failures': []}, claimed=[])}
+
+    def call_fixture_func(
+        fixturefunc: _FixtureFunc[FixtureValue], request: FixtureRequest, kwargs
+    ) -> FixtureValue:
+        if inspect.isgeneratorfunction(fixturefunc):
+            fixturefunc = cast(Callable[..., Generator[FixtureValue]], fixturefunc)
+            generator = fixturefunc(**kwargs)
+            try:
+                fixture_result = next(generator)
+            except StopIteration:
+                raise ValueError(f"{request.fixturename} did not yield a value") from None
+            finalizer = functools.partial(_teardown_yield_fixture, fixturefunc, generator)
+            request.addfinalizer(finalizer)
+        else:
+            fixturefunc = cast(Callable[..., FixtureValue], fixturefunc)
+>           fixture_result = fixturefunc(**kwargs)
+                             ^^^^^^^^^^^^^^^^^^^^^
+
+/usr/local/lib/python3.13/site-packages/_pytest/fixtures.py:1074: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/steps/common/steps.py:117: in _rejected_with_message
+    check_rejected(recorder, outcome, message)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+recorder = Recorder(db=<psycopg.Connection [IDLE] (host=127.0.0.1 port=5433 user=postgres database=yc) at 0x7fb5193032f0>, respon... 10:00:00+08")'], 'sign_in_attempts': ['(1,testclient,"2026-11-15 10:00:00+08")'], 'sign_in_failures': []}, claimed=[])
+outcome = 'INVALID', message = '共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工'
+
+    def check_rejected(recorder: Recorder, outcome: str, message: str | None) -> None:
+        table = outcome_http_table()
+        assert outcome in table, f"{outcome} 不是 spec/README.md 的結果類別"
+        r = recorder.response
+        assert r is not None, "沒有回應可檢查"
+>       assert r.status_code == table[outcome], f"HTTP status 應為 {table[outcome]}，實際 {r.status_code}"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: HTTP status 應為 422，實際 200
+
+tests/steps/common/steps.py:109: AssertionError
+_____ test_an_ineligible_collaborator_is_refused[Wen-the submitter itself] _____
+
+fixturefunc = <function _rejected_with_message at 0x7fb519e5ed40>
+request = <FixtureRequest for <Function test_an_ineligible_collaborator_is_refused[Wen-the submitter itself]>>
+kwargs = {'outcome': 'INVALID', 'message': '共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工', 'recorder': Recorder(db=<psycopg.Connection [IDLE] ...10:00:00+08")'], 'sign_in_attempts': ['(1,testclient,"2026-11-15 10:00:00+08")'], 'sign_in_failures': []}, claimed=[])}
+
+    def call_fixture_func(
+        fixturefunc: _FixtureFunc[FixtureValue], request: FixtureRequest, kwargs
+    ) -> FixtureValue:
+        if inspect.isgeneratorfunction(fixturefunc):
+            fixturefunc = cast(Callable[..., Generator[FixtureValue]], fixturefunc)
+            generator = fixturefunc(**kwargs)
+            try:
+                fixture_result = next(generator)
+            except StopIteration:
+                raise ValueError(f"{request.fixturename} did not yield a value") from None
+            finalizer = functools.partial(_teardown_yield_fixture, fixturefunc, generator)
+            request.addfinalizer(finalizer)
+        else:
+            fixturefunc = cast(Callable[..., FixtureValue], fixturefunc)
+>           fixture_result = fixturefunc(**kwargs)
+                             ^^^^^^^^^^^^^^^^^^^^^
+
+/usr/local/lib/python3.13/site-packages/_pytest/fixtures.py:1074: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/steps/common/steps.py:117: in _rejected_with_message
+    check_rejected(recorder, outcome, message)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+recorder = Recorder(db=<psycopg.Connection [IDLE] (host=127.0.0.1 port=5433 user=postgres database=yc) at 0x7fb5193036b0>, respon... 10:00:00+08")'], 'sign_in_attempts': ['(1,testclient,"2026-11-15 10:00:00+08")'], 'sign_in_failures': []}, claimed=[])
+outcome = 'INVALID', message = '共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工'
+
+    def check_rejected(recorder: Recorder, outcome: str, message: str | None) -> None:
+        table = outcome_http_table()
+        assert outcome in table, f"{outcome} 不是 spec/README.md 的結果類別"
+        r = recorder.response
+        assert r is not None, "沒有回應可檢查"
+>       assert r.status_code == table[outcome], f"HTTP status 應為 {table[outcome]}，實際 {r.status_code}"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: HTTP status 應為 422，實際 200
+
+tests/steps/common/steps.py:109: AssertionError
+______________ test_naming_the_same_collaborator_twice_is_refused ______________
+
+fixturefunc = <function _rejected_with_message at 0x7fb519e5ed40>
+request = <FixtureRequest for <Function test_naming_the_same_collaborator_twice_is_refused>>
+kwargs = {'outcome': 'INVALID', 'message': '共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工', 'recorder': Recorder(db=<psycopg.Connection [IDLE] ...10:00:00+08")'], 'sign_in_attempts': ['(1,testclient,"2026-11-15 10:00:00+08")'], 'sign_in_failures': []}, claimed=[])}
+
+    def call_fixture_func(
+        fixturefunc: _FixtureFunc[FixtureValue], request: FixtureRequest, kwargs
+    ) -> FixtureValue:
+        if inspect.isgeneratorfunction(fixturefunc):
+            fixturefunc = cast(Callable[..., Generator[FixtureValue]], fixturefunc)
+            generator = fixturefunc(**kwargs)
+            try:
+                fixture_result = next(generator)
+            except StopIteration:
+                raise ValueError(f"{request.fixturename} did not yield a value") from None
+            finalizer = functools.partial(_teardown_yield_fixture, fixturefunc, generator)
+            request.addfinalizer(finalizer)
+        else:
+            fixturefunc = cast(Callable[..., FixtureValue], fixturefunc)
+>           fixture_result = fixturefunc(**kwargs)
+                             ^^^^^^^^^^^^^^^^^^^^^
+
+/usr/local/lib/python3.13/site-packages/_pytest/fixtures.py:1074: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/steps/common/steps.py:117: in _rejected_with_message
+    check_rejected(recorder, outcome, message)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+recorder = Recorder(db=<psycopg.Connection [IDLE] (host=127.0.0.1 port=5433 user=postgres database=yc) at 0x7fb519302b70>, respon... 10:00:00+08")'], 'sign_in_attempts': ['(1,testclient,"2026-11-15 10:00:00+08")'], 'sign_in_failures': []}, claimed=[])
+outcome = 'INVALID', message = '共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工'
+
+    def check_rejected(recorder: Recorder, outcome: str, message: str | None) -> None:
+        table = outcome_http_table()
+        assert outcome in table, f"{outcome} 不是 spec/README.md 的結果類別"
+        r = recorder.response
+        assert r is not None, "沒有回應可檢查"
+>       assert r.status_code == table[outcome], f"HTTP status 應為 {table[outcome]}，實際 {r.status_code}"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: HTTP status 應為 422，實際 200
+
+tests/steps/common/steps.py:109: AssertionError
+__________________ test_a_report_with_no_quantity_is_refused ___________________
+
+fixturefunc = <function _rejected_with_message at 0x7fb519e5ed40>
+request = <FixtureRequest for <Function test_a_report_with_no_quantity_is_refused>>
+kwargs = {'outcome': 'INVALID', 'message': '請至少填寫一個工項數量', 'recorder': Recorder(db=<psycopg.Connection [IDLE] (host=127.0.0.1 po...10:00:00+08")'], 'sign_in_attempts': ['(1,testclient,"2026-11-15 10:00:00+08")'], 'sign_in_failures': []}, claimed=[])}
+
+    def call_fixture_func(
+        fixturefunc: _FixtureFunc[FixtureValue], request: FixtureRequest, kwargs
+    ) -> FixtureValue:
+        if inspect.isgeneratorfunction(fixturefunc):
+            fixturefunc = cast(Callable[..., Generator[FixtureValue]], fixturefunc)
+            generator = fixturefunc(**kwargs)
+            try:
+                fixture_result = next(generator)
+            except StopIteration:
+                raise ValueError(f"{request.fixturename} did not yield a value") from None
+            finalizer = functools.partial(_teardown_yield_fixture, fixturefunc, generator)
+            request.addfinalizer(finalizer)
+        else:
+            fixturefunc = cast(Callable[..., FixtureValue], fixturefunc)
+>           fixture_result = fixturefunc(**kwargs)
+                             ^^^^^^^^^^^^^^^^^^^^^
+
+/usr/local/lib/python3.13/site-packages/_pytest/fixtures.py:1074: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/steps/common/steps.py:117: in _rejected_with_message
+    check_rejected(recorder, outcome, message)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+recorder = Recorder(db=<psycopg.Connection [IDLE] (host=127.0.0.1 port=5433 user=postgres database=yc) at 0x7fb519302030>, respon... 10:00:00+08")'], 'sign_in_attempts': ['(1,testclient,"2026-11-15 10:00:00+08")'], 'sign_in_failures': []}, claimed=[])
+outcome = 'INVALID', message = '請至少填寫一個工項數量'
+
+    def check_rejected(recorder: Recorder, outcome: str, message: str | None) -> None:
+        table = outcome_http_table()
+        assert outcome in table, f"{outcome} 不是 spec/README.md 的結果類別"
+        r = recorder.response
+        assert r is not None, "沒有回應可檢查"
+>       assert r.status_code == table[outcome], f"HTTP status 應為 {table[outcome]}，實際 {r.status_code}"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: HTTP status 應為 422，實際 200
+
+tests/steps/common/steps.py:109: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_spec.py::test_an_edit_that_clears_every_quantity_is_refused
+FAILED tests/test_spec.py::test_an_ineligible_collaborator_is_refused[Nan-different zone]
+FAILED tests/test_spec.py::test_an_ineligible_collaborator_is_refused[Big-different type]
+FAILED tests/test_spec.py::test_an_ineligible_collaborator_is_refused[Old-archived]
+FAILED tests/test_spec.py::test_an_ineligible_collaborator_is_refused[Admin1-not a USER]
+FAILED tests/test_spec.py::test_an_ineligible_collaborator_is_refused[Wen-the submitter itself]
+FAILED tests/test_spec.py::test_naming_the_same_collaborator_twice_is_refused
+FAILED tests/test_spec.py::test_a_report_with_no_quantity_is_refused - Assert...
+8 failed, 1170 passed, 410 skipped in 200.01s (0:03:20)

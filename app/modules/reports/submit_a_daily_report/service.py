@@ -5,6 +5,7 @@
     parse_report_date(raw, today)            RPT-R02
     parse_quantity(raw)                      RPT-R03
     parse_quantities(fields, catalogue)      RPT-R01、R03
+    require_a_quantity(items, custom_tenths)  RPT-R08、R14（送出與編輯共用，只有這一份）
     resolve_collaborators(conn, submitter, raw_ids)   RPT-R05
     submit_report(conn, actor, form)         RPT-R04、R06、R07（整個送出，含稽核）
 
@@ -38,6 +39,7 @@ from app.modules.reports.submit_a_daily_report import repo
 MSG_DATE = "回報日期須為今天或往前 30 天內，不可選擇未來日期"
 MSG_QUANTITY = "工項數量須為 0 到 999.9，最小單位 0.1"
 MSG_COLLABORATORS = "共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工"
+MSG_NO_QUANTITY = "請至少填寫一個工項數量"  # D-096
 MSG_DAILY_CAP = "每日最多只能送出 3 筆回報"
 
 # spec/appendix-a-catalogues.md「A.4 預設設定」：固定值，不是可設定的
@@ -113,25 +115,38 @@ def parse_quantities(fields: dict[str, list[str]], catalogue_name: str) -> dict[
     return out
 
 
-def resolve_collaborators(conn: psycopg.Connection, submitter: repo.Account, raw_ids: list[str]) -> list[int]:
-    """RPT-R05：依提交者選的順序，留下符合資格的共同作業者的帳戶 id。
+def require_a_quantity(items: dict[str, int], custom_tenths: int | None = None) -> None:
+    """RPT-R08、R14（D-096）：至少一個工項的數量 > 0，否則 `INVALID`。送出與編輯共用，判斷只寫在這裡。
 
-    不符資格的（不同區、不同類型、封存、非 USER、提交者自己、不存在、不是數字）**不被存入，也不是錯誤**：
-    scenario 的 Then 是「the saved crew is "Wen"」，送出仍成功。同一個人重複選只留第一次。
-    留下來的人數超過 6 才是 `INVALID`（附錄 B 的字串）。空白的選項（沒選人）略過。
+    `items` 是這次送出的目錄工項（{代碼: tenths}，空白已是 0）。`custom_tenths` 是回報的自訂工項數量（REV-R20，D-086；
+    沒有自訂工項是 None）：自訂工項有數量也算有工項（D-096 B1）。送出時還沒有自訂工項，編輯時由呼叫端傳入已存的數量
+    （編輯表單不改自訂工項，所以它留在回報上）。
+    """
+    if any(tenths > 0 for tenths in items.values()) or (custom_tenths or 0) > 0:
+        return
+    raise OutcomeError(Outcome.INVALID, MSG_NO_QUANTITY)
+
+
+def resolve_collaborators(conn: psycopg.Connection, submitter: repo.Account, raw_ids: list[str]) -> list[int]:
+    """RPT-R05（D-097）：依提交者選的順序，回傳共同作業者的帳戶 id；任何一個不合格就整張拒絕。
+
+    不符資格（不同區、不同類型、封存、非 USER、提交者自己、不存在、不是數字）、同一個人出現兩次、超過 6 人，
+    一律 `INVALID`（同一句附錄 B 的字串），不寫任何資料；不再靜默略過或自動修正。
+    空白的選項（表單上沒選人的下拉選單）不算被選：略過。
     """
     candidates: list[int] = []
     for raw in raw_ids:
         text = raw.strip()
         if text == "":
             continue
-        if _ID_RE.match(text):  # 只收純數字 id（半形）；其他一律當作不符資格
-            candidates.append(int(text))
-    eligible = repo.eligible_collaborator_ids(conn, submitter, list(dict.fromkeys(candidates)))
-    chosen = [i for i in dict.fromkeys(candidates) if i in eligible]
-    if len(chosen) > MAX_COLLABORATORS:
+        if not _ID_RE.match(text):  # 只收純數字 id（半形）
+            raise OutcomeError(Outcome.INVALID, MSG_COLLABORATORS)
+        candidates.append(int(text))
+    if len(candidates) > MAX_COLLABORATORS or len(set(candidates)) != len(candidates):
         raise OutcomeError(Outcome.INVALID, MSG_COLLABORATORS)
-    return chosen
+    if not set(candidates) <= repo.eligible_collaborator_ids(conn, submitter, candidates):
+        raise OutcomeError(Outcome.INVALID, MSG_COLLABORATORS)
+    return candidates
 
 
 # ───────────────────────── 送出 ─────────────────────────
@@ -157,7 +172,7 @@ def submit_report(conn: psycopg.Connection, actor: Actor, form: dict[str, list[s
     順序（有意義）：
     1. 權限（RPT-R06）：ADMIN、OWNER → FORBIDDEN，並寫 ACCESS_DENIED（authorize 內，獨立連線）。權限先於欄位驗證，
        所以管理員送出任何內容都只得到 FORBIDDEN，不會因為內容而洩漏欄位規則。
-    2. 欄位（不碰資料庫的先做）：日期、工項、共同作業者。
+    2. 欄位（不碰資料庫的先做）：日期、工項數量、至少一個工項（RPT-R08）、共同作業者（RPT-R05）。同時有多個錯誤時回先檢查到的那一個。
     3. 每日上限（RPT-R04）：鎖住提交者 → 計數 → 寫入，在同一個 transaction，並行時也成立。
     4. 稽核 REPORT_CREATE 與資料同一個 transaction 提交（app/core/audit.py）。
     """
@@ -171,6 +186,7 @@ def submit_report(conn: psycopg.Connection, actor: Actor, form: dict[str, list[s
         values = form.get(FIELD_DATE, [])
         report_date = parse_report_date(values[0] if len(values) == 1 else None, clock.now().date())
         items = parse_quantities(form, catalogue_name)
+        require_a_quantity(items)  # 送出時還沒有自訂工項（REV-R20 屬 M3）
         crew_ids = resolve_collaborators(conn, submitter, form.get(FIELD_COLLABORATOR, []))
 
         repo.lock_submitter(conn, submitter.id)

@@ -64,17 +64,26 @@ def ensure_signed_in(client, db, name: str) -> None:
         assert response.status_code == 303, f"登入應成功（303），實際 {response.status_code}"
 
 
-def insert_report(db, submitter: str, date: str, status: str, *, items: dict[str, int] | None = None, crew: tuple[str, ...] = ()) -> int:
-    """Given 用：直接寫一張回報（含工項數量與共同作業者），不經過任何產品端點。"""
+def insert_report(
+    db,
+    submitter: str,
+    date: str,
+    status: str,
+    *,
+    items: dict[str, int] | None = None,
+    crew: tuple[str, ...] = (),
+    custom: tuple[str, int, int] | None = None,
+) -> int:
+    """Given 用：直接寫一張回報（含工項數量、共同作業者、自訂工項 (名稱, tenths, 單價)），不經過任何產品端點。"""
     now = clock.now()
     submitter_id, zone, big = account_row(db, submitter)  # 先查：account_row 會 rollback，不能夾在待提交的寫入中間
     crew_ids = [account_row(db, who)[0] for who in crew]
     catalogue = "BIG_METER" if big else zone
     with db.cursor() as cur:
         cur.execute(
-            "insert into yc_v3.reports(submitter_id, report_date, catalogue, status, created_at, updated_at) "
-            "values (%s, %s, %s, %s, %s, %s) returning id",
-            (submitter_id, date, catalogue, status, now, now),
+            "insert into yc_v3.reports(submitter_id, report_date, catalogue, status, created_at, updated_at, "
+            "custom_name, custom_tenths, custom_price) values (%s, %s, %s, %s, %s, %s, %s, %s, %s) returning id",
+            (submitter_id, date, catalogue, status, now, now, *(custom or (None, None, None))),
         )
         rid = cur.fetchone()[0]
         for code, tenths in (items or {}).items():
@@ -158,6 +167,13 @@ def _has_own_pending(db, lifecycle, name):
     _remember(lifecycle, insert_report(db, name, _DATE, "PENDING", items={EDIT_ITEM: 20}), _DATE, "PENDING")
 
 
+@given(parsers.re(r'a PENDING report by "(?P<name>[^"]+)" with custom item "(?P<custom>[^"]+)" quantity (?P<qty>[0-9]+)\.(?P<tenth>[0-9]) at price (?P<price>[0-9]+)$'))
+def _a_pending_report_with_custom_item(db, lifecycle, name, custom, qty, tenth, price):
+    """RPT-R14：回報只有一個自訂工項有數量（沒有任何目錄工項）。自訂工項的畫面與寫入屬於 M3（REV-R20），這裡直接寫資料庫。"""
+    rid = insert_report(db, name, _DATE, "PENDING", custom=(custom, int(qty) * 10 + int(tenth), int(price)))
+    _remember(lifecycle, rid, _DATE, "PENDING")
+
+
 @given(parsers.re(r'a CONFIRMED report by "(?P<name>[^"]+)"$'))
 def _a_confirmed_report_by(db, lifecycle, name):
     _remember(lifecycle, insert_report(db, name, _DATE, "CONFIRMED", items={EDIT_ITEM: 20}), _DATE, "CONFIRMED")
@@ -215,6 +231,25 @@ def _edits_pending_to(recorder, client, db, lifecycle, name, item, qty):
 @when(parsers.re(r'"(?P<name>[^"]+)" edits it with report date "(?P<date>[^"]*)"$'))
 def _edits_with_date(recorder, client, db, lifecycle, name, date):
     _edit(recorder, client, db, lifecycle, name, [("report_date", date), (EDIT_ITEM, "2.0")])
+
+
+def _all_catalogue_codes(db, lifecycle) -> list[str]:
+    """那張回報的工項組的每一個工項代碼（編輯表單上會出現的全部欄位）。"""
+    from app.modules.reports.submit_a_daily_report import catalogue as product
+
+    with db.cursor() as cur:
+        cur.execute("select catalogue from yc_v3.reports where id = %s", (lifecycle["report_id"],))
+        name = cur.fetchone()[0]
+    db.rollback()
+    return product.item_codes(name)
+
+
+@when(parsers.re(r'"(?P<name>[^"]+)" edits it with every (?P<which>catalogue )?quantity 0$'))
+def _edits_all_zero(recorder, client, db, lifecycle, name, which):
+    """RPT-R14：表單上每個目錄工項都送出 0。`catalogue` 一詞只是說明自訂工項不在這張表單上。"""
+    _the_report(db, lifecycle, name)
+    fields = [("report_date", lifecycle["date"])] + [(code, "0") for code in _all_catalogue_codes(db, lifecycle)]
+    _edit(recorder, client, db, lifecycle, name, fields)
 
 
 @when(parsers.re(r'"(?P<name>[^"]+)" saves it unchanged$'))
