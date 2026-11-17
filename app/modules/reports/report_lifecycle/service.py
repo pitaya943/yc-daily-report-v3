@@ -1,4 +1,4 @@
-"""回報生命週期的規則（RPT-F02：R10 編輯與刪除的權限、R11 編輯的內容與稽核、R13 刪除；R12 的份額由 T-301 補）。
+"""回報生命週期的規則（RPT-F02：R10 編輯與刪除的權限、R11 編輯的內容與稽核、R12 管理員編輯 CONFIRMED 時份額作廢（T-301）、R13 刪除）。
 
 欄位驗證**重用** T-201 的 `submit_a_daily_report.service`（parse_quantities、resolve_collaborators、MSG_DATE）與
 `catalogue`，這裡只加編輯特有的規則：回報日期不能改（AD-8）、工項組沿用送出時記下的（AD-4）、狀態一律回到 PENDING。
@@ -163,8 +163,9 @@ def edit_report(conn: psycopg.Connection, actor: Actor, report_id: int, form: di
         changes = describe_changes(report.items, items, [n for _, n in report.crew], [names[i] for i in crew_ids])
 
         repo.replace_report_content(conn, report.id, items=items, crew_ids=crew_ids, status="PENDING", now=clock.now())
+        if report.status != "PENDING":
+            lifecycle_repo.discard_review(conn, report.id)  # RPT-R12（D-085）：刪除已存的份額、清掉審核者
         if report.status == "CONFIRMED":
-            # T-301（D-085）：份額表建立後，在這裡刪除這張回報的份額（RPT-R12 的 "has no stored shares"）。
             audit.write(actor, "REPORT_UNCONFIRM", f"日報 #{report.id} 由 CONFIRMED 退回 PENDING：管理員編輯，已確認的結果作廢", conn=conn)
         audit.write(actor, "REPORT_UPDATE", audit_description_for_update(report, changes), conn=conn)
         conn.commit()

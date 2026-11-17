@@ -22,7 +22,7 @@ flowchart LR
 | 能力 | Feature | 規則數 | Scenario 數 | v2 行為 ID |
 | --- | --- | --- | --- | --- |
 | **IAM** 身分與帳戶 | [IAM-F01 登入](../spec/features/IAM-F01-sign-in.feature) | 3 | 4 | B-060 |
-|  | [IAM-F02 登入鎖定與頻率限制](../spec/features/IAM-F02-sign-in-lockout-and-rate-limit.feature) | 4 | 7 | B-089, B-080 |
+|  | [IAM-F02 登入鎖定與頻率限制](../spec/features/IAM-F02-sign-in-lockout-and-rate-limit.feature) | 5 | 10 | B-089, B-080 |
 |  | [IAM-F03 Session 與登出](../spec/features/IAM-F03-session-and-sign-out.feature) | 3 | 8 | B-061, B-079 |
 |  | [IAM-F04 帳戶生命週期與薪資設定](../spec/features/IAM-F04-account-lifecycle-and-pay-settings.feature) | 7 | 16 | B-007, B-010, B-012, B-013, B-015, B-017, B-074, B-095 |
 |  | [IAM-F05 Owner 管理管理員](../spec/features/IAM-F05-owner-manages-administrators.feature) | 3 | 7 | B-096 |
@@ -52,4 +52,4 @@ flowchart LR
 | **ARC** 檔案庫 | [ARC-F01 日月報檔案庫](../spec/features/ARC-F01-scheduled-and-manual-archives.feature) | 6 | 11 | B-077, B-078 |
 | **CFG** 設定 | [CFG-F01 單價](../spec/features/CFG-F01-unit-prices.feature) | 4 | 5 | B-032, B-075, B-094 |
 |  | [CFG-F02 費率](../spec/features/CFG-F02-rates.feature) | 4 | 6 | B-033, B-034, B-092 |
-| | **合計** | **139** | **259** | |
+| | **合計** | **140** | **262** | |

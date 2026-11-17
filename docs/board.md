@@ -47,7 +47,7 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 | T-203 | M2 | 歷史與匯出 | merged | [#32](https://github.com/pitaya943/yc-daily-report-v3/pull/32) | 0 | Builder 第一輪：claude-sonnet-5-5（20:42 碰到 usage 上限，22:01 繼續）；Verifier 第 1 輪：claude-opus-5-5（PASS，14 個變異全抓到）；規格問題併入 issue #29；加嚴斷言「匯出只寫一列稽核」「一律斷言順序」可能影響 M4 匯出 |
 | T-204 | M2 | 至少一個工項與共同作業者資格（規格更新） | merged | [#36](https://github.com/pitaya943/yc-daily-report-v3/pull/36) | 0 | Builder 第一輪：claude-sonnet-5-5；T-205 合併後 merge milestone 重跑 CI；Verifier 第 1 輪：claude-opus-5-5（PASS，7 個變異全抓到）；RPT-R03、R05 已加回（D-103）；規格問題併入 issue #35 第 6、7 項 |
 | T-205 | M2 | 歷史篩選調整（規格更新） | merged | [#34](https://github.com/pitaya943/yc-daily-report-v3/pull/34) | 0 | Builder 第一輪：claude-sonnet-5-5；T-202 合併後 merge milestone 重跑 CI；Verifier 第 1 輪：claude-opus-5-5（PASS；產品變異 3/3，畫面變異 2 個只有 Playwright 抓得到）；PR 說明測試數字過時；規格問題併入 issue #35 第 5 項 |
-| T-301 | M3 | 確認或駁回回報，保存份額 | verifying | [#43](https://github.com/pitaya943/yc-daily-report-v3/pull/43) | 0 | Builder 第一輪：claude-sonnet-5-5；allowed_paths 漏列 `app/modules/review/__init__.py` → issue #42，Chief 依先例補上；Verifier 第 1 輪：claude-opus-5-5（session_01LCMZdkfJjXYK3AuZ45a8Ld） |
+| T-301 | M3 | 確認或駁回回報，保存份額 | merged | [#43](https://github.com/pitaya943/yc-daily-report-v3/pull/43) | 0 | Builder 第一輪：claude-sonnet-5-5；allowed_paths 漏列 `app/modules/review/__init__.py` → issue #42，Chief 依先例補上；Verifier 第 1 輪：claude-opus-5-5（PASS，8 個變異全抓到；並行測試拿掉鎖後 180 輪有 166 輪異常）；規格問題 3 項記入 M3 報告；Builder 在 merge milestone 時碰到 usage 上限（12:44～16:10），恢復後完成 |
 | T-302 | M3 | 自訂工項 | todo | — | — | — |
 | T-303 | M3 | 帳戶生命週期與薪資設定 | todo | — | — | — |
 | T-304 | M3 | OWNER 管理管理員 | todo | — | — | — |

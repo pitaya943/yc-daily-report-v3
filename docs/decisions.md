@@ -129,6 +129,7 @@
 | D-123 | 改密碼或被重設後，該帳戶其他已登入的 session？ | 自己改密碼時保留目前這個 session、結束同一帳戶的其他 session；被管理員重設時結束該帳戶全部的 session。新增 IAM-R33（2 個 scenario）。 | 密碼外洩的人在對方改密碼後不能繼續使用 | 2026-11-17 | issue #40 選項 2A；T-308 |
 | D-124 | 改密碼時輸入錯誤的目前密碼要計入鎖定嗎？ | 要，與登入共用同一個帳戶失敗計數與鎖定（IAM-R04、R05）；鎖定期間改密碼為 `LOCKED`。不計入來源位址的頻率限制（IAM-R07）。新增 IAM-R34（2 個 scenario）。 | 否則攻擊者可以在登入頁與改密碼頁各試 4 次 | 2026-11-17 | issue #40 選項 3B（共用）；T-308 |
 | D-125 | issue #40 新增的 scenario 放哪張 ticket？ | D-122 併進 T-304；D-123、D-124 新增 T-308（排在 T-305 合併之後，與階段 2 平行）。T-305 照原定完成條件驗證與合併。T-304 依賴加上 T-308（兩張都改 `password_change_and_reset/`）。 | T-305 不必重做 | 2026-11-17 | issue #40 選項 4A；`spec/capabilities.md` 與 `spec/README.md` 的合計更正為 139 條規則、259 個 scenario（同時修正 MAT-F03、PAY-F01 先前未更新的列） |
+| D-126 | 使用者不小心連續打錯密碼被鎖定，管理員確認是人為失誤時，能不能提前解除？ | 可以。新增 IAM-R08：ADMIN 可以解除 USER 的鎖定，ADMIN 的鎖定只有 OWNER 能解除，OWNER 被鎖定時只能等鎖定結束；解除時鎖定與失敗計數一起清除。稽核沿用 `ACCOUNT_UPDATE`，說明含「解除鎖定」（不新增稽核類型，因此不需要 migration）。來源位址的頻率限制（IAM-R07）不受影響。端點 `POST /accounts/{id}/unlock` 由 T-308 實作；帳戶管理頁的按鈕由 T-304 加上。 | 現場被擋住時不必等 15 分鐘；新增稽核類型要改 `0002` 的 check 約束與 `app/core/audit.py`，會讓 T-308 變成 migration ticket 而不能與 T-303 平行 | 2026-11-17 | Kuei 在 Chief session 提出並選 A（新增解除動作）與 A2（沿用 `ACCOUNT_UPDATE`）；T-308 改 7 個 scenario |
 
 ## 待決定
 

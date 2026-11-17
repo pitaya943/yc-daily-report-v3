@@ -1,0 +1,37 @@
+sssssssssFFFFF..........FFFFsssssssssssssss..Fssssssssss...s............ [ 28%]
+........................................................................ [ 57%]
+........................................................................ [ 86%]
+.................................                                        [100%]
+=================================== FAILURES ===================================
+E   AssertionError: 佇列應為 200，實際 404：{"detail":"Not Found"}
+/home/user/yc-daily-report-v3/tests/steps/REV-F01/rev_f01_steps.py:311: AssertionError: 佇列應為 200，實際 404：{"detail":"Not Found"}
+E   AssertionError: R1 應為 CONFIRMED、審核者 Admin1，實際 ('PENDING', None)
+/home/user/yc-daily-report-v3/tests/steps/REV-F01/rev_f01_steps.py:335: AssertionError: R1 應為 CONFIRMED、審核者 Admin1，實際 ('PENDING', None)
+E   AssertionError: 回報的狀態應為 REJECTED，實際 PENDING
+/home/user/yc-daily-report-v3/tests/steps/RPT-F02/rpt_f02_steps.py:299: AssertionError: 回報的狀態應為 REJECTED，實際 PENDING
+E   AssertionError: R1 應被其中一位管理員確認，實際 ('PENDING', None)
+/home/user/yc-daily-report-v3/tests/steps/REV-F01/rev_f01_steps.py:342: AssertionError: R1 應被其中一位管理員確認，實際 ('PENDING', None)
+E   AssertionError: HTTP status 應為 409，實際 404
+/home/user/yc-daily-report-v3/tests/steps/common/steps.py:109: AssertionError: HTTP status 應為 409，實際 404
+E   AssertionError: direct_13 已存的份額（依 crew 順序）應為 [('Wen', 24), ('Wei', 23), ('Wan', 23)]，實際 []
+/home/user/yc-daily-report-v3/tests/steps/REV-F02/rev_f02_steps.py:148: AssertionError: direct_13 已存的份額（依 crew 順序）應為 [('Wen', 24), ('Wei', 23), ('Wan', 23)]，實際 []
+E   ModuleNotFoundError: No module named 'app.modules.review'
+/home/user/yc-daily-report-v3/tests/steps/REV-F02/rev_f02_steps.py:138: ModuleNotFoundError: No module named 'app.modules.review'
+E   AssertionError: direct_13 已存的份額（依 crew 順序）應為 [('Wen', 24), ('Wei', 23), ('Wan', 23)]，實際 []
+/home/user/yc-daily-report-v3/tests/steps/REV-F02/rev_f02_steps.py:148: AssertionError: direct_13 已存的份額（依 crew 順序）應為 [('Wen', 24), ('Wei', 23), ('Wan', 23)]，實際 []
+E   AssertionError: 自訂工項已存的份額應為 [('Wen', 2), ('Wei', 1)]，實際 []
+/home/user/yc-daily-report-v3/tests/steps/REV-F02/rev_f02_steps.py:162: AssertionError: 自訂工項已存的份額應為 [('Wen', 2), ('Wei', 1)]，實際 []
+E   AssertionError: 份額應已作廢：目錄工項 2 列、自訂工項 0 列
+/home/user/yc-daily-report-v3/tests/steps/RPT-F02/rpt_f02_steps.py:330: AssertionError: 份額應已作廢：目錄工項 2 列、自訂工項 0 列
+=========================== short test summary info ============================
+FAILED tests/test_spec.py::test_the_ordinary_queue_excludes_bigmeter_reports
+FAILED tests/test_spec.py::test_batch_confirm_skips_nonpending_rows - Asserti...
+FAILED tests/test_spec.py::test_reject_excludes_the_report_from_payroll - Ass...
+FAILED tests/test_spec.py::test_two_administrators_confirm_the_same_report_at_once
+FAILED tests/test_spec.py::test_no_unconfirm_action_exists - AssertionError: ...
+FAILED tests/test_spec.py::test_confirmation_stores_one_share_per_crew_member_per_item
+FAILED tests/test_spec.py::test_payroll_uses_stored_shares_not_the_current_crew
+FAILED tests/test_spec.py::test_a_collaborator_archived_before_approval_still_gets_a_share
+FAILED tests/test_spec.py::test_the_custom_item_is_split_by_the_same_rule - A...
+FAILED tests/test_spec.py::test_editing_a_confirmed_report_discards_its_shares
+10 failed, 204 passed, 35 skipped, 661 deselected in 93.65s (0:01:33)

@@ -1,0 +1,24 @@
+-- 畫面操作後的資料（Admin1 批次確認 Wan、Wei 的回報，再單筆駁回 Wen 的回報）
+ id | submitter |  status   | reviewer 
+----+-----------+-----------+----------
+  1 | Wen       | REJECTED  | Admin1
+  2 | Wei       | CONFIRMED | Admin1
+  3 | Wan       | CONFIRMED | Admin1
+  4 | Nan       | PENDING   | 
+  5 | Big       | PENDING   | 
+(5 rows)
+
+ report_id | item_code | name | position | tenths 
+-----------+-----------+------+----------+--------
+         2 | direct_25 | Wei  |        0 |     40
+         3 | recheck   | Wan  |        0 |     15
+(2 rows)
+
+      type      | actor_name |                       description                        
+----------------+------------+----------------------------------------------------------
+ ACCESS_DENIED  | Wen        | 嘗試執行但被拒絕：open the review landing page
+ REPORT_CONFIRM | Admin1     | 確認日報 #2（2026-11-13，WEST，提交者 Wei）
+ REPORT_CONFIRM | Admin1     | 確認日報 #3（2026-11-12，WEST，提交者 Wan）
+ REPORT_REJECT  | Admin1     | 駁回日報 #1（2026-11-14，WEST，提交者 Wen，共 3 人作業）
+(4 rows)
+
