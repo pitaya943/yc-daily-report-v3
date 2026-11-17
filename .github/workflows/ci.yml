@@ -67,6 +67,19 @@ jobs:
         run: scripts/dev/migrate
       - name: 單元測試與 tests/implemented.txt 列出的規則
         run: python3 -m pytest -p scripts.ci.rule_report -p no:cacheprovider
+      # T-307、D-120：用真的瀏覽器跑歷史頁的冒煙測試（D-099 的畫面行為只有瀏覽器抓得到）。
+      # 放在 tests job 內，所以已是必要檢查；放在單元測試之後，那邊失敗時不浪費瀏覽器的安裝時間。
+      # 版本固定：Node 22（setup-node）、Playwright 以 package-lock.json 為準（npm ci）、只安裝 Chromium。
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: E2E：安裝 Playwright 與 Chromium
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: E2E：歷史頁冒煙測試（tests/e2e/run：種資料、啟動 app、操作瀏覽器、清資料）
+        run: tests/e2e/run
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
