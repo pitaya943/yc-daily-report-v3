@@ -22,11 +22,11 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 - 結果：6 張全部 merged；報告 `docs/milestones/M2.html`；未決 issue #35（不擋 M2）。
 - 模型：Chief claude-opus-5-5；Builder claude-sonnet-5-5；Verifier claude-opus-5-5；修正第二輪 Builder claude-opus-5-5。
 
-## M3（計畫：issue #38，待核准）
+## M3（計畫：issue #38，D-110～D-121）
 
-- 順序（依建議）：階段 1 T-301 ‖ T-305 → 階段 2 T-303 ‖ T-302 → 階段 3 T-306 ‖ T-304；migration 依序 `0006`（T-301）、`0007`（T-303）、`0008`（T-306）。
-- 同時進行上限：2 張（issue #38 第 10 項選 A 時加 T-307，最多 3 張）。
-- issue #35 已記為 D-104～D-109 並關閉。
+- 順序：階段 1 T-301 ‖ T-305 ‖ T-307 → 階段 2 T-303 ‖ T-302 → 階段 3 T-306 ‖ T-304；migration 依序 `0006`（T-301）、`0007`（T-303）、`0008`（T-306）。
+- 同時進行上限：3 張（階段 1）；之後 2 張。`tests/implemented.txt` 依 D-089 為例外。
+- issue #35 已記為 D-104～D-109 並關閉。CI 安裝步驟已修正（D-119）。
 - 模型：Chief claude-opus-5-5；Builder claude-sonnet-5-5；Verifier claude-opus-5-5；修正第二輪 Builder claude-opus-5-5。
 
 | Ticket | Milestone | 標題 | 狀態 | PR | 修正輪數 | 備註 |
@@ -52,7 +52,8 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 | T-303 | M3 | 帳戶生命週期與薪資設定 | todo | — | — | — |
 | T-304 | M3 | OWNER 管理管理員 | todo | — | — | — |
 | T-305 | M3 | 密碼變更與重設 | todo | — | — | — |
-| T-306 | M3 | 銀行帳號遮罩與顯示 | todo | — | — | — |
+| T-306 | M3 | 銀行帳號、發薪方式與遮罩 | todo | — | — | — |
+| T-307 | M3 | CI 的 Playwright 冒煙測試 | todo | — | — | — |
 | T-401 | M4 | 單價與費率設定 | todo | — | — | — |
 | T-402 | M4 | 薪資計算與薪資批次 | todo | — | — | — |
 | T-403 | M4 | 封存帳戶的薪資 | todo | — | — | — |

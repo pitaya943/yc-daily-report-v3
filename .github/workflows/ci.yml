@@ -57,7 +57,7 @@ jobs:
           echo "runner 上設定的 PG* 變數名稱：$(env | grep -o '^PG[A-Z_]*' | tr '\n' ' ' || true)"
           python3 -m app.core.local_url
       - name: 安裝 PostgreSQL 17 用戶端（migrate 腳本需要 psql 17）
-        run: sudo scripts/dev/install-postgres && sudo systemctl stop postgresql || true
+        run: sudo scripts/dev/install-postgres && { sudo systemctl stop postgresql || true; }  # D-119：安裝失敗要在這一步失敗
       - name: 守衛：tests job 本身不能把失敗吞掉或縮小範圍（scripts/ci/checks.py 的 check_tests）
         run: python3 scripts/ci/run.py tests
       - run: pip install -e '.[dev]'
@@ -180,7 +180,7 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: 安裝 PostgreSQL 17 用戶端（migrate 腳本需要 psql 17）
-        run: sudo scripts/dev/install-postgres && sudo systemctl stop postgresql || true
+        run: sudo scripts/dev/install-postgres && { sudo systemctl stop postgresql || true; }  # D-119：安裝失敗要在這一步失敗
       - run: pip install -e '.[dev]'
       - name: 安裝 ruff（與 tests job 相同版本；否則 lint 的測試在這裡會失敗，比對就看不到它們）
         run: pip install ruff==0.16.9
