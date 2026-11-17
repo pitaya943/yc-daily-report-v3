@@ -337,3 +337,54 @@ def test_the_reset_permission_lives_in_one_function():
 
     assert hasattr(service, "authorize_reset") and "authorize_reset" in inspect.getsource(service.reset_password)
     assert "authorize" not in inspect.getsource(router).replace("service.", "").split("def reset_password")[1].split("return render_page")[0]
+
+
+# ───────────────────────── 密碼不能進網址（Bugbot 意見、Chief 要求）─────────────────────────
+
+
+def test_the_password_form_posts_to_the_change_endpoint_even_without_javascript(db):
+    """沒有 `method="post"` 時，瀏覽器的預設是 GET：三個密碼欄位會進網址、歷史紀錄與存取紀錄。"""
+    import re
+
+    html = signed_in(db, "Wen").get(f06.OWN_PASSWORD_PATH).text
+    form = re.search(r"<form\b[^>]*>", html).group(0)
+    assert re.search(r'\bmethod="post"', form), f"密碼表單必須明確用 POST：{form}"
+    assert f'action="{f06.OWN_PASSWORD_PATH}"' in form, f"密碼表單必須有明確的 action：{form}"
+    assert not re.search(r'\bmethod="get"', form, re.I)
+
+
+def test_every_form_that_contains_a_password_field_posts(db):
+    """所有「包含密碼欄位的表單」都明確用 POST（登入頁另一個沒有密碼的 GET 表單——群組選單——不受影響）。
+    新增含密碼欄位的頁面時這項檢查會一併涵蓋。"""
+    import re
+    from pathlib import Path
+
+    checked = []
+    for template in sorted(Path("app").rglob("*.html")):
+        for match in re.finditer(r"(<form\b[^>]*>)(.*?)</form>", template.read_text(encoding="utf-8"), re.S | re.I):
+            tag, body = match.groups()
+            if 'type="password"' not in body:
+                continue
+            checked.append(str(template))
+            assert re.search(r'\bmethod="post"', tag), f"{template}：含密碼欄位的表單必須明確用 POST：{tag}"
+    # 防止空轉：至少要檢查到登入頁與密碼變更頁兩個表單
+    assert len(checked) >= 2 and any("sign_in" in c for c in checked) and any("password_change_and_reset" in c for c in checked), checked
+
+
+def test_a_get_with_passwords_in_the_query_changes_nothing(db, recorder):
+    client = signed_in(db, "Wen")
+    before = password_hash(db, "Wen")
+    query = urlencode(VALID)
+    recorder.perform(lambda: client.get(f"{f06.OWN_PASSWORD_PATH}?{query}"))
+    assert recorder.response.status_code == 200  # 只是顯示頁面
+    check_nothing_written(recorder)
+    assert password_hash(db, "Wen") == before and can_sign_in(db, "Wen", TEST_PASSWORD)
+
+
+def test_a_get_on_the_reset_path_is_not_allowed_and_changes_nothing(db, recorder):
+    client = signed_in(db, "Admin1")
+    path = f06.RESET_PATH.format(id=f06.account_id(db, "Wen")) + "?" + urlencode({"new_password": "newpass1"})
+    recorder.perform(lambda: client.get(path))
+    assert recorder.response.status_code == 405
+    check_nothing_written(recorder)
+    assert can_sign_in(db, "Wen", "newpass1") is False
