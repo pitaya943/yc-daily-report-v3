@@ -1,0 +1,6 @@
+      4 E       AssertionError: HTTP status 應為 403，實際 404
+      1 E       AssertionError: HTTP status 應為 422，實際 404
+      1 E       AssertionError: 回報應已不存在
+      4 E       AssertionError: 應被接受（200），實際 404：{"detail":"Not Found"}
+      1 E       AssertionError: 應該恰新增 1 列稽核，實際 []
+      1 E       AssertionError: 沒有新增 actor 為 "Wen" 的 "REPORT_UPDATE" 稽核列（或都已被前面的步驟斷言過）；新增的列：[]

@@ -1,0 +1,11 @@
+# Simulation of T-204 behaviour in service.edit_report (local only, reverted with git checkout; git status clean afterwards)
+# + all quantities 0 -> OutcomeError(INVALID, '請至少填寫一個工項數量')   (RPT-R14, D-096)
+# + any ineligible / duplicate / non-numeric collaborator -> OutcomeError(INVALID, '共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工')   (RPT-R05, D-097)
+# Probe (temporary test file, deleted, not committed) proving the simulation is active:
+ALLZERO 422 {'outcome': 'INVALID', 'message': '請至少填寫一個工項數量'}
+CREW ['7'] (Nan, SOUTH) 422 {'outcome': 'INVALID', 'message': '共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工'}
+CREW ['5', '5'] (Wei twice) 422 {'outcome': 'INVALID', 'message': '共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工'}
+
+$ python3 -m pytest -q   # full suite with the simulation applied
+1158 passed, 430 skipped in 221.40s (0:03:41)
+# 0 failed. Round 1 under the same simulation: 4 failed in test_lifecycle_details.py

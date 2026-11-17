@@ -1,0 +1,44 @@
+=== S1_audit_desc_ge1: tests/steps/common/audit_description.py
+    - 'assert len(added) == 1,'
+    + 'assert len(added) >= 1,'
+    FAILED tests/steps/common/test_outcome_messages.py::test_audit_description_fails_when_two_rows_are_added_even_if_one_matches
+    1 failed, 62 passed, 1525 deselected in 12.01s
+=== S2_audit_desc_no_text_check: tests/steps/common/audit_description.py
+    - 'assert text in description,'
+    + 'assert True or text in description,'
+    FAILED tests/steps/common/test_outcome_messages.py::test_audit_description_fails_when_the_text_is_not_in_the_new_row
+    1 failed, 62 passed, 1525 deselected in 11.83s
+=== P1_submitter_may_change_CONFIRMED: app/modules/reports/report_lifecycle/service.py
+    - 'states={"PENDING", "REJECTED"}'
+    + 'states={"PENDING", "REJECTED", "CONFIRMED"}'
+    FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_edit_page_prefills_the_report_and_is_forbidden_when_confirmed
+    FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_a_confirmed_report_cannot_be_edited_by_the_submitter_even_with_a_stale_form
+    FAILED tests/test_spec.py::test_submitter_actions_by_state[CONFIRMED-edit-FORBIDDEN-CONFIRMED]
+    FAILED tests/test_spec.py::test_submitter_actions_by_state[CONFIRMED-delete-FORBIDDEN-CONFIRMED]
+    4 failed, 104 passed, 1480 deselected in 44.19s
+=== P2_admin_edit_keeps_CONFIRMED: app/modules/reports/report_lifecycle/service.py
+    - 'items=items, crew_ids=crew_ids, status="PENDING"'
+    + 'items=items, crew_ids=crew_ids, status=report.status'
+    FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_admin_edit_of_confirmed_returns_to_pending_and_writes_two_audit_rows
+    FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_admin_edit_of_unconfirmed_writes_only_update[REJECTED]
+    FAILED tests/test_spec.py::test_submitter_actions_by_state[REJECTED-edit-accepted-PENDING]
+    3 failed, 105 passed, 1480 deselected in 45.08s
+=== P3_no_REPORT_UNCONFIRM: app/modules/reports/report_lifecycle/service.py
+    - 'audit.write(actor, "REPORT_UNCONFIRM"'
+    + 'None and audit.write(actor, "REPORT_UNCONFIRM"'
+    FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_admin_edit_of_confirmed_returns_to_pending_and_writes_two_audit_rows
+    1 failed, 107 passed, 1480 deselected in 45.00s
+=== P4_delete_without_audit: app/modules/reports/report_lifecycle/service.py
+    - '        audit.write(\n            actor,\n            "REPORT_DELETE",'
+    + '        None and audit.write(\n            actor,\n            "REPORT_DELETE",'
+    FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_delete_removes_items_and_crew_and_writes_one_audit_row
+    FAILED tests/test_spec.py::test_administrator_deletes_a_confirmed_report - As...
+    2 failed, 106 passed, 1480 deselected in 45.28s
+=== P5_date_change_allowed: app/modules/reports/report_lifecycle/service.py
+    - 'raise OutcomeError(Outcome.INVALID, MSG_DATE_LOCKED)'
+    + 'pass'
+    FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_invalid_fields_are_rejected_with_the_full_string_and_nothing_changes[fields4-\u56de\u5831\u65e5\u671f\u9001\u51fa\u5f8c\u4e0d\u53ef\u4fee\u6539]
+    FAILED tests/test_spec.py::test_the_report_date_cannot_be_changed_on_edit - A...
+    2 failed, 106 passed, 1480 deselected in 44.86s
+=== baseline (after restore)
+    108 passed, 1480 deselected in 44.34s
