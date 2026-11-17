@@ -70,3 +70,18 @@ Feature: Report lifecycle
       When "Admin1" deletes it
       Then the report no longer exists
       And an audit row "REPORT_DELETE" is written with actor "Admin1"
+
+  Rule: RPT-R14 An edit must leave at least one quantity above 0
+    # D-096：與 RPT-R08 相同的規則用在編輯；自訂工項（REV-R20）有數量也算。
+
+    Scenario: An edit that clears every quantity is refused
+      Given "Wen" has an own PENDING report
+      When "Wen" edits it with every quantity 0
+      Then the request is rejected as INVALID with message "請至少填寫一個工項數量"
+      And nothing is written
+
+    Scenario: A custom item quantity is enough
+      Given a PENDING report by "Wen" with custom item "夜間加班" quantity 2.0 at price 500
+      When "Admin1" edits it with every catalogue quantity 0
+      Then the outcome is accepted
+      And the report state is PENDING

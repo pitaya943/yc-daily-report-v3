@@ -1,0 +1,22 @@
+sign-in status: 303
+ordinary unfiltered rows: ["4 2026-11-13 Wen","3 2026-11-11 Nan","1 2026-11-10 Wen"]
+ordinary zone=WEST rows (Wen moved WEST->SOUTH after report 1): ["1 2026-11-10 Wen"]
+export link WEST: {"href":"/review/history/ordinary/export?zone=WEST","ariaDisabled":null,"tabindex":null,"pointerEvents":"auto"}
+export WEST status/content-type: [200,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"]
+ordinary zone=SOUTH rows: ["4 2026-11-13 Wen","3 2026-11-11 Nan"]
+invalid: error text: "請輸入有效的篩選條件"
+invalid: error hidden: false
+invalid: rows: []
+invalid: table/empty count: 0
+invalid: count text: ""
+invalid: export link: {"href":null,"ariaDisabled":"true","tabindex":"-1","pointerEvents":"none"}
+invalid: url unchanged: true
+invalid: click/Enter on export -> navigated, downloaded: [false,false]
+recovered: rows: ["1 2026-11-10 Wen"]
+recovered: error hidden: true
+recovered: export link: {"href":"/review/history/ordinary/export?zone=WEST","ariaDisabled":null,"tabindex":null,"pointerEvents":"auto"}
+big-meter zone=SOUTH rows: ["2 2026-11-10 Big"]
+big-meter zone=WEST rows: []
+big-meter invalid: error: "請輸入有效的篩選條件"
+big-meter invalid: rows/export: [[],{"href":null,"ariaDisabled":"true","tabindex":"-1","pointerEvents":"none"}]
+export zone=WEST sheet 歷史 [['日期', '帳戶', '直總-13'], ['2026-11-10', 'Wen', None]]

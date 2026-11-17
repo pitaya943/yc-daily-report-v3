@@ -1,0 +1,20 @@
+# no-weakened-tests cross-check: test IDs collected on origin/milestone/M2 (ef17f8e) vs HEAD (371f686)
+base: 1538  head: 1588
+base IDs missing in head: 0
+tests/steps/RPT-F02/test_lifecycle_details.py exists in base: no
+
+$ git diff --name-status 996645a 371f686   # round-1 fix
+A	docs/evidence/T-202/green-output-round1.txt
+A	docs/evidence/T-202/mutation-audit-description.txt
+A	docs/evidence/T-202/verify/mutation-output.txt
+A	docs/evidence/T-202/verify/playwright-output.txt
+A	docs/evidence/T-202/verify/v01-edit-success.png
+A	docs/evidence/T-202/verify/v02-confirmed-rejected.png
+A	docs/evidence/T-202/verify/v03-delete-confirm.png
+A	docs/evidence/T-202/verify/v04-deleted.png
+A	docs/evidence/T-202/verify/v05-admin-edit-confirmed.png
+M	tests/steps/RPT-F02/test_lifecycle_details.py
+M	tests/steps/common/test_outcome_messages.py
+
+$ git diff --stat 996645a 371f686 -- app/ tests/steps/common/outcome.py tests/steps/common/audit_description.py
+(empty = unchanged)

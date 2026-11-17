@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M2 報告 — 員工日報系統</title>
+<style>
+  :root { --bg:#f7f9f9; --card:#fff; --ink:#18282b; --muted:#5a6c6f; --line:#d6dfe0; --accent:#0d6b74; --warn:#b5560b; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111b1d; --card:#182628; --ink:#e5eced; --muted:#9db1b4; --line:#2d4144; --accent:#6cc7cf; --warn:#f0a45c; } }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.75 "Noto Sans TC", system-ui, sans-serif; }
+  main { max-width:860px; margin:0 auto; padding:40px 16px 80px; }
+  h1 { font-size:1.8rem; margin:0 0 4px; }
+  h2 { font-size:1.25rem; color:var(--accent); margin:44px 0 12px; border-bottom:1px solid var(--line); padding-bottom:6px; }
+  h3 { font-size:1.05rem; margin:28px 0 8px; }
+  p, li { max-width:68ch; }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .verdict { background:var(--card); border:1px solid var(--line); border-left:5px solid var(--accent); padding:16px 20px; margin-top:20px; }
+  .todo { color:var(--warn); }
+  .scroll { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; font-size:.92rem; background:var(--card); }
+  th, td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { white-space:nowrap; }
+  code, pre { font-family:ui-monospace, Menlo, monospace; font-size:.88em; }
+  pre { background:var(--card); border:1px solid var(--line); padding:12px 14px; overflow-x:auto; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>M2 報告：日報</h1>
+  <p class="meta">分支 <code>milestone/M2</code> · 報告日期 2026-11-17 · 撰寫者 Chief（模型 <code>claude-opus-5-5</code>）</p>
+
+  <div class="verdict">
+    <p><strong>結論。</strong>M2 的 6 張 ticket 都已合併進 <code>milestone/M2</code>（原計畫 4 張，依 issue #29 的規格變更新增 T-204、T-205）。員工可以送出、編輯、刪除、查詢並匯出日報；每日 3 筆上限（含並行）、共同作業者資格、至少一個工項、回報日期範圍都由伺服器強制。M1 延過來的 IAM-R10（閒置逾時）的 4 個 scenario 也已開啟。Chief 在合併後的 <code>cc9101e</code> 重跑：<code>1218 passed, 409 skipped</code>；RPT 規則 35 個 scenario 中 34 個通過。</p>
+    <p><strong>沒完成的一件事：</strong>RPT-R12（管理員編輯已確認回報時刪除份額）的 1 個 scenario 沒有開啟。份額表要到 M3 的 T-301 才建立，所以依 D-085 移到 T-301。T-202 已實作「已確認 → 待確認」與兩筆稽核，只差刪除份額。</p>
+    <p><strong>最該注意的一件事：</strong>這個 milestone 有 4 次停下來，都是 M1 留下的<strong>共用測試步驟寫得太嚴或太窄</strong>（issue #27、#30、#31），以及 T-202 自己寫了會擋住下一張 ticket 的補充測試（第 1 輪 FAIL）。每一次都是測試基礎設施的問題，不是產品程式的錯。另外，issue <a href="https://github.com/pitaya943/yc-daily-report-v3/issues/35">#35</a> 還有 7 個規格問題在等你回覆；目前的實作都是建議的選項 A，不擋任何 ticket。</p>
+  </div>
+
+  <h2>1. 達成的 feature</h2>
+  <p>員工登入後落在 <code>/reports</code>，填寫自己工項組（西區 32 項、南區 37 項、大表 25 項）的數量與共同作業者送出；之後可以編輯或刪除尚未確認的回報，查看自己送出與共作的歷史並匯出 Excel。管理員可以編輯、刪除任何回報，分別查看一般與大表的歷史、篩選並匯出。所有頁面共用固定版本的 HTMX 與 CSRF 標頭。</p>
+  <div class="scroll"><table>
+    <tr><th>Feature</th><th>規則</th><th>Scenario 通過／總數</th><th>Ticket</th><th>PR</th><th>證據</th><th>Builder／Verifier 的模型</th></tr>
+    <tr><td>HTMX 與共用版型（D-062、D-080）</td><td>—</td><td>不適用；單元測試 32 項</td><td>T-200</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/26">#26</a></td><td><code>docs/evidence/T-200/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/26#issuecomment-6926239057">Verifier PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>RPT-F01 送出日報</td><td>RPT-R01、R02、R04、R06、R07（T-201）；R03、R05、R08（T-204）</td><td>17／17</td><td>T-201、T-204</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/28">#28</a>、<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/36">#36</a></td><td><code>docs/evidence/T-201/</code>、<code>docs/evidence/T-204/</code>（含截圖）；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/28#issuecomment-6928528093">T-201 PASS</a>、<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/36#issuecomment-6938728595">T-204 PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>IAM-F03 閒置逾時（M1 延過來，D-058）</td><td>IAM-R10</td><td>4／4</td><td>T-201</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/28">#28</a></td><td>同上</td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>RPT-F02 回報生命週期</td><td>RPT-R10、R11、R13（T-202）；R14（T-204）；R12 移到 T-301</td><td>8／9（RPT-R12 的 1 個 skipped）</td><td>T-202、T-204</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/33">#33</a>、<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/36">#36</a></td><td><code>docs/evidence/T-202/</code>（含 <code>verify/</code>、<code>verify2/</code>）；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/33#issuecomment-6933578491">第 1 輪 FAIL</a>、<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/33#issuecomment-6934269324">第 2 輪 PASS</a></td><td>claude-sonnet-5-5（修正第 1 輪同一 session）／claude-opus-5-5</td></tr>
+    <tr><td>RPT-F03 歷史與匯出</td><td>RPT-R20～R23（T-203）；R24（T-205）</td><td>9／9</td><td>T-203、T-205</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/32">#32</a>、<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/34">#34</a></td><td><code>docs/evidence/T-203/</code>、<code>docs/evidence/T-205/</code>（含截圖與匯出範例）；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/32#issuecomment-6931955048">T-203 PASS</a>、<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/34#issuecomment-6937715703">T-205 PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+  </table></div>
+  <p>模型名稱是各 session 用 <code>get_session</code> 讀出的實際設定，寫在各 PR 的交付留言與判定留言中。重算方式：在 <code>cc9101e</code>（T-204 合併後）用 CI 的 <code>rule_report</code> plugin 逐條統計，完整輸出在 <code>docs/evidence/M2/rerun.txt</code>：</p>
+  <pre>$ python3 -m pytest -q -p scripts.ci.rule_report -p no:cacheprovider
+1218 passed, 409 skipped in 302.46s (0:05:02)
+
+$ 依 tests/implemented.txt 統計 rule-report.json（scenario 為單位，passed／總數）
+... RPT-R01 2/2  RPT-R02 2/2  RPT-R04 4/4  RPT-R06 1/1  RPT-R07 2/2  IAM-R10 4/4  RPT-R10 2/2  RPT-R11 3/3
+RPT-R13 1/1  RPT-R20 2/2  RPT-R21 3/3  RPT-R22 2/2  RPT-R23 1/1  RPT-R03 1/1  RPT-R05 4/4  RPT-R08 1/1
+RPT-R14 2/2  RPT-R24 1/1
+RPT 合計：34/35 passed；未列入 implemented 的 RPT 規則： ['RPT-R12']</pre>
+  <p>規格在這個 milestone 由 134 條規則、245 個 scenario 增為 137 條、251 個（D-096、D-097、D-100 新增 RPT-R08、R14、R24，並改寫 RPT-R03、R05）。</p>
+
+  <h2>2. 為何這樣設計</h2>
+  <h3>2.1 RPT-R12 與自訂工項：資料模型不提前替 M3 決定（D-085、D-086）</h3>
+  <p>規劃時發現 M2 有兩處用到 M3 才建立的資料：RPT-R12 需要「保存的份額」，T-203 的篩選與匯出需要「自訂工項」。份額的結構取決於 REV-R11（確認時怎麼存），提前建表很可能要再改，所以把 RPT-R12 整條移到建立份額表的 T-301。自訂工項不同：REV-R20 規定一張回報最多一個，一對一放在 <code>reports</code> 上三個可為 null 的欄位最簡單，check 約束要求三者同時為 null 或同時有值；T-302 之後很可能不需要 migration。會出問題的情況：如果 M3 決定一張回報可以有多個自訂工項，這三個欄位要改成獨立的表。</p>
+  <h3>2.2 共用版型負責 CSRF，各頁不自己處理（D-062、D-080、D-088）</h3>
+  <p>T-200 把 <code>htmx.org@2.0.11</code> 原封不動放進 repo（Verifier 自己用 <code>npm pack</code> 比對 sha256 <code>d6fdc75f…f717</code>），並提供 <code>render_page</code> 與 <code>base.html</code>：已登入時在 <code>&lt;body&gt;</code> 放 <code>hx-headers='{"X-CSRF-Token": …}'</code>（用 Jinja 的 <code>tojson</code> 產生，放在單引號屬性內）。另一個做法是每張表單放隱藏欄位，但那樣 <code>app/core/session.py</code> 的檢查要讀請求主體，而且每張表單都可能忘記放。代價：沒有 JavaScript 的純 HTML 表單不能用（D-080 已接受）；HTMX 2 預設不顯示 4xx 回應，所以每頁要自己處理 <code>htmx:beforeSwap</code>（pitfall #31）。選 2.x 而不是 4.x：4.0 剛發布不久，是 npm 的 <code>next</code>。</p>
+  <h3>2.3 每日 3 筆上限在並行時也成立：鎖住提交者的帳戶列</h3>
+  <p>T-201 在同一個 transaction 裡先 <code>select … for no key update</code> 鎖住提交者在 <code>accounts</code> 的那一列，再計數、寫入、寫稽核、提交。沒有用 unique 約束，因為「最多 3 筆」不是唯一性；也沒有用 trigger，因為 D-045 不允許。代價是同一個人在不同日期的送出也會排隊，但量級可以忽略。會出問題的情況：之後有新的寫入路徑（例如 M3 的管理員代填）沒有拿同一把鎖。另外，RPT-R04 的並行 scenario 只送 2 個請求，Verifier 拿掉鎖之後 15 次只抓到 10 次（見第 8 節）。</p>
+  <h3>2.4 改了已實作的規則時，先暫時移出再由新 ticket 加回（D-103）</h3>
+  <p>issue #29 的 2B 改寫了 RPT-R05（不符資格的共同作業者從「略過」改為「拒絕」），1B 讓 RPT-R03 的邊界表也要改寫。這兩條規則已經實作，規格一改、程式還沒改之前，<code>milestone/M2</code> 的 CI 會變紅，擋住所有 ticket。你選了「暫時移出 implemented」：Chief 在改規格的同一個 commit（<code>ef17f8e</code>）把 RPT-R03、R05 移出 <code>tests/implemented.txt</code>，並刪除兩個寫死舊行為的補充測試；T-204 加回，<code>done-when</code> 強制全部通過。代價：從 <code>ef17f8e</code> 到 T-204 合併（<code>cc9101e</code>）之間，這兩條規則沒有 Gherkin 把關。另一個做法是把規格修改放在 T-204 的分支上，但同一個 PR 會混著 Chief 的規格修改與 Builder 的程式，Verifier 較難分辨。</p>
+  <h3>2.5 共用步驟從「只有一種情況」一般化（D-093、D-094、D-095）</h3>
+  <p>M1 把 <code>the outcome is &lt;OUTCOME&gt;</code> 一般化時，只考慮了 <code>LOCKED</code>：其他類別一律要求錯誤字串為 null、資料完全不變。M2 碰到三個反例：附錄 B 有字串的 <code>INVALID</code>（#27）、規格要求寫 <code>ACCESS_DENIED</code> 的 <code>FORBIDDEN</code>（#31），以及只看 <code>REPORT_CREATE</code> 的 <code>the audit description contains</code>（#30）。三次都選擇修改共用步驟，而不是改規格：因為同樣的寫法在 M3～M5 的 CFG、IAM-F04、MAT、LED、AUD 都會出現，改規格要一個一個改。代價：<code>the outcome is INVALID</code> 現在只確認「是附錄 B 的某一句」，不確認是「這個欄位的那一句」；逐字對到正確的句子，由各 feature 的 <code>… with message "…"</code> scenario 負責。每次修改都加了反例單元測試，證明沒有放寬到「任何字串都通過」。</p>
+  <h3>2.6 匯出用 openpyxl（D-087）</h3>
+  <p>比較過用標準庫 <code>zipfile</code> 自己寫 xlsx：不新增依賴，但格式要自己維護，Excel 能不能開只能靠截圖。選了 <code>openpyxl&gt;=3.1.5,&lt;3.2</code>，M4 的薪資批次匯出可以沿用。T-203 另外處理了試算表注入：使用者輸入的文字一律存成字串型別，不會被當成公式（有測試）。</p>
+
+  <h2>3. 如何審查</h2>
+  <div class="scroll"><table>
+    <tr><th>順序</th><th>檔案</th><th>要看什麼</th></tr>
+    <tr><td>1</td><td><code>spec/features/RPT-F01-submit-a-daily-report.feature</code>、<code>RPT-F02…</code>、<code>RPT-F03…</code></td><td>這個 milestone 由 Chief 依你的決定改了規格：RPT-R03、R05 改寫，新增 R08、R14、R24。對照實際業務，確認「全部為 0 拒絕」「不符資格的共同作業者拒絕」「區域依回報的工項組」是你要的</td></tr>
+    <tr><td>2</td><td><code>migrations/0005_daily_reports.sql</code></td><td>三張表的約束：狀態 check、自訂工項三欄同為 null 或同有值、共同作業者 1～6 位且不重複、數量 0～9999（0.1 只）</td></tr>
+    <tr><td>3</td><td><code>app/modules/reports/submit_a_daily_report/service.py</code>、<code>repo.py</code></td><td>每日上限的鎖（<code>lock_submitter</code>）、<code>require_a_quantity</code>（送出與編輯共用）、共同作業者資格的 SQL 白名單</td></tr>
+    <tr><td>4</td><td><code>app/modules/reports/report_lifecycle/service.py</code></td><td>誰能改、誰能刪；管理員編輯已確認的回報時回到 PENDING 並寫 <code>REPORT_UNCONFIRM</code>；T-301 要在哪裡補上刪除份額（程式內有標註）</td></tr>
+    <tr><td>5</td><td><code>app/modules/reports/history_and_export/service.py</code>、<code>export.py</code></td><td>USER 只看到自己送出或共作的回報；一般與大表歷史的分法；匯出等於畫面上的列</td></tr>
+    <tr><td>6</td><td><code>tests/steps/common/outcome.py</code>、<code>audit_description.py</code>、<code>test_outcome_messages.py</code></td><td>D-093～D-095 的修改與反例測試。這些步驟會被之後每個 milestone 使用</td></tr>
+    <tr><td>7</td><td><code>app/core/pages.py</code>、<code>app/core/templates/base.html</code>、<code>app/modules/system/static_assets/router.py</code></td><td>CSRF 標頭怎麼放進頁面；靜態檔只供應一個檔案</td></tr>
+  </table></div>
+
+  <h2>4. 如何驗證</h2>
+  <h3>4.1 自動測試</h3>
+  <pre>scripts/dev/install-postgres        # PostgreSQL 17（需要 root）
+pip install -e '.[dev]'             # 這個 milestone 新增 openpyxl
+scripts/dev/db-start                # 127.0.0.1:5433，資料庫 yc
+scripts/dev/migrate                 # 預期：套用 0001～0005、「migration 完成」
+python3 -m pytest -q                # 預期：1218 passed, 409 skipped（約 5 分鐘）</pre>
+  <p>只跑 <code>tests/test_spec.py</code> 會出現「Step definition is not found」，要跑完整的 <code>python3 -m pytest</code>（pitfall #26）。</p>
+  <h3>4.2 手動操作流程</h3>
+  <p>先照 M1 報告 4.2 的 <code>seed.py</code> 載入背景帳戶並設定密碼 <code>test-pass-1</code>（這個 milestone 多了日報的表，在 <code>truncate</code> 的清單前面加上 <code>yc_v3.report_crew, yc_v3.report_items, yc_v3.reports,</code>），再執行 <code>scripts/dev/run</code>。這些步驟的畫面，Builder 與 Verifier 都已截圖（第 1 節的證據目錄）；Chief 這次沒有另外手動操作一遍。</p>
+  <div class="scroll"><table>
+    <tr><th>步驟</th><th>操作</th><th>預期結果</th><th>對應規則</th></tr>
+    <tr><td>1</td><td>西區選 Wen 登入</td><td>轉到 <code>/reports</code>；表單有 32 個工項，日期預設今天</td><td>RPT-R01、D-057</td></tr>
+    <tr><td>2</td><td>不填任何數量直接送出</td><td>「請至少填寫一個工項數量」，沒有新增回報</td><td>RPT-R08</td></tr>
+    <tr><td>3</td><td>填「直總-13」2.3，共同作業者選 Wei、Wan 送出</td><td>成功，狀態待確認，「共 3 人作業」</td><td>RPT-R03、R05、R07</td></tr>
+    <tr><td>4</td><td>同一天再送 3 筆</td><td>第 4 筆「每日最多只能送出 3 筆回報」</td><td>RPT-R04</td></tr>
+    <tr><td>5</td><td>日期選明天送出</td><td>「回報日期須為今天或往前 30 天內，不可選擇未來日期」</td><td>RPT-R02</td></tr>
+    <tr><td>6</td><td>開 <code>/reports/history</code>，點一筆回報編輯，把所有數量改成 0</td><td>「請至少填寫一個工項數量」</td><td>RPT-R14</td></tr>
+    <tr><td>7</td><td>改一個數量後儲存，再刪除另一筆</td><td>編輯成功；刪除後當天額度釋放</td><td>RPT-R10、R11、R13</td></tr>
+    <tr><td>8</td><td>登出，用 Wei 登入開 <code>/reports/history</code></td><td>看到 Wen 送出、Wei 共作的回報，標示「共作（Wen 回報）」；不能編輯或刪除它</td><td>RPT-R20、R10</td></tr>
+    <tr><td>9</td><td>用 Admin1 登入，開 <code>/review/history/ordinary</code>，篩選區域 WEST，再把帳戶填成不存在的名字</td><td>篩選有效時清單與匯出正常；無效時顯示「請輸入有效的篩選條件」，清單清空、匯出連結停用</td><td>RPT-R21、R23、D-099</td></tr>
+    <tr><td>10</td><td>點「匯出 Excel」，用 Excel 開啟</td><td>欄位為日期、帳戶、西區與南區工項的聯集、自訂工項、確認狀態；列與畫面相同；<code>audit_log</code> 多一列 <code>EXPORT</code></td><td>RPT-R22</td></tr>
+    <tr><td>11</td><td>閒置 30 分鐘後再操作</td><td>被要求重新登入；先前送出的回報還在</td><td>IAM-R10</td></tr>
+  </table></div>
+  <p>注意：管理員登入後的落地頁 <code>/review</code> 要到 M3 才有，目前是 404，請直接輸入上面的網址。</p>
+  <h3>4.3 建議的獨立驗證</h3>
+  <ul>
+    <li><strong>並行上限：</strong>用兩個真的 uvicorn 行程（不同 port、同一個資料庫），同一個帳戶同一天同時送出 10 次，確認只有 3 筆成立。現有的並行 scenario 只送 2 個請求，Verifier 拿掉鎖後 15 次只抓到 10 次。</li>
+    <li><strong>CSRF：</strong>用瀏覽器開發者工具刪掉 <code>&lt;body&gt;</code> 的 <code>hx-headers</code> 再送出表單，應該回 403，並在 <code>audit_log</code> 留下 <code>ACCESS_DENIED</code>。</li>
+    <li><strong>匯出：</strong>在自訂工項或帳戶名稱放 <code>=1+1</code>，匯出後用 Excel 開，應該顯示文字，不是計算結果。</li>
+    <li><strong>規格本身：</strong>請另一個模型只讀 <code>spec/features/RPT-F0*.feature</code> 與附錄 B，寫一份自己的測試清單，和 <code>tests/steps/RPT-F0*/test_*_details.py</code> 比對，找出沒被涵蓋的情況。</li>
+  </ul>
+
+  <h2>5. Migration 套用步驟</h2>
+  <p>依 D-050，migration 不在這個 milestone 合併後套用，延到「部署準備」ticket。這個 milestone 新增 <code>0005</code>（依賴 <code>0001</code>～<code>0004</code>）。只碰 <code>yc_v3</code>，可重複執行（<code>IF NOT EXISTS</code>），已通過 CI 的 <code>migration-scope</code> 兩層檢查。</p>
+  <div class="scroll"><table>
+    <tr><th>檔案</th><th>內容</th><th>套用後檢查（預期 1 列，全部為 t）</th><th>回滾（只在沒有真實資料、且 Kuei 同意時）</th></tr>
+    <tr><td><code>0005_daily_reports.sql</code></td><td><code>reports</code>（提交者、回報日期、工項組、狀態 PENDING／CONFIRMED／REJECTED、自訂工項三欄）、<code>report_items</code>（每工項一列，數量以 0.1 只的整數存）、<code>report_crew</code>（共同作業者與順序）與 3 個索引</td><td><code>select to_regclass('yc_v3.reports') is not null, to_regclass('yc_v3.report_items') is not null, to_regclass('yc_v3.report_crew') is not null;</code></td><td><code>drop table yc_v3.report_crew; drop table yc_v3.report_items; drop table yc_v3.reports;</code> 並刪除 <code>schema_migrations</code> 的 <code>0005</code></td></tr>
+  </table></div>
+  <p>部署檢查表（M1 已列，再加上本 milestone 的項目）：<code>APP_ENV=production</code>（D-063）；uvicorn 加 <code>--proxy-headers --forwarded-allow-ips</code>；依序套用 <code>0003</code>、<code>0004</code>、<code>0005</code> 並執行上表的檢查；部署環境要能安裝 <code>openpyxl</code>。</p>
+
+  <h2>6. Agent 自行做的判斷</h2>
+  <p>規格沒有明說、由 agent 決定，而且沒有經過你的事。已經由你在 issue 中決定的，列在第 7 節。</p>
+  <div class="scroll"><table>
+    <tr><th>判斷</th><th>誰做的</th><th>理由</th><th>位置</th></tr>
+    <tr><td>工項目錄放 Python 常數，不放資料庫；回報存工項代碼</td><td>T-201 Builder</td><td>規格固定三個工項組，不是使用者編輯的資料；測試逐項與附錄 A 比對</td><td><code>submit_a_daily_report/catalogue.py</code></td></tr>
+    <tr><td>每日上限用 <code>select … for no key update</code> 鎖提交者的帳戶列</td><td>T-201 Builder</td><td>見 2.3</td><td><code>submit_a_daily_report/repo.py</code></td></tr>
+    <tr><td>共同作業者用 6 個依序的下拉選單（送帳戶 id）</td><td>T-201 Builder</td><td>核取方塊表達不了順序（RPT-R05 的順序）</td><td><code>templates/reports.html</code></td></tr>
+    <tr><td>拒絕一律回 JSON，由各頁的 <code>htmx:beforeSwap</code> 取出字串顯示；規格沒有字串的拒絕顯示「無法送出（FORBIDDEN）」等 UI 說明</td><td>T-201～T-205 Builder</td><td>結果類別只有一個出口；HTMX 2 預設不 swap 4xx</td><td>各模組 <code>templates/</code></td></tr>
+    <tr><td>稽核說明的格式（送出、編輯、退回、刪除、匯出）</td><td>T-201～T-203 Builder</td><td>附錄 C 只規定「共 N 人作業」；你在 D-098 同意維持</td><td>各模組 <code>service.py</code></td></tr>
+    <tr><td>編輯以送出的內容整個取代工項與組員；超過 30 天的回報仍可編輯（日期不變）</td><td>T-202 Builder</td><td>AD-8 只禁止改日期；後者已列在 issue #35 第 2 項</td><td><code>report_lifecycle/service.py</code></td></tr>
+    <tr><td>不存在的回報回 404，不是結果類別；開別人的編輯頁也寫 <code>ACCESS_DENIED</code></td><td>T-202 Builder</td><td>結果類別表沒有「找不到」；已列在 issue #35 第 3、4 項</td><td>同上</td></tr>
+    <tr><td>編輯與刪除先 <code>select … for update</code> 鎖住該回報</td><td>T-202 Builder</td><td>避免和 M3 的確認同時進行；M3 的確認要用同一把鎖</td><td>同上</td></tr>
+    <tr><td>同時有多個 <code>INVALID</code> 原因時的順序：日期 → 數量格式 → 至少一個工項 → 共同作業者</td><td>T-204 Builder</td><td>依 T-202 Verifier 的建議；已列在 issue #35 第 1 項</td><td><code>submit_a_daily_report/service.py</code></td></tr>
+    <tr><td>歷史的篩選在 Python 做，日期交給 SQL；沒有分頁</td><td>T-203 Builder</td><td>重用 T-201 的 <code>list_reports</code>；規格沒有分頁，量級可忽略</td><td><code>history_and_export/service.py</code></td></tr>
+    <tr><td>一般歷史的匯出欄位是西區與南區工項「依顯示名稱合併」的聯集；USER 匯出 = 自己目前的工項組加上看得到的回報的工項組</td><td>T-203 Builder</td><td>兩區有同名不同代碼的工項；你在 D-102 同意維持</td><td><code>history_and_export/export.py</code></td></tr>
+    <tr><td>D-100 的大表歷史維持依提交者目前的區域</td><td>Chief</td><td>大表回報的工項組是 BIG_METER，不含區域，5B 的「依工項組」無法套用；已在 issue #29 說明</td><td><code>spec/features/RPT-F03…</code> RPT-R24 註解</td></tr>
+    <tr><td>依 D-103 刪除 T-201 的兩個補充測試；RPT-R03 一併移出 implemented</td><td>Chief</td><td>它們寫死被推翻的舊行為；RPT-R03 的邊界表因 RPT-R08 必須改寫</td><td><code>ef17f8e</code></td></tr>
+    <tr><td>T-202、T-204、T-205 的 PR 說明裡的測試數字是舊的，沒等 Builder 更新就合併</td><td>Chief</td><td>只是文字；T-202 的 Builder 碰到額度中斷；實際數字以 Verifier 留言與本報告為準</td><td>PR #33、#34、#36</td></tr>
+  </table></div>
+
+  <h2>7. 問過 Kuei 的問題與決定</h2>
+  <div class="scroll"><table>
+    <tr><th>Issue</th><th>問題</th><th>決定</th><th>影響</th></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/23">#23</a>（M1 留下）</td><td>Session 與登入鎖定的 6 個規格問題</td><td>D-078～D-083，全選 A</td><td>不改程式；D-080 決定 CSRF 一律用 <code>hx-headers</code></td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/25">#25</a></td><td>M2 計畫、份額、自訂工項、xlsx、HTMX 版本、平行、路徑、pitfall #29、刪哪些 pitfalls</td><td>D-084～D-092，全選 A</td><td>新增 T-200；RPT-R12 移到 T-301；<code>build-ticket</code> skill 加一條；pitfalls 刪 #5、#7、#11</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/27">#27</a></td><td><code>the outcome is INVALID</code> 只接受 null</td><td>D-093（A′）</td><td>所有拒絕類別接受附錄 B 的字串或 null</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/30">#30</a></td><td><code>the audit description contains</code> 只看 REPORT_CREATE</td><td>D-094（A）</td><td>搬到 <code>tests/steps/common/</code>，不限類型</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/31">#31</a></td><td><code>the outcome is FORBIDDEN</code> 要求資料完全不變</td><td>D-095（A）</td><td>改為恰好一列 <code>ACCESS_DENIED</code></td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/29">#29</a></td><td>空回報、共同作業者資格、無效篩選的畫面、區域篩選依據、USER 篩選、匯出欄位、UI 用語</td><td>D-096～D-102（1B、2B、4B、5B，6 在 Chief session 從 B 更正為 A，其餘維持）；銜接方式 D-103</td><td>規格新增 RPT-R08、R14、R24，改寫 R03、R05；新增 T-204、T-205</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/35">#35</a>（<strong>尚未回覆</strong>）</td><td>7 項：多個 <code>INVALID</code> 的順序、舊回報編輯、不存在的回報、開編輯頁被拒、直接開無效篩選網址、送出後才不合格的組員、M3 自訂工項的送出路徑</td><td>—</td><td>不擋 M2；目前的實作都是選項 A。M3 的 Chief 依你的回覆記錄</td></tr>
+  </table></div>
+
+  <h2>8. 已知風險與沒做到的事</h2>
+  <ul class="todo">
+    <li><strong>RPT-R12 沒有開啟。</strong>管理員編輯已確認的回報時，目前只回到 PENDING 並寫兩筆稽核，沒有刪除份額（份額表還不存在）。處理：T-301 的完成條件已列 <code>RPT-R12</code>（1）。</li>
+    <li><strong>D-099 的畫面行為沒有自動化測試。</strong>「篩選無效時清空清單、停用匯出」的兩個變異 pytest 抓不到，只有 Verifier 的 Playwright 抓得到。後果：之後有人改壞 <code>history.html</code>，CI 不會變紅。建議：另開一張 ticket，加 Playwright 冒煙測試到 CI（要改 <code>.github/**</code>，需要你核准）。</li>
+    <li><strong>並行上限的測試是機率性的。</strong>RPT-R04 的並行 scenario 只送 2 個請求，拿掉鎖後 15 次只失敗 10 次。實作是對的，但測試不保證每次都抓到退步。建議：T-604（M6）用更多請求或可控的等待點。</li>
+    <li><strong>CI 的安裝步驟會吞掉失敗。</strong><code>install-postgres &amp;&amp; systemctl stop postgresql || true</code> 等於 <code>(A &amp;&amp; B) || true</code>，安裝失敗要到下一步才以「找不到 PostgreSQL 17」出現（T-200 遇過一次）。建議：改成 <code>A &amp;&amp; { B || true; }</code>，要改 <code>.github/**</code>，需要你核准。</li>
+    <li><strong>issue #35 的 7 項還沒決定。</strong>選 B 的項目會在 M3 加 ticket。</li>
+    <li><strong>管理員的落地頁 <code>/review</code> 是 404。</strong>M3 才有審核頁；目前管理員要直接輸入歷史頁的網址。</li>
+    <li><strong>會擋住後續 ticket 的加嚴斷言（D-091）。</strong>T-203：匯出只能多寫一列稽核、清單一律比對順序；T-200：渲染頁面時整個資料庫不能有變動。M4 的匯出如果要多寫其他紀錄，會碰到第一條。</li>
+    <li><strong>M3 要確認自訂工項在送出路徑也算「有工項」。</strong>目前送出時自訂工項固定為空，只有編輯路徑測得到（issue #35 第 7 項）。</li>
+    <li><strong>歷史沒有分頁。</strong>規格沒寫；資料量大時管理員歷史會一次載入日期範圍內的全部回報。</li>
+    <li><strong>T-201 Verifier 的截圖沒有提交。</strong>Chief 當時的指示寫「不要推送任何分支」，和 <code>verify-ticket</code> 允許推送截圖衝突；之後的 Verifier 都已推送到 <code>verify/</code>。</li>
+  </ul>
+
+  <h2>9. 過程紀錄</h2>
+  <div class="scroll"><table>
+    <tr><th>Ticket</th><th>修正輪數</th><th>Verifier 找到的問題</th><th>備註</th></tr>
+    <tr><td>T-200</td><td>0</td><td>無；9 個變異全部抓到</td><td>CI 第一次因 runner 網路錯誤失敗，重跑通過（第 8 節）</td></tr>
+    <tr><td>T-201</td><td>0</td><td>無；22 個變異全部抓到（並行鎖為機率性）</td><td>Builder 依規停下來開 #27；2 個規格問題 → #29</td></tr>
+    <tr><td>T-203</td><td>0</td><td>無；14 個變異全部抓到</td><td>Builder 碰到 usage 上限一次；6 個規格問題 → #29</td></tr>
+    <tr><td>T-202</td><td>1</td><td>第 1 輪 FAIL：4 個補充測試寫死被 D-096、D-097 推翻的行為，會擋住 T-204；第 2 輪 PASS</td><td>Builder 依規停下來開 #30、#31；碰到 usage 上限一次；4 個規格問題 → #35</td></tr>
+    <tr><td>T-205</td><td>0</td><td>無；產品變異 3/3，畫面變異 2 個只有 Playwright 抓得到</td><td>等 T-202 合併後 merge milestone 才驗證；1 個規格問題 → #35</td></tr>
+    <tr><td>T-204</td><td>0</td><td>無；7 個變異全部抓到</td><td>等 T-205 合併後 merge milestone 才驗證；2 個規格問題 → #35</td></tr>
+  </table></div>
+  <p>Chief 這次的失誤：(1) T-202 第 1 輪 FAIL 的根源之一，是 Chief 改了規格（<code>ef17f8e</code>）之後，只告訴 T-202 Builder「這些不在你的範圍」，沒有提醒它「不要寫斷言舊行為的補充測試」；(2) T-201 Verifier 的指示寫了「不要推送任何分支」，讓它的截圖沒有提交；(3) 兩次 usage 上限都是你回來才發現，Chief 自己的 session 也在其中中斷。(4) 改規格時（<code>ef17f8e</code>）沒有同時更新 T-201 ticket 的 <code>RPT-R05</code> 數量（2 → 4），milestone PR 的 <code>done-when</code> 因此失敗一次，已在 <code>de3faba</code> 修正。ask-spec-question 的「Kuei 回覆之後」第 2 步本來就要求更新受影響 ticket 的完成條件，下一個 Chief 改規格後要用 <code>rule_ids_in()</code> 比對所有 ticket 的數量。已把 (1) 寫成 pitfall #32。</p>
+
+  <h2>10. 這個 milestone 的學習重點</h2>
+  <h3>10.1 為什麼「先查再寫」擋不住並行</h3>
+  <p>「查詢今天已有幾筆，少於 3 才寫入」在兩個請求同時進行時會失效：兩個請求都在對方寫入前查到 2 筆，於是都寫入，變成 4 筆。這叫 check-then-act 的競爭條件。解法是讓「查」與「寫」之間不能插隊：這裡在同一個 transaction 裡先鎖住提交者的帳戶列（<code>select … for no key update</code>），第二個請求必須等第一個提交後才能查，所以會查到 3 筆而被拒絕。也可以用資料庫約束，但「最多 3 筆」不是 unique 能表達的。</p>
+  <h3>10.2 CSRF token 放在標頭，而不是表單</h3>
+  <p>M1 已經說明 CSRF 是什麼（M1 報告 10.2）。M2 決定的是 token 怎麼送：放在每個請求的標頭 <code>X-CSRF-Token</code>，由共用版型的 <code>hx-headers</code> 統一加上，所以伺服器檢查時不必讀請求主體，各頁也不會忘記放。惡意網站可以讓瀏覽器送出跨站的表單，但不能替請求加上自訂標頭（瀏覽器的同源政策會擋），所以只要 token 在標頭，偽造的請求就不會通過。代價是沒有 JavaScript 的純表單無法使用。</p>
+  <h3>10.3 改規格時，已經通過的測試怎麼辦</h3>
+  <p>CI 的 <code>no-weakened-tests</code> 保護的是「已經通過的測試不能消失或變失敗」。這擋住了偷懶的 agent，但也代表規格改變時，寫死舊行為的測試會反過來擋住正確的新程式。M2 碰到兩次：T-201 的補充測試（Chief 依 D-103 刪除）與 T-202 的補充測試（第 1 輪 FAIL）。教訓是：測試應該只斷言規格寫的事；規格沒寫、或可能改變的行為，不要寫成測試。</p>
+  <h3>10.4 共用測試步驟是公開介面</h3>
+  <p>pytest-bdd 的步驟是全域註冊的，同一句話在所有 feature 都會用到同一個定義。所以共用步驟的語意一旦定下，之後每個 feature 都要遵守；寫得太窄（只看 <code>REPORT_CREATE</code>）或太嚴（<code>FORBIDDEN</code> 不准寫任何資料），就會在之後的 milestone 一再卡住。M2 的三次修改（D-093～D-095）都伴隨反例測試，證明放寬的只是規格允許的部分。</p>
+  <h3>10.5 匯出檔的試算表注入</h3>
+  <p>如果使用者在名稱欄位輸入 <code>=HYPERLINK("http://…")</code>，而匯出時把它當成公式寫入，別人打開 Excel 時就可能被誘導點擊或執行。T-203 把所有使用者輸入的文字明確存成字串型別。這也是「伺服器不信任任何輸入」的延伸：不只驗證進來的資料，也要注意資料被其他程式讀取時的意義。</p>
+  <h3>請你回答的四個問題</h3>
+  <ol>
+    <li>Q1：這個 milestone 做了什麼？為什麼要先有日報，才能做 M3 的審核？</li>
+    <li>Q2：為什麼 RPT-R12 移到 T-301、自訂工項卻提前放進 <code>0005</code>？為什麼共用步驟三次都選擇修改步驟，而不是改規格？</li>
+    <li>Q3：什麼情況下這些設計會失效？例如之後有新的寫入路徑沒有拿同一把鎖、有人改壞了沒有自動化測試的畫面行為、M3 決定一張回報可以有多個自訂工項。</li>
+    <li>Q4：你學到了什麼？特別是第 7 節 issue #29 的規則變更，有沒有哪一項和實際業務不符？</li>
+  </ol>
+</main>
+</body>
+</html>

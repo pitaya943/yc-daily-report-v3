@@ -1,0 +1,136 @@
+{#- 歷史頁（RPT-F03；D-057、D-080、D-090）。USER 的歷史與管理員的一般／大表歷史共用這一份，extends T-200 的共用版型。
+    * 篩選表單用 HTMX（hx-get，只換 #results）；anti-forgery token 由版型 <body> 的 hx-headers 帶上（GET 不檢查）。
+    * 列：`<tr data-report-id>`，儲存格 class 是 account／label／status／custom，測試與截圖都靠這些。
+    * HTMX 2 預設不把 4xx 換進畫面：下面的 htmx:beforeSwap 把拒絕的完整錯誤字串顯示在 #filter-error，
+      不修改 base.html。伺服器的拒絕回應是 JSON：{"outcome": ..., "message": ...}（app/core/outcomes.py）。
+    * 匯出連結只由「已驗證的篩選值」組成（router.py），所以點下去不會得到錯誤。
+    * D-099：篩選無效時，清空清單並停用匯出連結（拿掉 href，避免使用者以為匯出的是表單上的新條件，或匯出舊篩選）；
+      之後送出有效的篩選，伺服器回傳新的 #results（含新的連結），整塊取代而恢復。 -#}
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, "Noto Sans TC", sans-serif; margin: 0; padding: 16px; max-width: 64rem; margin-inline: auto; line-height: 1.5; }
+  h1 { font-size: 1.25rem; margin: 0 0 .5rem; }
+  nav { margin: 0 0 1rem; display: flex; gap: .75rem; flex-wrap: wrap; }
+  nav a { padding: .25rem .6rem; border-radius: 6px; border: 1px solid color-mix(in srgb, currentColor 35%, transparent); color: inherit; text-decoration: none; }
+  nav a[aria-current] { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+  form { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; margin: 0 0 1rem; }
+  form label { display: flex; flex-direction: column; font-size: .85rem; gap: .2rem; }
+  input, select, button, .btn { font: inherit; padding: .4rem .55rem; border-radius: 6px; border: 1px solid color-mix(in srgb, currentColor 35%, transparent); background: transparent; color: inherit; }
+  label.check { flex-direction: row; align-items: center; gap: .4rem; padding-bottom: .5rem; }
+  button { background: #1d4ed8; color: #fff; border-color: #1d4ed8; font-weight: 600; cursor: pointer; }
+  .btn { text-decoration: none; display: inline-block; }
+  .btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; pointer-events: none; background: transparent; }
+  #filter-error { border: 1px solid #b91c1c; background: color-mix(in srgb, #b91c1c 12%, transparent); border-radius: 6px; padding: .6rem .75rem; margin: 0 0 1rem; }
+  #filter-error[hidden] { display: none; }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent); vertical-align: top; }
+  td.items div { white-space: nowrap; }
+  .count { margin: .5rem 0; opacity: .75; }
+  .empty { padding: 1rem 0; opacity: .75; }
+  .actions { display: flex; justify-content: space-between; align-items: center; gap: .75rem; flex-wrap: wrap; }
+</style>
+
+<h1>{{ title }}</h1>
+{% if is_admin %}
+<nav aria-label="歷史">
+  {% for key, label, href in nav %}<a href="{{ href }}"{% if key == page %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+</nav>
+{% endif %}
+
+<form id="filter-form" hx-get="{{ path }}" hx-target="#results" hx-select="#results" hx-swap="outerHTML" hx-push-url="true" autocomplete="off">
+  <label>起始日期<input type="date" name="date_from" value="{{ filters.get('date_from', '') }}"></label>
+  <label>結束日期<input type="date" name="date_to" value="{{ filters.get('date_to', '') }}"></label>
+  {% if is_admin %}
+  <label>區域
+    <select name="zone">
+      <option value="">（全部）</option>
+      {% for z in zones %}<option value="{{ z }}"{% if filters.get('zone') == z %} selected{% endif %}>{{ z }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>帳戶<input type="text" name="account" value="{{ filters.get('account', '') }}" placeholder="帳戶名稱"></label>
+  {% endif %}
+  <label class="check"><input type="checkbox" name="has_custom" value="1"{% if filters.get('has_custom') %} checked{% endif %}>有自訂工項</label>
+  <button type="submit">篩選</button>
+</form>
+<div id="filter-error" role="alert" aria-live="assertive" hidden></div>
+
+<div id="results">
+  <div class="actions">
+    <p class="count">共 {{ rows|length }} 筆</p>
+    <a class="btn" id="export-link" href="{{ export_url }}" download>匯出 Excel</a>
+  </div>
+  {% if rows %}
+  <div class="scroll">
+  <table>
+    <thead><tr><th>日期</th><th>帳戶</th>{% if not is_admin %}<th>身分</th>{% endif %}<th>作業小組</th><th>工項</th><th>自訂工項</th><th>確認狀態</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr data-report-id="{{ r.id }}">
+      <td class="date">{{ r.date }}</td>
+      <td class="account">{{ r.account }}</td>
+      {% if not is_admin %}<td class="label">{{ r.label }}</td>{% endif %}
+      <td class="crew">{{ r.crew }}</td>
+      <td class="items">{% for text in r['items'] %}<div>{{ text }}</div>{% endfor %}</td>
+      <td class="custom">{{ r.custom }}</td>
+      <td class="status">{{ r.status }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="empty">沒有符合條件的回報</p>
+  {% endif %}
+</div>
+
+<script>
+(function () {
+  var form = document.getElementById("filter-form");
+  var errorBox = document.getElementById("filter-error");
+  function showError(text) { errorBox.textContent = text; errorBox.hidden = false; }
+  function clearError() { errorBox.textContent = ""; errorBox.hidden = true; }
+
+  // D-099：清空清單、停用匯出連結。連結拿掉 href 與 download（不可點、沒有指向舊篩選的網址）；
+  // 下一次有效的篩選會整塊換掉 #results，連結與清單自然恢復，不需要另外「還原」的程式。
+  function clearResults() {
+    var results = document.getElementById("results");
+    if (!results) { return; }
+    var list = results.querySelector(".scroll");
+    if (list) { list.remove(); }
+    var empty = results.querySelector(".empty");
+    if (empty) { empty.remove(); }
+    var count = results.querySelector(".count");
+    if (count) { count.textContent = ""; }
+    var link = document.getElementById("export-link");
+    if (link) {
+      link.removeAttribute("href");
+      link.removeAttribute("download");
+      link.setAttribute("aria-disabled", "true");
+      link.setAttribute("tabindex", "-1");
+    }
+  }
+
+  form.addEventListener("htmx:beforeRequest", clearError);
+
+  // HTMX 2 預設不換進 4xx／5xx。篩選無效時使用者必須在畫面上看到完整的錯誤字串，所以在這裡處理（ticket 完成條件 5）。
+  // detail.target 是換入的目標（#results）；用它判斷是不是這張表單的回應（T-201 實測：detail.elt 不是表單）。
+  document.body.addEventListener("htmx:beforeSwap", function (evt) {
+    if (!evt.detail.target || evt.detail.target.id !== "results") { return; }
+    var xhr = evt.detail.xhr;
+    if (xhr.status < 400) { return; }
+    evt.detail.shouldSwap = false;
+    evt.detail.isError = false;
+    if (xhr.status === 401) { window.location.assign("/sign-in"); return; }   // 閒置逾時：回登入頁（IAM-R10）
+    var body = {};
+    try { body = JSON.parse(xhr.responseText); } catch (e) { /* 不是 JSON（例如 500）：用下面的備用文字 */ }
+    clearResults();
+    showError(body.message ? body.message : "無法載入（" + (body.outcome || xhr.status) + "）");
+  });
+  form.addEventListener("htmx:sendError", function () { showError("無法連線，請稍後再試"); });
+})();
+</script>
+{% endblock %}

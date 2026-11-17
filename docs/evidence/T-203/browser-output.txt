@@ -1,0 +1,8 @@
+user rows: 3 labels: ["自己送出","共作（Wei 回報）","自己送出"]
+user filtered rows: 2 http://127.0.0.1:8000/reports/history?date_from=2026-11-11&date_to=
+ordinary rows: 6
+big-meter rows: 2
+zone SOUTH rows: 2 http://127.0.0.1:8000/review/history/ordinary?date_from=&date_to=&zone=SOUTH&account=
+error text: "請輸入有效的篩選條件"
+error text (reversed range): "請輸入有效的篩選條件"
+download: report-history-2026-11-17.xlsx

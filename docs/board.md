@@ -15,6 +15,13 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 - 同時進行上限：3 張。第一批 T-101、T-111、T-112；有一張合併就補 T-113、T-114。
 - 模型：Chief claude-opus-5-5；Builder claude-sonnet-5-5；Verifier claude-opus-5-5；修正第二輪 Builder claude-opus-5-5。
 
+## M2（計畫：issue #25，D-084～D-092）
+
+- 順序：T-200 → T-201 → T-202 ‖ T-203；issue #29 新增 T-205（‖ T-202）與 T-204（在 T-202 之後）。
+- 同時進行上限：2 張（T-202 ‖ T-203、T-202 ‖ T-205 平行；`tests/implemented.txt` 是例外，D-089、D-103）。
+- 結果：6 張全部 merged；報告 `docs/milestones/M2.html`；未決 issue #35（不擋 M2）。
+- 模型：Chief claude-opus-5-5；Builder claude-sonnet-5-5；Verifier claude-opus-5-5；修正第二輪 Builder claude-opus-5-5。
+
 | Ticket | Milestone | 標題 | 狀態 | PR | 修正輪數 | 備註 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T-001 | M0 | 專案骨架與測試框架 | merged | [#2](https://github.com/pitaya943/yc-daily-report-v3/pull/2) | 2 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（FAIL）；修正第 1 輪：claude-sonnet-5-5；Verifier 第 2 輪：claude-opus-5-5（FAIL：PGSERVICE）；修正第 2 輪：claude-opus-5-5（新 session）；Verifier 第 3 輪：claude-opus-5-5（PASS） |
@@ -27,9 +34,12 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 | T-112 | M1 | 純函式：薪資公式 | merged | [#13](https://github.com/pitaya943/yc-daily-report-v3/pull/13) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS；變異 2 個存活，測試缺口記給 T-402）；規格問題 → issue #15（D-064～D-068） |
 | T-113 | M1 | 純函式：保留金 | merged | [#17](https://github.com/pitaya943/yc-daily-report-v3/pull/17) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS）；規格問題見 issue #19 |
 | T-114 | M1 | 純函式：庫存比對 | merged | [#16](https://github.com/pitaya943/yc-daily-report-v3/pull/16) | 0 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（PASS）；規格問題見 issue #19 |
-| T-201 | M2 | 送出日報 | todo | — | — | — |
-| T-202 | M2 | 回報生命週期 | todo | — | — | — |
-| T-203 | M2 | 歷史與匯出 | todo | — | — | — |
+| T-200 | M2 | 固定版本的 HTMX 與共用頁面版型 | merged | [#26](https://github.com/pitaya943/yc-daily-report-v3/pull/26) | 0 | Builder 第一輪：claude-sonnet-5-5；CI 第一次因 runner 網路錯誤失敗（install-postgres 的失敗被 `|| true` 吞掉），重跑全綠；Verifier 第 1 輪：claude-opus-5-5（PASS，9 個變異全抓到） |
+| T-201 | M2 | 送出日報 | merged | [#28](https://github.com/pitaya943/yc-daily-report-v3/pull/28) | 0 | Builder 第一輪：claude-sonnet-5-5；共用步驟 `the outcome is` 與 RPT-R02／R03 的字串衝突 → issue #27 → D-093（同一個 session 繼續）；Verifier 第 1 輪：claude-opus-5-5（PASS，22 個變異全抓到；拿掉並行鎖的變異是機率性抓到，15 次中 10 次）；規格問題 → issue #29 |
+| T-202 | M2 | 回報生命週期 | merged | [#33](https://github.com/pitaya943/yc-daily-report-v3/pull/33) | 1 | Builder 第一輪：claude-sonnet-5-5（20:41 碰到 usage 上限，22:01 繼續）；共用步驟衝突 → issue #30、#31 → D-094、D-095；Verifier 第 1 輪：claude-opus-5-5（FAIL：4 個補充測試寫死被 D-096／D-097 推翻的行為）；修正第 1 輪：claude-sonnet-5-5（同一 session）；Verifier 第 2 輪：claude-opus-5-5（PASS）；PR 說明的測試數字與未解問題第 3 點未更新（Builder 額度中斷），記入 milestone 報告；規格問題 → issue #35 |
+| T-203 | M2 | 歷史與匯出 | merged | [#32](https://github.com/pitaya943/yc-daily-report-v3/pull/32) | 0 | Builder 第一輪：claude-sonnet-5-5（20:42 碰到 usage 上限，22:01 繼續）；Verifier 第 1 輪：claude-opus-5-5（PASS，14 個變異全抓到）；規格問題併入 issue #29；加嚴斷言「匯出只寫一列稽核」「一律斷言順序」可能影響 M4 匯出 |
+| T-204 | M2 | 至少一個工項與共同作業者資格（規格更新） | merged | [#36](https://github.com/pitaya943/yc-daily-report-v3/pull/36) | 0 | Builder 第一輪：claude-sonnet-5-5；T-205 合併後 merge milestone 重跑 CI；Verifier 第 1 輪：claude-opus-5-5（PASS，7 個變異全抓到）；RPT-R03、R05 已加回（D-103）；規格問題併入 issue #35 第 6、7 項 |
+| T-205 | M2 | 歷史篩選調整（規格更新） | merged | [#34](https://github.com/pitaya943/yc-daily-report-v3/pull/34) | 0 | Builder 第一輪：claude-sonnet-5-5；T-202 合併後 merge milestone 重跑 CI；Verifier 第 1 輪：claude-opus-5-5（PASS；產品變異 3/3，畫面變異 2 個只有 Playwright 抓得到）；PR 說明測試數字過時；規格問題併入 issue #35 第 5 項 |
 | T-301 | M3 | 確認或駁回回報，保存份額 | todo | — | — | — |
 | T-302 | M3 | 自訂工項 | todo | — | — | — |
 | T-303 | M3 | 帳戶生命週期與薪資設定 | todo | — | — | — |

@@ -1,0 +1,14 @@
+test_submitter_actions_by_state[PENDING-edit-accepted-PENDING] PASSED
+test_submitter_actions_by_state[REJECTED-edit-accepted-PENDING] PASSED
+test_submitter_actions_by_state[CONFIRMED-edit-FORBIDDEN-CONFIRMED] PASSED
+test_submitter_actions_by_state[PENDING-delete-accepted-gone] PASSED
+test_submitter_actions_by_state[REJECTED-delete-accepted-gone] PASSED
+test_submitter_actions_by_state[CONFIRMED-delete-FORBIDDEN-CONFIRMED] PASSED
+test_a_collaborator_may_only_view[PENDING-edit] PASSED
+test_a_collaborator_may_only_view[PENDING-delete] PASSED
+test_editing_does_not_count_as_a_new_submission PASSED
+test_the_report_date_cannot_be_changed_on_edit PASSED
+test_an_edit_with_no_change_says_so PASSED
+test_administrator_deletes_a_confirmed_report PASSED
+test_crew_report_records_the_crew_size PASSED
+===================== 13 passed, 1568 deselected in 8.25s ======================

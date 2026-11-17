@@ -1,0 +1,16 @@
+"""Verifier 用：清空本機 yc_v3、載入 background、設定測試密碼與固定時鐘，然後在同一個 process 啟動 app。"""
+import os, sys
+sys.path.insert(0, "/home/user/yc-daily-report-v3")
+os.chdir("/home/user/yc-daily-report-v3")
+import psycopg, uvicorn
+from app.core import session as session_core
+from tests.conftest import _truncate_all, load_background
+url = os.environ.get("DATABASE_URL", "postgresql://postgres@127.0.0.1:5433/yc")
+assert "127.0.0.1" in url
+with psycopg.connect(url) as conn:
+    _truncate_all(conn); load_background(conn)   # also clock.set(2026-11-15 10:00 Asia/Taipei)
+    h = session_core.hash_password("correct")
+    conn.execute("update yc_v3.accounts set password_hash = %s where name in ('Wen','Admin1')", (h,))
+    conn.commit()
+from app.main import app
+uvicorn.run(app, host="127.0.0.1", port=8010, log_level="warning")

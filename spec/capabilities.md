@@ -28,9 +28,9 @@ flowchart LR
 |  | [IAM-F05 Owner 管理管理員](../spec/features/IAM-F05-owner-manages-administrators.feature) | 3 | 6 | B-096 |
 |  | [IAM-F06 密碼變更與重設](../spec/features/IAM-F06-password-change-and-reset.feature) | 3 | 5 | B-008 |
 |  | [IAM-F07 銀行帳號遮罩與顯示](../spec/features/IAM-F07-bank-number-masking-and-reveal.feature) | 4 | 7 | B-014, B-081, B-082, B-093 |
-| **RPT** 日報 | [RPT-F01 送出日報](../spec/features/RPT-F01-submit-a-daily-report.feature) | 7 | 14 | B-062 |
-|  | [RPT-F02 回報生命週期](../spec/features/RPT-F02-report-lifecycle.feature) | 4 | 7 | B-023, B-064 |
-|  | [RPT-F03 歷史與匯出](../spec/features/RPT-F03-history-and-export.feature) | 4 | 8 | B-063 |
+| **RPT** 日報 | [RPT-F01 送出日報](../spec/features/RPT-F01-submit-a-daily-report.feature) | 8 | 17 | B-062 |
+|  | [RPT-F02 回報生命週期](../spec/features/RPT-F02-report-lifecycle.feature) | 5 | 9 | B-023, B-064 |
+|  | [RPT-F03 歷史與匯出](../spec/features/RPT-F03-history-and-export.feature) | 5 | 9 | B-063 |
 | **REV** 審核 | [REV-F01 確認或駁回回報](../spec/features/REV-F01-confirm-or-reject-reports.feature) | 3 | 5 | B-069, B-071 |
 |  | [REV-F02 小組分配與份額保存](../spec/features/REV-F02-crew-split-and-stored-shares.feature) | 2 | 6 | B-044, B-091 |
 |  | [REV-F03 自訂工項](../spec/features/REV-F03-custom-work-item.feature) | 5 | 7 | B-024 |
@@ -52,4 +52,4 @@ flowchart LR
 | **ARC** 檔案庫 | [ARC-F01 日月報檔案庫](../spec/features/ARC-F01-scheduled-and-manual-archives.feature) | 6 | 11 | B-077, B-078 |
 | **CFG** 設定 | [CFG-F01 單價](../spec/features/CFG-F01-unit-prices.feature) | 4 | 5 | B-032, B-075, B-094 |
 |  | [CFG-F02 費率](../spec/features/CFG-F02-rates.feature) | 4 | 6 | B-033, B-034, B-092 |
-| | **合計** | **134** | **245** | |
+| | **合計** | **137** | **251** | |

@@ -1,0 +1,44 @@
+# T-201 再綠：完整測試
+# 指令：python3 -m pytest -q
+986 passed, 435 skipped in 126.69s (0:02:06)
+
+# 這張 ticket 的規則（RPT-R01～R07、IAM-R10）展開後的 scenario 結果
+# 指令：python3 -m pytest -q -rA | grep -E "PASSED tests/test_spec.py::test_(catalogue|a_quantity|report_date|the_date|quantity|the_fourth|being_a|deleting|two_simul|collaborator|crew|admin_and|solo|saved_data|idle|activity)"
+PASSED tests/test_spec.py::test_idle_boundary[29 min 59 sec-accepted]
+PASSED tests/test_spec.py::test_idle_boundary[30 min 00 sec-UNAUTHENTICATED]
+PASSED tests/test_spec.py::test_activity_restarts_the_idle_window
+PASSED tests/test_spec.py::test_saved_data_survives_a_timeout
+PASSED tests/test_spec.py::test_there_is_no_rememberme
+PASSED tests/test_spec.py::test_catalogue_by_zone_and_bigmeter_flag[Wen-WEST-32]
+PASSED tests/test_spec.py::test_catalogue_by_zone_and_bigmeter_flag[Nan-SOUTH-37]
+PASSED tests/test_spec.py::test_catalogue_by_zone_and_bigmeter_flag[Big-BIG_METER-25]
+PASSED tests/test_spec.py::test_a_quantity_for_an_item_outside_the_catalogue_is_refused
+PASSED tests/test_spec.py::test_report_date_boundary[2026-11-15-accepted-today]
+PASSED tests/test_spec.py::test_report_date_boundary[2026-10-16-accepted-30 days back]
+PASSED tests/test_spec.py::test_report_date_boundary[2026-10-15-INVALID-31 days back]
+PASSED tests/test_spec.py::test_report_date_boundary[2026-11-16-INVALID-tomorrow]
+PASSED tests/test_spec.py::test_the_date_error_message
+PASSED tests/test_spec.py::test_quantity_boundary_1[-accepted-0]
+PASSED tests/test_spec.py::test_quantity_boundary_1[0-accepted-0]
+PASSED tests/test_spec.py::test_quantity_boundary_1[0.1-accepted-1]
+PASSED tests/test_spec.py::test_quantity_boundary_1[2.3-accepted-23]
+PASSED tests/test_spec.py::test_quantity_boundary_1[999.9-accepted-9999]
+PASSED tests/test_spec.py::test_quantity_boundary_1[1000-INVALID--]
+PASSED tests/test_spec.py::test_quantity_boundary_1[0.05-INVALID--]
+PASSED tests/test_spec.py::test_quantity_boundary_1[-1-INVALID--]
+PASSED tests/test_spec.py::test_quantity_boundary_1[abc-INVALID--]
+PASSED tests/test_spec.py::test_the_fourth_own_report_is_refused
+PASSED tests/test_spec.py::test_being_a_collaborator_does_not_use_the_quota
+PASSED tests/test_spec.py::test_deleting_a_pending_report_frees_the_quota
+PASSED tests/test_spec.py::test_two_simultaneous_submits_cannot_exceed_the_cap
+PASSED tests/test_spec.py::test_collaborator_eligibility[Wei-Wen, Wei-eligible]
+PASSED tests/test_spec.py::test_collaborator_eligibility[Nan-Wen-different zone]
+PASSED tests/test_spec.py::test_collaborator_eligibility[Big-Wen-different type]
+PASSED tests/test_spec.py::test_collaborator_eligibility[Old-Wen-archived]
+PASSED tests/test_spec.py::test_collaborator_eligibility[Admin1-Wen-not a USER]
+PASSED tests/test_spec.py::test_collaborator_eligibility[Wen-Wen-the submitter itself]
+PASSED tests/test_spec.py::test_crew_order_is_the_order_the_submitter_chose
+PASSED tests/test_spec.py::test_admin_and_owner_are_turned_away[Admin1]
+PASSED tests/test_spec.py::test_admin_and_owner_are_turned_away[Kuei]
+PASSED tests/test_spec.py::test_solo_report
+PASSED tests/test_spec.py::test_crew_report_records_the_crew_size

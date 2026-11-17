@@ -1,0 +1,5 @@
+edit success: 日報已更新（#1，2026-11-15），狀態：待確認（PENDING）。
+GET edit of CONFIRMED by Wen: 403 {"outcome":"FORBIDDEN","message":null}
+confirmed edit rejected: 無法儲存（FORBIDDEN）：這張回報已確認，或你沒有權限修改它
+deleted: 日報 #3（2026-11-15）已永久刪除。
+admin edit confirmed: 日報已更新（#4，2026-11-15），狀態：待確認（PENDING）。原本已確認，現在回到待確認，份額作廢。

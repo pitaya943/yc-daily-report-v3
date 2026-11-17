@@ -1,0 +1,2 @@
+$ python3 -m pytest -q
+1172 passed, 409 skipped in 194.77s (0:03:14)
