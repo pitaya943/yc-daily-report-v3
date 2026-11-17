@@ -41,7 +41,7 @@
 | [T-204](../tickets/T-204.md) | M2 | 至少一個工項與共同作業者資格（規格更新） | T-202 | RPT-R03、R05、R08、R14 | 8 | 否 |
 | [T-205](../tickets/T-205.md) | M2 | 歷史篩選調整（規格更新） | T-203 | RPT-R24 | 1 | 否 |
 | [T-301](../tickets/T-301.md) | M3 | 確認或駁回回報，保存份額 | T-202, T-111 | REV-F01、REV-F02、RPT-R12 | 12 | 是 |
-| [T-302](../tickets/T-302.md) | M3 | 自訂工項 | T-301 | REV-F03 | 7 | 是 |
+| [T-302](../tickets/T-302.md) | M3 | 自訂工項 | T-301 | REV-F03 | 7 | 否 |
 | [T-303](../tickets/T-303.md) | M3 | 帳戶生命週期與薪資設定 | T-103 | IAM-F04 | 16 | 是 |
 | [T-304](../tickets/T-304.md) | M3 | OWNER 管理管理員 | T-303 | IAM-F05 | 6 | 否 |
 | [T-305](../tickets/T-305.md) | M3 | 密碼變更與重設 | T-103 | IAM-F06 | 5 | 否 |
@@ -74,3 +74,12 @@
 - `migration: true` 的 ticket 一次只做一張，依 `migration_number` 的順序。
 - 例外：`tests/implemented.txt` 可以重疊；後合併的 ticket 在開 Verifier 前先 merge milestone 分支（D-089）。
 - 同時進行的 ticket 數量由 Chief 決定，並記錄在 `docs/board.md`。
+
+## 部署準備 ticket 的檢查表
+
+部署前的「部署準備」ticket（第 1 節，D-050）還沒開。開的時候，完成條件至少包含下列各項（M2 交接，M3 起累積）：
+
+- `APP_ENV=production`（D-063）。
+- uvicorn 加上 `--proxy-headers --forwarded-allow-ips`。
+- 依序套用全部 migration 並跑各自的檢查：`0003`、`0004` 的檢查與回滾見 `docs/milestones/M1.html` 第 5 節；`0005` 見 `docs/milestones/M2.html` 第 5 節；`0006` 起見各 milestone 報告第 5 節。
+- 部署環境能安裝 `openpyxl`（D-087）。
