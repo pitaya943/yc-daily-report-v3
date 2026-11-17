@@ -1,0 +1,22 @@
+T-305 Verifier 第 1 輪：關閉 JavaScript 實際送出密碼表單（Node 版 Playwright，pitfall #33）
+head 9f30e14b0b88a4208a1ebfc9688253b85d23ba2e；app 跑在 127.0.0.1:8011；容器內 PostgreSQL
+
+# 1) javaScriptEnabled=false（01-nojs-password-page.png、02-nojs-after-submit.png）
+javaScriptEnabled = false ; typeof window.htmx = undefined
+form attrs (via $eval) {"method":"post","action":"/account/password"}
+after submit URL: http://127.0.0.1:8011/account/password
+response status: 403
+navigation requests: GET /account/password ; POST /account/password body=current_password=...&new_password=...&password_confirm=...
+URL contains password? false
+uvicorn: "GET /account/password HTTP/1.1" 200 / "POST /account/password HTTP/1.1" 403 Forbidden
+Wen 的 password_hash md5 前後相同（dc5373a5... → dc5373a5...）；新增 1 列 ACCESS_DENIED「沒有有效的 anti-forgery token：POST /account/password」（D-095/D-107）
+
+# 2) 對照：javaScriptEnabled=true（03-js-password-page.png、04-js-after-submit.png）
+javaScriptEnabled = true ; typeof window.htmx = object
+after submit URL: http://127.0.0.1:8011/account/password
+response status: 200   （XHR，不是導覽）
+稽核：PASSWORD_CHANGE「變更自己的密碼」，整列不含任何密碼
+
+# 3) 反事實（本地暫改，已還原，未推送）：拿掉 <form> 的 method/action 後關閉 JS 送出
+after submit URL: http://127.0.0.1:8011/account/password?current_password=correct&new_password=SECRETnew1&password_confirm=SECRETnew1
+URL contains password? true

@@ -21,6 +21,11 @@
   所以它的資料斷言是「恰好新增 1 列 `ACCESS_DENIED`、行為者是被拒絕的人（發出請求的 session 的主人），其他資料表完全不變」；
   這一列同時被記為「已斷言」，之後的 `nothing else is written` 可以扣掉它。
 - `signed in` 與 `accepted` 是成功的結果：前者檢查登入的回應與 cookie，後者是 200。
+- `the outcome is <outcome> with message "<message>"`（D-117 S1，T-305 新增）：規格的例子表把結果與完整字串放在同一列
+  （例如 IAM-R30）。`accepted` 時 message 必須是空字串、HTTP 200；其他類別逐字比對（`check_rejected`，不經附錄 B 白名單：
+  這句的重點就是「這一句」），資料斷言與 `the outcome is X` 完全相同（FORBIDDEN 依 D-095）。例子表的空儲存格代表
+  「規格沒有為這個拒絕寫字串」，也就是回應的 message 為 null。
+  regex 用 fullmatch，而 `the outcome is (?P<outcome>[A-Z_]+)` 不含空白與引號，所以不會吃掉這一句（見 test_outcome_with_message.py）。
 """
 from __future__ import annotations
 
@@ -69,10 +74,14 @@ def expected_message(outcome: str, actual: str | None) -> str | None:
     return None  # actual 不是 null 也不在附錄 B → check_rejected 會以「應為 None」失敗
 
 
-@then("the outcome is accepted")
-def _outcome_accepted(recorder):
+def check_accepted(recorder) -> None:
     r = recorder.response
     assert r.status_code == 200, f"應被接受（200），實際 {r.status_code}：{r.text[:200]}"
+
+
+@then("the outcome is accepted")
+def _outcome_accepted(recorder):
+    check_accepted(recorder)
 
 
 @then("the outcome is signed in")
@@ -106,6 +115,14 @@ def check_forbidden_writes_only_access_denied(recorder, client, db) -> None:
     claim_audit_row(recorder, db, "ACCESS_DENIED", actor.name)  # 類型與行為者都要對；同時記為已斷言
 
 
+def check_rejection_writes(recorder, client, db, outcome: str) -> None:
+    """拒絕時的資料斷言：FORBIDDEN 依 D-095，其他類別資料完全不變。`the outcome is X` 與 `... with message` 共用。"""
+    if outcome == "FORBIDDEN":
+        check_forbidden_writes_only_access_denied(recorder, client, db)  # D-095
+    else:
+        check_nothing_written(recorder)
+
+
 @then(parsers.re(r"the outcome is (?P<outcome>[A-Z_]+)"))
 def _outcome_rejected(recorder, client, db, outcome):
     try:
@@ -113,7 +130,16 @@ def _outcome_rejected(recorder, client, db, outcome):
     except Exception:  # 回應不是 JSON：交給 check_rejected 報出真正的問題
         actual = None
     check_rejected(recorder, outcome, expected_message(outcome, actual))
-    if outcome == "FORBIDDEN":
-        check_forbidden_writes_only_access_denied(recorder, client, db)  # D-095
-    else:
-        check_nothing_written(recorder)
+    check_rejection_writes(recorder, client, db, outcome)
+
+
+@then(parsers.re(r'the outcome is (?P<outcome>accepted|[A-Z_]+) with message "(?P<message>.*)"'))
+def _outcome_with_message(recorder, client, db, outcome, message):
+    """D-117 S1：結果類別與完整錯誤字串一起斷言。"""
+    if outcome == "accepted":
+        assert message == "", f"accepted 不可帶錯誤字串，規格寫的是 {message!r}"
+        check_accepted(recorder)
+        return
+    # 空字串 = 規格沒有為這個拒絕寫字串 → 回應的 message 必須是 null；其他一律逐字相等
+    check_rejected(recorder, outcome, message or None)
+    check_rejection_writes(recorder, client, db, outcome)

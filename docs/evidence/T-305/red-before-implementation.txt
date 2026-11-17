@@ -1,0 +1,21 @@
+$ python3 -m pytest tests -q -p no:cacheprovider -k "test_own_password_change or owner_also_enters or audited_without_the_password or test_reset_1 or test_forgotten_password"
+(實作前；PASSWORD 端點尚未存在)
+E       AssertionError: 應被接受（200），實際 404：{"detail":"Not Found"}
+E       AssertionError: HTTP status 應為 422，實際 404
+E       AssertionError: HTTP status 應為 422，實際 404
+E       AssertionError: HTTP status 應為 422，實際 404
+E       AssertionError: 應被接受（200），實際 404：{"detail":"Not Found"}
+E       AssertionError: HTTP status 應為 422，實際 404
+E       AssertionError: HTTP status 應為 422，實際 404
+E       AssertionError: 應成功（200），實際 404：{"detail":"Not Found"}
+E       AssertionError: 重設應成功（200），實際 404：{"detail":"Not Found"}
+FAILED tests/test_spec.py::test_own_password_change[Wen-correct-newpass1-newpass1-accepted-]
+FAILED tests/test_spec.py::test_own_password_change[Wen-wrong-newpass1-newpass1-INVALID-\u76ee\u524d\u5bc6\u78bc\u4e0d\u6b63\u78ba]
+FAILED tests/test_spec.py::test_own_password_change[Wen-correct-newpass1-newpass2-INVALID-\u5169\u6b21\u8f38\u5165\u7684\u5bc6\u78bc\u4e0d\u4e00\u81f4]
+FAILED tests/test_spec.py::test_own_password_change[Wen-correct-short-short-INVALID-\u5bc6\u78bc\u9577\u5ea6\u9808\u70ba 6 \u81f3 30 \u500b\u5b57]
+FAILED tests/test_spec.py::test_own_password_change[Admin1-correct-newpass1-newpass1-accepted-]
+FAILED tests/test_spec.py::test_own_password_change[Admin1-wrong-newpass1-newpass1-INVALID-\u76ee\u524d\u5bc6\u78bc\u4e0d\u6b63\u78ba]
+FAILED tests/test_spec.py::test_the_owner_also_enters_the_current_password - ...
+FAILED tests/test_spec.py::test_a_password_change_is_audited_without_the_password
+FAILED tests/test_spec.py::test_reset_1 - AssertionError: 重設應成功（200），...
+9 failed, 1 passed, 1662 deselected in 9.41s
