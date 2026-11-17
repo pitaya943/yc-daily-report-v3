@@ -107,6 +107,12 @@
 | D-101 | USER 歷史可用哪些篩選？ | 維持：只接受日期與「有自訂工項」；`zone`、`account` 為 `INVALID`。USER 是某張回報的共同作業者時，那張回報出現在他的歷史中（RPT-R20，已實作）。 | Kuei 在 issue 回覆 6B 後，於 Chief session 更正為 6A 並補充共作者的說明 | 2026-11-16 | issue #29 第 6 項（更正為 6A）；不改程式 |
 | D-102 | USER 匯出的工項欄位、帳戶篩選的範圍？ | 維持 T-203 的實作：USER 匯出 = 自己目前的工項組加上看得到的回報所屬的工項組；帳戶篩選包含已封存的 USER，ADMIN、OWNER 的名稱為 `INVALID`。 | 與規格例子一致 | 2026-11-16 | issue #29 選項 7A、8A；不改程式 |
 | D-103 | 已實作的規則（RPT-R03、RPT-R05）改規格時，程式還沒改，CI 會變紅？ | Chief 在改規格的同一個 commit，把 RPT-R03、RPT-R05 從 `tests/implemented.txt` 暫時移除，並刪除兩個寫死舊行為的補充測試（`test_ineligible_and_duplicate_collaborators_do_not_count_toward_six`、`test_an_empty_report_with_no_quantities_is_accepted_and_stores_no_items`）。T-204 把兩條規則加回去，`done-when` 強制全部通過；在那之前這兩條規則沒有 Gherkin 把關。T-205 與 T-202 平行時，比照 D-089 只在 `tests/implemented.txt` 重疊。 | 避免 `milestone/M2` 變紅擋住其他 ticket；D-052 不允許 Builder 刪測試 | 2026-11-16 | Kuei 在 Chief session 選定（「暫時移出 implemented」）；RPT-R03 為同一原因一併處理 |
+| D-104 | 同一個請求有多個 `INVALID` 原因時，回哪一句？ | 規格不規定順序。目前的實作順序為：日期 → 數量格式 → 至少一個工項 → 共同作業者。scenario 與補充測試每次只放一個錯誤原因；回哪一句只要是附錄 B 的其中一句（D-093）。 | 使用者一次只看到一個錯誤即可；不把實作順序變成規格 | 2026-11-17 | issue #35 選項 1A；不改程式 |
+| D-105 | 超過 30 天的回報還能編輯嗎？ | 可以。日期不變就不檢查 30 天（AD-8 只禁止改日期）。 | RPT-R02 只限制送出時的日期 | 2026-11-17 | issue #35 選項 2A；不改程式 |
+| D-106 | 編輯或刪除不存在的回報？ | 回 HTTP 404，不是結果類別。`spec/README.md` 註明「找不到資源」不在結果類別表內。 | 維持 T-202 的實作 | 2026-11-17 | issue #35 選項 3A；`spec/README.md` 結果類別表下加註；不改程式 |
+| D-107 | 打開別人的編輯頁（GET）被拒絕時，寫不寫 `ACCESS_DENIED`？ | 寫。 | 每個 `FORBIDDEN` 都寫 `ACCESS_DENIED`（AUD-R03、D-095） | 2026-11-17 | issue #35 選項 4A；不改程式 |
+| D-108 | 直接開啟帶無效篩選的網址時，畫面怎麼呈現？ | D-099 的範圍是「表單送出的篩選」。直接開啟帶無效篩選的網址回 422 JSON。 | 正常操作碰不到；網址列只推送成功的篩選 | 2026-11-17 | issue #35 選項 5A；RPT-F03 的 D-099 註解加上範圍；不改程式；補充 D-099 |
+| D-109 | 編輯時，送出後才變得不合格（封存、改區、改類型）的組員？ | 一律拒絕（D-097 的字串），必須先把那個人移出組員才能存檔。 | 與 D-097「不擅自修正輸入」一致 | 2026-11-17 | issue #35 選項 6A；不改程式 |
 
 ## 待決定
 
