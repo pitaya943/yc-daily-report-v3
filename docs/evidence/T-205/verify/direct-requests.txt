@@ -1,0 +1,5 @@
+GET /review/history/ordinary?account=NoSuchPerson -> 422 application/json {"outcome":"INVALID","message":"請輸入有效的篩選條件"}
+GET /review/history/ordinary/export?account=NoSuchPerson -> 422 application/json {"outcome":"INVALID","message":"請輸入有效的篩選條件"}
+GET /review/history/ordinary/export?zone=EAST -> 422 application/json {"outcome":"INVALID","message":"請輸入有效的篩選條件"}
+GET /review/history/big-meter/export?zone=SOUTH -> 200 application/vnd.openxmlformats-officedocument.spreadsheetml.sheet 
+big-meter export zone=SOUTH rows: [('日期', '帳戶'), ('2026-11-10', 'Big')]
