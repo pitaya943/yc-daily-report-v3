@@ -1,0 +1,64 @@
+== baseline (-k "quantity or collaborator or crew or custom or eligible or every or blank or boundary or duplicate or stale")
+239 passed, 30 skipped, 1358 deselected in 99.81s (0:01:39)
+applied M1_submit_no_quantity_check
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+FAILED tests/steps/RPT-F01/test_report_details.py::test_a_submit_with_no_quantity_above_zero_is_invalid_and_writes_nothing[fields0]
+FAILED tests/steps/RPT-F01/test_report_details.py::test_a_submit_with_no_quantity_above_zero_is_invalid_and_writes_nothing[fields1]
+FAILED tests/steps/RPT-F01/test_report_details.py::test_a_submit_with_no_quantity_above_zero_is_invalid_and_writes_nothing[fields2]
+FAILED tests/test_spec.py::test_a_report_with_no_quantity_is_refused
+4 failed, 235 passed, 30 skipped, 1358 deselected in 102.87s (0:01:42)
+applied M2_edit_no_quantity_check
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_an_edit_that_leaves_no_quantity_is_invalid_and_changes_nothing[fields_after_date0]
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_an_edit_that_leaves_no_quantity_is_invalid_and_changes_nothing[fields_after_date1]
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_an_edit_that_leaves_no_quantity_is_invalid_and_changes_nothing[fields_after_date2]
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_the_admin_edit_of_every_state_also_needs_a_quantity[PENDING]
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_the_admin_edit_of_every_state_also_needs_a_quantity[REJECTED]
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_the_admin_edit_of_every_state_also_needs_a_quantity[CONFIRMED]
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_a_custom_item_quantity_of_zero_does_not_count
+FAILED tests/test_spec.py::test_an_edit_that_clears_every_quantity_is_refused
+8 failed, 231 passed, 30 skipped, 1358 deselected in 101.77s (0:01:41)
+applied M3_custom_item_not_counted
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+FAILED tests/steps/RPT-F01/test_report_details.py::test_require_a_quantity_is_one_judgement_shared_by_submit_and_edit[items5-20-True]
+FAILED tests/steps/RPT-F01/test_report_details.py::test_require_a_quantity_is_one_judgement_shared_by_submit_and_edit[items6-1-True]
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_an_edit_keeps_the_custom_item_when_the_catalogue_quantities_are_cleared
+FAILED tests/test_spec.py::test_a_custom_item_quantity_is_enough
+4 failed, 235 passed, 30 skipped, 1358 deselected in 100.16s (0:01:40)
+applied M4_ineligible_silently_dropped
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+FAILED tests/steps/RPT-F01/test_report_details.py::test_a_collaborator_that_is_not_a_real_account_id_is_invalid_and_writes_nothing[0]
+FAILED tests/steps/RPT-F01/test_report_details.py::test_a_collaborator_that_is_not_a_real_account_id_is_invalid_and_writes_nothing[99999999999]
+FAILED tests/steps/RPT-F01/test_report_details.py::test_one_ineligible_collaborator_among_eligible_ones_refuses_the_whole_report
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_an_edit_naming_an_ineligible_collaborator_is_invalid_and_changes_nothing[Nan]
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_an_edit_naming_an_ineligible_collaborator_is_invalid_and_changes_nothing[Big]
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_an_edit_naming_an_ineligible_collaborator_is_invalid_and_changes_nothing[Old]
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_an_edit_naming_an_ineligible_collaborator_is_invalid_and_changes_nothing[Admin1]
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_an_edit_naming_an_ineligible_collaborator_is_invalid_and_changes_nothing[Wen]
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_an_edit_with_a_stale_collaborator_who_was_archived_after_submit_is_refused
+FAILED tests/test_spec.py::test_an_ineligible_collaborator_is_refused[Nan-different zone]
+FAILED tests/test_spec.py::test_an_ineligible_collaborator_is_refused[Big-different type]
+FAILED tests/test_spec.py::test_an_ineligible_collaborator_is_refused[Old-archived]
+FAILED tests/test_spec.py::test_an_ineligible_collaborator_is_refused[Admin1-not a USER]
+FAILED tests/test_spec.py::test_an_ineligible_collaborator_is_refused[Wen-the submitter itself]
+14 failed, 225 passed, 30 skipped, 1358 deselected in 100.00s (0:01:39)
+applied M5_duplicate_silently_dropped
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+FAILED tests/steps/RPT-F01/test_report_details.py::test_a_duplicate_is_refused_even_when_it_is_the_only_problem_among_seven_slots
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_an_edit_naming_the_same_collaborator_twice_is_invalid_and_changes_nothing
+FAILED tests/test_spec.py::test_naming_the_same_collaborator_twice_is_refused
+3 failed, 236 passed, 30 skipped, 1358 deselected in 100.11s (0:01:40)
+applied M6_archived_not_checked
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_an_edit_naming_an_ineligible_collaborator_is_invalid_and_changes_nothing[Old]
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_an_edit_with_a_stale_collaborator_who_was_archived_after_submit_is_refused
+FAILED tests/test_spec.py::test_an_ineligible_collaborator_is_refused[Old-archived]
+3 failed, 236 passed, 30 skipped, 1358 deselected in 100.50s (0:01:40)
+applied M7_submitter_self_allowed
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+FAILED tests/steps/RPT-F02/test_lifecycle_details.py::test_an_edit_naming_an_ineligible_collaborator_is_invalid_and_changes_nothing[Wen]
+FAILED tests/test_spec.py::test_an_ineligible_collaborator_is_refused[Wen-the submitter itself]
+2 failed, 237 passed, 30 skipped, 1358 deselected in 100.23s (0:01:40)
+== restored
+239 passed, 30 skipped, 1358 deselected in 100.80s (0:01:40)
+DONE

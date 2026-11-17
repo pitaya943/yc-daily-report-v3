@@ -1,0 +1,47 @@
+# Verifier 第 1 輪：Playwright（Node require('playwright')，viewport 520x900，deviceScaleFactor 2），伺服器 127.0.0.1:8010，本機 DB
+submit all zero: HTTP 422 body={"outcome":"INVALID","message":"請至少填寫一個工項數量"} | #form-error="請至少填寫一個工項數量" | #result=""
+submit archived collaborator Old: HTTP 422 body={"outcome":"INVALID","message":"共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工"} | #form-error="共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工" | #result=""
+submit ok: HTTP 200 body=<p class="saved" role="status">日報已送出（#1，2026-11-15），狀態：待確認（PENDING）。</p> | #form-error="" | #result="日報已送出（#1，2026-11-15），狀態：待確認（PENDING）。"
+edit all zero: HTTP 422 body={"outcome":"INVALID","message":"請至少填寫一個工項數量"} | #form-error="請至少填寫一個工項數量" | #result=""
+edit duplicate collaborator Wei,Wei: HTTP 422 body={"outcome":"INVALID","message":"共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工"} | #form-error="共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工" | #result=""
+
+# 操作後的資料庫（被拒絕的 4 次都沒有留下資料；只有一次成功的送出）
+$ select id,status from yc_v3.reports
+1|4|PENDING
+$ select * from yc_v3.report_items
+1|direct_13|20
+1|direct_20|0
+1|direct_25|0
+1|direct_40|0
+1|indirect_13|0
+1|indirect_20|0
+1|indirect_25|0
+1|indirect_40|0
+1|original_change|0
+1|dsv_13|0
+1|dsv_20|0
+1|dsv_25|0
+1|isv_13|0
+1|isv_20|0
+1|isv_25|0
+1|sw_13|0
+1|sw_20|0
+1|sw_25|0
+1|switch_valve_40|0
+1|dfix_13|0
+1|dfix_20|0
+1|dfix_25|0
+1|direct_fixed_40|0
+1|ifix_13|0
+1|ifix_20|0
+1|ifix_25|0
+1|indirect_fixed_40|0
+1|pipe_repair|0
+1|mobilization|0
+1|recheck|0
+1|soil_clearing|0
+1|app_item|0
+$ select count(*) from yc_v3.report_crew
+0
+$ select type from yc_v3.audit_log order by id
+REPORT_CREATE|Wen

@@ -1,0 +1,29 @@
+$ git rev-parse HEAD
+9a9fe1957bf6ece21774958000534f3bbc8ade4b
+$ PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -rA (clean checkout, local PostgreSQL 17 @127.0.0.1:5433)
+1218 passed, 409 skipped in 272.88s (0:04:32)
+
+# RPT-R03 / R05 / R08 / R14 scenarios
+PASSED tests/test_spec.py::test_an_edit_that_clears_every_quantity_is_refused
+PASSED tests/test_spec.py::test_a_custom_item_quantity_is_enough
+PASSED tests/test_spec.py::test_quantity_boundary_1[-accepted-0]
+PASSED tests/test_spec.py::test_quantity_boundary_1[0-accepted-0]
+PASSED tests/test_spec.py::test_quantity_boundary_1[0.1-accepted-1]
+PASSED tests/test_spec.py::test_quantity_boundary_1[2.3-accepted-23]
+PASSED tests/test_spec.py::test_quantity_boundary_1[999.9-accepted-9999]
+PASSED tests/test_spec.py::test_quantity_boundary_1[1000-INVALID--]
+PASSED tests/test_spec.py::test_quantity_boundary_1[0.05-INVALID--]
+PASSED tests/test_spec.py::test_quantity_boundary_1[-1-INVALID--]
+PASSED tests/test_spec.py::test_quantity_boundary_1[abc-INVALID--]
+PASSED tests/test_spec.py::test_an_eligible_collaborator_is_saved
+PASSED tests/test_spec.py::test_an_ineligible_collaborator_is_refused[Nan-different zone]
+PASSED tests/test_spec.py::test_an_ineligible_collaborator_is_refused[Big-different type]
+PASSED tests/test_spec.py::test_an_ineligible_collaborator_is_refused[Old-archived]
+PASSED tests/test_spec.py::test_an_ineligible_collaborator_is_refused[Admin1-not a USER]
+PASSED tests/test_spec.py::test_an_ineligible_collaborator_is_refused[Wen-the submitter itself]
+PASSED tests/test_spec.py::test_naming_the_same_collaborator_twice_is_refused
+PASSED tests/test_spec.py::test_crew_order_is_the_order_the_submitter_chose
+PASSED tests/test_spec.py::test_a_report_with_no_quantity_is_refused
+
+# SKIPPED lines naming an implemented rule (expect none)
+(end)
