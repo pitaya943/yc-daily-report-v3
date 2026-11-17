@@ -1,0 +1,25 @@
+            finalizer = functools.partial(_teardown_yield_fixture, fixturefunc, generator)
+            request.addfinalizer(finalizer)
+        else:
+            fixturefunc = cast(Callable[..., FixtureValue], fixturefunc)
+>           fixture_result = fixturefunc(**kwargs)
+                             ^^^^^^^^^^^^^^^^^^^^^
+
+/usr/local/lib/python3.13/site-packages/_pytest/fixtures.py:1074: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+recorder = Recorder(db=<psycopg.Connection [IDLE] (host=127.0.0.1 port=5433 user=postgres database=yc) at 0x7f8d6ded7770>, respon... 10:00:00+08")'], 'sign_in_attempts': ['(1,testclient,"2026-11-15 10:00:00+08")'], 'sign_in_failures': []}, claimed=[])
+labels = {'R1': 1}, rows = 'R1', ordered = None
+
+    @then(parsers.re(r'the list is "?(?P<rows>R\d+(?:, R\d+)*)"?(?P<ordered> in that order)?$'))
+    def _list_is(recorder, labels, rows, ordered):
+        # 順序一律斷言（日期新到舊、同日 id 大到小）：scenario 的列表只寫了順序的一種寫法，不能因為沒寫「in that order」就不檢查
+>       assert labels_of(labels, page_rows(recorder.response)) == rows.split(", ")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError
+
+tests/steps/RPT-F03/rpt_f03_steps.py:308: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_spec.py::test_a_report_stays_in_the_zone_it_was_filed_in - ...
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 1537 deselected in 2.08s

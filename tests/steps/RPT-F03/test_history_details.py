@@ -306,3 +306,30 @@ def test_text_cells_are_never_formulas(client, db):
     book = zipfile.ZipFile(io.BytesIO(response.content))
     sheets = [book.read(n).decode("utf-8", "replace") for n in book.namelist() if n.startswith("xl/worksheets/")]
     assert sheets and all("<f>" not in xml for xml in sheets), "工作表裡不得有公式節點"
+
+
+# ───────────────────────── RPT-R24 補充（T-205）：區域篩選依回報的工項組 ─────────────────────────
+
+
+def test_after_a_move_the_old_report_keeps_its_zone_and_new_reports_follow_the_new_zone(client, db):
+    old = insert_report(db, "Wen", "2026-11-10")  # 送出時 Wen 在 WEST：工項組 WEST
+    with db.cursor() as cur:
+        cur.execute("update yc_v3.accounts set zone = 'SOUTH' where name = 'Wen'")
+    db.commit()
+    new = insert_report(db, "Wen", "2026-11-12")  # 搬到 SOUTH 之後送出：工項組 SOUTH
+    west, _ = _act(client, db, "Admin1", ADMIN_PAGES[0], {"zone": "WEST"})
+    south, _ = _act(client, db, "Admin1", ADMIN_PAGES[0], {"zone": "SOUTH"})
+    assert [r["id"] for r in page_rows(west)] == [old]
+    assert [r["id"] for r in page_rows(south)] == [new]
+
+
+def test_the_big_meter_zone_filter_still_follows_the_submitters_current_zone(client, db):
+    """D-100：大表頁的回報工項組是 BIG_METER，不含區域，區域篩選維持依提交者目前的區域。"""
+    big = insert_report(db, "Big", "2026-11-10")
+    with db.cursor() as cur:
+        cur.execute("update yc_v3.accounts set zone = 'SOUTH' where name = 'Big'")
+    db.commit()
+    south, _ = _act(client, db, "Admin1", ADMIN_PAGES[1], {"zone": "SOUTH"})
+    west, _ = _act(client, db, "Admin1", ADMIN_PAGES[1], {"zone": "WEST"})
+    assert [r["id"] for r in page_rows(south)] == [big]
+    assert page_rows(west) == []

@@ -129,8 +129,13 @@ def admin_history(conn: psycopg.Connection, page: str, f: Filters) -> list[Repor
     )
     reports = [r for r in reports if r.catalogue in catalogues]
     if f.zone is not None:
-        zones = history_repo.zones_by_account(conn, {r.submitter_id for r in reports})
-        reports = [r for r in reports if zones.get(r.submitter_id) == f.zone]
+        if page == "ordinary":
+            # RPT-R24（D-100）：依回報送出時記下的工項組（AD-4）；帳戶之後換區域，舊回報仍留在原本那一區
+            reports = [r for r in reports if r.catalogue == f.zone]
+        else:
+            # 大表頁：回報的工項組是 BIG_METER，不含區域，維持依提交者目前的區域（D-100）
+            zones = history_repo.zones_by_account(conn, {r.submitter_id for r in reports})
+            reports = [r for r in reports if zones.get(r.submitter_id) == f.zone]
     return [r for r in reports if not f.has_custom or r.custom_name is not None]
 
 

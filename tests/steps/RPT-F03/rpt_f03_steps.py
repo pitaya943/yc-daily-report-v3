@@ -224,6 +224,15 @@ def _rows_with_options(db, labels, rows):
         labels[label] = insert_report(db, name, date, crew=(collab,) if collab else (), custom=CUSTOM_ITEM if custom else None)
 
 
+@given(parsers.re(r'"(?P<name>[^"]+)" has since moved to zone (?P<zone>WEST|SOUTH)$'))
+def _has_since_moved(db, name, zone):
+    """RPT-R24：回報送出之後帳戶才換區域。直接改帳戶的區域（回報上記下的工項組 `reports.catalogue` 不動）。"""
+    with db.cursor() as cur:
+        cur.execute("update yc_v3.accounts set zone = %s where name = %s", (zone, name))
+        assert cur.rowcount == 1, f"背景資料裡沒有帳戶 {name}"
+    db.commit()
+
+
 @given(parsers.re(r'"(?P<name>[^"]+)" can see (?P<n>\d+) reports under the current filter$'))
 def _can_see(db, labels, last, name, n):
     assert int(n) == 2, "這個 Given 只為 scenario 的 2 張回報準備資料"
