@@ -125,7 +125,10 @@ def test_a_wrong_current_password_leaves_the_old_password_working(db, recorder):
     client = signed_in(db, "Wen")
     own(recorder, client, db, urlencode({**VALID, "current_password": "wrong"}))
     check_rejected(recorder, "INVALID", CURRENT_WRONG)
-    check_nothing_written(recorder)
+    # D-124（T-308）：錯誤的目前密碼與登入共用失敗計數，所以恰好寫一列失敗次數；帳戶、session、稽核等其他資料不變。
+    # 原本斷言整個資料庫不變，那是 D-124 推翻的行為（pitfall #32）；這裡改成更精確的「只有這一張表、只多這一列」。
+    assert set(recorder.changes()) == {"sign_in_failures"}, recorder.changes()
+    assert len(recorder.changes()["sign_in_failures"]["added"]) == 1 and recorder.changes()["sign_in_failures"]["removed"] == []
     assert can_sign_in(db, "Wen", TEST_PASSWORD)
 
 
