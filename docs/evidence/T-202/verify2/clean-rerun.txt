@@ -1,0 +1,27 @@
+# Verifier round 2: clean rerun at head 371f686 (PYTHONDONTWRITEBYTECODE=1, __pycache__ cleared)
+# scripts/dev/install-postgres -> postgres (PostgreSQL) 17.12; pip install -e '.[dev]'; scripts/dev/db-start (127.0.0.1:5433); scripts/dev/migrate (0001..0005)
+$ python3 -m pytest -q -rs | tail
+SKIPPED [1] ../../../usr/local/lib/python3.13/site-packages/pytest_bdd/scenario.py:303: 尚未實作 (PAY-R32; not listed in implemented.txt)
+SKIPPED [4] ../../../usr/local/lib/python3.13/site-packages/pytest_bdd/scenario.py:303: 尚未實作 (PAY-R33; not listed in implemented.txt)
+1158 passed, 430 skipped in 219.54s (0:03:39)
+
+$ python3 -m pytest -v -rs tests -k "<RPT-F02 scenarios + RPT-R07>"
+tests/test_spec.py::test_submitter_actions_by_state[PENDING-edit-accepted-PENDING] PASSED
+tests/test_spec.py::test_submitter_actions_by_state[REJECTED-edit-accepted-PENDING] PASSED
+tests/test_spec.py::test_submitter_actions_by_state[CONFIRMED-edit-FORBIDDEN-CONFIRMED] PASSED
+tests/test_spec.py::test_submitter_actions_by_state[PENDING-delete-accepted-gone] PASSED
+tests/test_spec.py::test_submitter_actions_by_state[REJECTED-delete-accepted-gone] PASSED
+tests/test_spec.py::test_submitter_actions_by_state[CONFIRMED-delete-FORBIDDEN-CONFIRMED] PASSED
+tests/test_spec.py::test_a_collaborator_may_only_view[PENDING-edit] PASSED
+tests/test_spec.py::test_a_collaborator_may_only_view[PENDING-delete] PASSED
+tests/test_spec.py::test_editing_does_not_count_as_a_new_submission PASSED
+tests/test_spec.py::test_the_report_date_cannot_be_changed_on_edit PASSED
+tests/test_spec.py::test_an_edit_with_no_change_says_so PASSED
+tests/test_spec.py::test_editing_a_confirmed_report_discards_its_shares SKIPPED
+tests/test_spec.py::test_administrator_deletes_a_confirmed_report PASSED
+tests/test_spec.py::test_an_edit_that_clears_every_quantity_is_refused SKIPPED
+tests/test_spec.py::test_a_custom_item_quantity_is_enough SKIPPED (...)
+tests/test_spec.py::test_crew_report_records_the_crew_size PASSED
+SKIPPED [1] ../../../usr/local/lib/python3.13/site-packages/pytest_bdd/scenario.py:303: 尚未實作 (RPT-R12; not listed in implemented.txt)
+SKIPPED [2] ../../../usr/local/lib/python3.13/site-packages/pytest_bdd/scenario.py:303: 尚未實作 (RPT-R14; not listed in implemented.txt)
+=============== 13 passed, 3 skipped, 1572 deselected in 10.74s ================

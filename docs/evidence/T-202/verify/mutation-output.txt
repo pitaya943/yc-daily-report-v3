@@ -1,0 +1,66 @@
+## BASE_prod: SURVIVED | 48 passed, 1537 deselected in 31.82s
+## BASE_step: SURVIVED | 83 passed, 1502 deselected in 19.12s
+## P1_submitter_edits_confirmed: CAUGHT | 4 failed, 44 passed, 1537 deselected in 32.87s
+    tests/steps/RPT-F02/test_lifecycle_details.py::test_edit_page_prefills_the_report_and_is_forbidden_when_confirmed
+    tests/steps/RPT-F02/test_lifecycle_details.py::test_a_confirmed_report_cannot_be_edited_by_the_submitter_even_with_a_stale_form
+    tests/test_spec.py::test_submitter_actions_by_state[CONFIRMED-edit-FORBIDDEN-CONFIRMED]
+    tests/test_spec.py::test_submitter_actions_by_state[CONFIRMED-delete-FORBIDDEN-CONFIRMED]
+## P2_collaborator_can_edit: CAUGHT | 4 failed, 44 passed, 1537 deselected in 32.78s
+    tests/steps/RPT-F02/test_lifecycle_details.py::test_nobody_else_may_edit_or_delete_and_the_attempt_is_audited[Nan-PENDING]
+    tests/steps/RPT-F02/test_lifecycle_details.py::test_nobody_else_may_edit_or_delete_and_the_attempt_is_audited[Wei-REJECTED]
+    tests/test_spec.py::test_a_collaborator_may_only_view[PENDING-edit]
+    tests/test_spec.py::test_a_collaborator_may_only_view[PENDING-delete]
+## P3_date_change_allowed: CAUGHT | 2 failed, 46 passed, 1537 deselected in 32.85s
+    tests/steps/RPT-F02/test_lifecycle_details.py::test_invalid_fields_are_rejected_with_the_full_string_and_nothing_changes[fields4-\u56de\u5831\u65e5\u671f\u9001\u51fa\u5f8c\u4e0d\u53ef\u4fee\u6539]
+    tests/test_spec.py::test_the_report_date_cannot_be_changed_on_edit
+## P4_admin_confirmed_stays_confirmed: CAUGHT | 1 failed, 47 passed, 1537 deselected in 32.97s
+    tests/steps/RPT-F02/test_lifecycle_details.py::test_admin_edit_of_confirmed_returns_to_pending_and_writes_two_audit_rows
+## P5_no_unconfirm_audit: CAUGHT | 1 failed, 47 passed, 1537 deselected in 32.67s
+    tests/steps/RPT-F02/test_lifecycle_details.py::test_admin_edit_of_confirmed_returns_to_pending_and_writes_two_audit_rows
+## P6_delete_no_audit: CAUGHT | 2 failed, 46 passed, 1537 deselected in 32.06s
+    tests/steps/RPT-F02/test_lifecycle_details.py::test_delete_removes_items_and_crew_and_writes_one_audit_row
+    tests/test_spec.py::test_administrator_deletes_a_confirmed_report
+## P7_no_change_text_missing: CAUGHT | 3 failed, 45 passed, 1537 deselected in 32.27s
+    tests/steps/RPT-F02/test_lifecycle_details.py::test_no_change_description_and_a_change_description
+    tests/steps/RPT-F02/test_lifecycle_details.py::test_blank_quantity_equals_a_missing_item_for_the_no_change_check
+    tests/test_spec.py::test_an_edit_with_no_change_says_so
+## P8_edit_consumes_quota_dup: CAUGHT | 1 failed, 47 passed, 1537 deselected in 32.50s
+    tests/test_spec.py::test_editing_does_not_count_as_a_new_submission
+## P9_no_access_denied_on_forbidden: CAUGHT | 6 failed, 42 passed, 1537 deselected in 33.23s
+    tests/steps/RPT-F02/test_lifecycle_details.py::test_nobody_else_may_edit_or_delete_and_the_attempt_is_audited[Nan-PENDING]
+    tests/steps/RPT-F02/test_lifecycle_details.py::test_nobody_else_may_edit_or_delete_and_the_attempt_is_audited[Wei-REJECTED]
+    tests/test_spec.py::test_submitter_actions_by_state[CONFIRMED-edit-FORBIDDEN-CONFIRMED]
+    tests/test_spec.py::test_submitter_actions_by_state[CONFIRMED-delete-FORBIDDEN-CONFIRMED]
+    tests/test_spec.py::test_a_collaborator_may_only_view[PENDING-edit]
+    tests/test_spec.py::test_a_collaborator_may_only_view[PENDING-delete]
+## T1_R14_reject_all_zero_edit: CAUGHT | 4 failed, 44 passed, 1537 deselected in 32.71s
+    tests/steps/RPT-F02/test_lifecycle_details.py::test_invalid_fields_are_rejected_with_the_full_string_and_nothing_changes[fields9-None]
+    tests/steps/RPT-F02/test_lifecycle_details.py::test_ineligible_collaborators_are_dropped_not_rejected
+    tests/steps/RPT-F02/test_lifecycle_details.py::test_more_than_six_collaborators_is_invalid
+    tests/steps/RPT-F02/test_lifecycle_details.py::test_blank_quantity_equals_a_missing_item_for_the_no_change_check
+## S1_forbidden_accepts_two_rows: CAUGHT | 1 failed, 82 passed, 1502 deselected in 17.80s
+    tests/steps/common/test_outcome_messages.py::test_forbidden_fails_when_two_audit_rows_are_written
+## S2_forbidden_any_actor: CAUGHT | 1 failed, 82 passed, 1502 deselected in 18.75s
+    tests/steps/common/test_outcome_messages.py::test_forbidden_fails_when_the_actor_is_not_the_rejected_person
+## S3_forbidden_other_tables_ok: CAUGHT | 1 failed, 82 passed, 1502 deselected in 18.35s
+    tests/steps/common/test_outcome_messages.py::test_forbidden_fails_when_another_table_changes
+## S4_forbidden_any_type: CAUGHT | 3 failed, 80 passed, 1502 deselected in 18.19s
+    tests/steps/common/test_outcome_messages.py::test_forbidden_claims_the_access_denied_row_for_nothing_else_is_written
+    tests/steps/common/test_outcome_messages.py::test_forbidden_fails_when_the_actor_is_not_the_rejected_person
+    tests/steps/common/test_outcome_messages.py::test_forbidden_fails_when_the_audit_row_is_not_access_denied
+## S5_other_outcomes_allow_access_denied: CAUGHT | 9 failed, 74 passed, 1502 deselected in 18.37s
+    tests/steps/common/test_outcome_messages.py::test_accepts_an_appendix_b_message_or_null[INVALID-\u56de\u5831\u65e5\u671f\u9808\u70ba\u4eca\u5929\u6216\u5f80\u524d 30 \u5929\u5167\uff0c\u4e0d\u53ef\u9078\u64c7\u672a\u4f86\u65e5\u671f]
+    tests/steps/common/test_outcome_messages.py::test_accepts_an_appendix_b_message_or_null[INVALID-\u5de5\u9805\u6578\u91cf\u9808\u70ba 0 \u5230 999.9\uff0c\u6700\u5c0f\u55ae\u4f4d 0.1]
+    tests/steps/common/test_outcome_messages.py::test_accepts_an_appendix_b_message_or_null[INVALID-None]
+    tests/steps/common/test_outcome_messages.py::test_accepts_an_appendix_b_message_or_null[CONFLICT-\u6bcf\u65e5\u6700\u591a\u53ea\u80fd\u9001\u51fa 3 \u7b46\u56de\u5831]
+    tests/steps/common/test_outcome_messages.py::test_accepts_an_appendix_b_message_or_null[CONFLICT-None]
+    tests/steps/common/test_outcome_messages.py::test_accepts_an_appendix_b_message_or_null[UNAUTHENTICATED-None]
+    tests/steps/common/test_outcome_messages.py::test_other_outcomes_still_require_nothing_to_be_written[INVALID]
+    tests/steps/common/test_outcome_messages.py::test_other_outcomes_still_require_nothing_to_be_written[CONFLICT]
+    tests/steps/common/test_outcome_messages.py::test_other_outcomes_still_require_nothing_to_be_written[UNAUTHENTICATED]
+## S6_auditdesc_any_count: SURVIVED | 83 passed, 1502 deselected in 18.18s
+## S7_auditdesc_no_text_check: SURVIVED | 83 passed, 1502 deselected in 18.02s
+## S8_auditdesc_only_REPORT_CREATE: CAUGHT | 1 failed, 82 passed, 1502 deselected in 17.35s
+    tests/test_spec.py::test_an_edit_with_no_change_says_so
+## S9_forbidden_no_session_ok: CAUGHT | 1 failed, 82 passed, 1502 deselected in 16.98s
+    tests/steps/common/test_outcome_messages.py::test_forbidden_fails_when_the_request_had_no_session

@@ -1,0 +1,32 @@
+import subprocess, sys, shutil, os, pathlib
+os.environ["PYTHONDONTWRITEBYTECODE"]="1"
+SVC="app/modules/reports/report_lifecycle/service.py"
+AD="tests/steps/common/audit_description.py"
+K_PROD="submitter_actions_by_state or collaborator_may_only_view or editing_does_not_count or report_date_cannot_be_changed_on_edit or edit_with_no_change_says_so or administrator_deletes_a_confirmed or crew_report_records_the_crew_size or test_lifecycle_details or test_outcome_messages"
+M=[
+ ("S1_audit_desc_ge1", AD, 'assert len(added) == 1,', 'assert len(added) >= 1,', "test_outcome_messages or crew_report_records_the_crew_size or edit_with_no_change_says_so"),
+ ("S2_audit_desc_no_text_check", AD, 'assert text in description,', 'assert True or text in description,', "test_outcome_messages or crew_report_records_the_crew_size or edit_with_no_change_says_so"),
+ ("P1_submitter_may_change_CONFIRMED", SVC, 'states={"PENDING", "REJECTED"}', 'states={"PENDING", "REJECTED", "CONFIRMED"}', K_PROD),
+ ("P2_admin_edit_keeps_CONFIRMED", SVC, 'items=items, crew_ids=crew_ids, status="PENDING"', 'items=items, crew_ids=crew_ids, status=report.status', K_PROD),
+ ("P3_no_REPORT_UNCONFIRM", SVC, 'audit.write(actor, "REPORT_UNCONFIRM"', 'None and audit.write(actor, "REPORT_UNCONFIRM"', K_PROD),
+ ("P4_delete_without_audit", SVC, '        audit.write(\n            actor,\n            "REPORT_DELETE",', '        None and audit.write(\n            actor,\n            "REPORT_DELETE",', K_PROD),
+ ("P5_date_change_allowed", SVC, 'raise OutcomeError(Outcome.INVALID, MSG_DATE_LOCKED)', 'pass', K_PROD),
+]
+def clean():
+    for p in pathlib.Path(".").rglob("__pycache__"): shutil.rmtree(p, ignore_errors=True)
+def run(k):
+    r=subprocess.run([sys.executable,"-m","pytest","-q","-p","no:cacheprovider","tests","-k",k],capture_output=True,text=True)
+    return [l for l in r.stdout.splitlines() if l.startswith("FAILED") or " passed" in l or " failed" in l]
+only=sys.argv[1:]
+for name,f,old,new,k in M:
+    if only and name not in only: continue
+    src=open(f).read(); assert src.count(old)==1,(name,src.count(old))
+    open(f,"w").write(src.replace(old,new)); clean()
+    try:
+        out=run(k)
+    finally:
+        open(f,"w").write(src); clean()
+    print(f"=== {name}: {f}\n    - {old!r}\n    + {new!r}"); print("\n".join("    "+l for l in out), flush=True)
+clean()
+print("=== baseline (after restore)")
+print("\n".join("    "+l for l in run(K_PROD)))

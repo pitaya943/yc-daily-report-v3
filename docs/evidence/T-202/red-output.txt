@@ -1,0 +1,30 @@
+>           fixture_result = fixturefunc(**kwargs)
+                             ^^^^^^^^^^^^^^^^^^^^^
+
+/usr/local/lib/python3.13/site-packages/_pytest/fixtures.py:1074: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+db = <psycopg.Connection [IDLE] (host=127.0.0.1 port=5433 user=postgres database=yc) at 0x7fee7a4b7110>
+lifecycle = {'report_id': 1, 'date': '2026-11-15', 'state': 'CONFIRMED', 'actor': 'Admin1'}
+
+    @then("the report no longer exists")
+    def _report_gone(db, lifecycle):
+>       assert report_state(db, lifecycle["report_id"]) is None, "回報應已不存在"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: 回報應已不存在
+
+tests/steps/RPT-F02/rpt_f02_steps.py:262: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_spec.py::test_submitter_actions_by_state[PENDING-edit-accepted-PENDING]
+FAILED tests/test_spec.py::test_submitter_actions_by_state[REJECTED-edit-accepted-PENDING]
+FAILED tests/test_spec.py::test_submitter_actions_by_state[CONFIRMED-edit-FORBIDDEN-CONFIRMED]
+FAILED tests/test_spec.py::test_submitter_actions_by_state[PENDING-delete-accepted-gone]
+FAILED tests/test_spec.py::test_submitter_actions_by_state[REJECTED-delete-accepted-gone]
+FAILED tests/test_spec.py::test_submitter_actions_by_state[CONFIRMED-delete-FORBIDDEN-CONFIRMED]
+FAILED tests/test_spec.py::test_a_collaborator_may_only_view[PENDING-edit] - ...
+FAILED tests/test_spec.py::test_a_collaborator_may_only_view[PENDING-delete]
+FAILED tests/test_spec.py::test_editing_does_not_count_as_a_new_submission - ...
+FAILED tests/test_spec.py::test_the_report_date_cannot_be_changed_on_edit - A...
+FAILED tests/test_spec.py::test_an_edit_with_no_change_says_so - AssertionErr...
+FAILED tests/test_spec.py::test_administrator_deletes_a_confirmed_report - As...
+12 failed, 1409 deselected in 8.82s
