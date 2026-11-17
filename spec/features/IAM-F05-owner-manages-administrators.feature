@@ -20,6 +20,13 @@ Feature: Owner manages administrators
         | change the zone of   |
         | change the role of   |
 
+    # D-122：owner 的密碼在系統外重設（Q-046），系統內沒有人能重設 owner 的密碼；owner 自己用 IAM-R30 改密碼。
+    Scenario: Nobody resets the owner's password
+      Given "Admin1" is signed in
+      When "Admin1" tries to reset the password of "Kuei"
+      Then the request is rejected as FORBIDDEN
+      And nothing is written except an audit row "ACCESS_DENIED" with actor "Admin1"
+
     Scenario: An ADMIN cannot create an ADMIN
       Given "Admin1" is signed in
       When "Admin1" creates an account with role "ADMIN"

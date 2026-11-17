@@ -9,6 +9,7 @@
 | 檢查 | 內容 | 失敗時 |
 | --- | --- | --- |
 | `tests` | 在乾淨的 PostgreSQL 17（D-033）上執行單元測試與 `tests/implemented.txt` 列出的所有規則的 scenario。 | 任何一個失敗 |
+| `tests` 的 E2E 步驟（T-307、D-120） | 在 `tests` job 內、單元測試之後，用真的 Chromium（Playwright Node 版，`package-lock.json` 固定版本，`npm ci`）跑 `tests/e2e/smoke.mjs`：種測試資料、啟動真的 app、以管理員登入，在 `/review/history/ordinary` 從表單送出無效篩選，斷言完整錯誤字串顯示、清單清空、「匯出 Excel」停用（沒有 `href`、點不到）；再送出有效篩選，清單與匯出連結恢復（D-099）。只透過 HTTP 與瀏覽器操作，不 import 產品程式。它是 `tests` 的一個步驟，不是另一個檢查，所以沒有獨立的 job 名稱。 | `history.html` 的 `htmx:beforeSwap` 處理壞了：不顯示錯誤字串、不清空清單、不停用匯出連結、有效篩選後沒有恢復；或登入、app 啟動失敗。本地執行：`scripts/dev/db-start && scripts/dev/migrate && npm ci && npx playwright install chromium && tests/e2e/run` |
 | `spec-readonly` | 目標是 `milestone/*` 的 PR 不得修改 `spec/**`、`AGENTS.md`、`.claude/**`、`.github/**`、`docs/decisions.md`、`docs/board.md`；例外是該 ticket 的 `allowed_paths` 明確列出的路徑（D-031）。 | 有任何一個被修改 |
 | `path-scope` | 從分支名稱找到 `docs/tickets/T-xxx.md`，PR 修改的每個檔案都要符合它的 `allowed_paths`。 | 有範圍外的檔案 |
 | `evidence` | PR 說明的「證據」一節至少有一個 code block（CLI 輸出）或一個指向 `docs/evidence/<ticket 編號>/` 的連結（D-041）；ticket front matter 為 `screens: true` 時，`docs/evidence/<ticket 編號>/` 至少有一張截圖。front matter 沒有 `screens` 欄位時判為失敗（D-040）。 | 缺少證據 |

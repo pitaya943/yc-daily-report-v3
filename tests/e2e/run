@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# E2E 冒煙測試（T-307）：種資料 → 啟動真的 app → 用 Playwright（Node 版）操作瀏覽器 → 關掉 app、清掉資料。
+# 需要：scripts/dev/db-start 與 migrate 已完成、pip install -e '.[dev]'、npm ci、npx playwright install chromium。
+# 用法：tests/e2e/run
+source "$(dirname "$0")/../../scripts/dev/_common.sh"   # DATABASE_URL 預設值與「只連本機」防線；也設定 set -euo pipefail
+assert_local_database_url
+cd "$REPO_ROOT"
+
+PORT="${E2E_PORT:-8765}"
+LOG="$(mktemp -t yc-e2e-app.XXXXXX.log)"
+APP_PID=""
+cleanup() {
+  [ -n "$APP_PID" ] && kill "$APP_PID" 2>/dev/null || true
+  python3 tests/e2e/seed.py --cleanup || true
+}
+trap cleanup EXIT
+
+python3 tests/e2e/seed.py
+python3 -m uvicorn app.main:app --host 127.0.0.1 --port "$PORT" >"$LOG" 2>&1 &
+APP_PID=$!
+
+for _ in $(seq 1 60); do
+  curl -fsS "http://127.0.0.1:$PORT/health" >/dev/null 2>&1 && break
+  kill -0 "$APP_PID" 2>/dev/null || { echo "app 啟動失敗：" >&2; cat "$LOG" >&2; exit 1; }
+  sleep 0.5
+done
+curl -fsS "http://127.0.0.1:$PORT/health" >/dev/null || { echo "app 在 30 秒內沒有回應：" >&2; cat "$LOG" >&2; exit 1; }
+
+E2E_BASE_URL="http://127.0.0.1:$PORT" node tests/e2e/smoke.mjs || { echo "--- app log ---" >&2; tail -n 30 "$LOG" >&2; exit 1; }

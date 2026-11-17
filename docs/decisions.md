@@ -125,6 +125,10 @@
 | D-119 | CI 的安裝步驟吞掉失敗？ | 改成 `sudo scripts/dev/install-postgres && { sudo systemctl stop postgresql \|\| true; }`，由 Chief 在任何 Builder 開工前直接提交到 `milestone/M3`。 | 安裝失敗要在那一步就失敗，不是到下一步才以「找不到 PostgreSQL 17」出現 | 2026-11-17 | issue #38 選項 9A；Kuei 核准修改 `.github/**` |
 | D-120 | D-099 的畫面行為沒有 CI 把關？ | 新增 T-307「CI 的 Playwright 冒煙測試」（M3，無 migration，`screens: false`），在階段 1 與 T-301、T-305 平行。 | 之後改壞 `history.html` 時 CI 會變紅 | 2026-11-17 | issue #38 選項 10A；T-307 `allowed_paths` 含 `.github/workflows/**`（D-031） |
 | D-121 | `docs/pitfalls.md` 滿 30 條，刪哪些？ | 刪 #1（`test_spec_collection.py` 已在 CI 比對收集數）、#12（`no-weakened-tests` 已會擋下，D-046、D-052）、#29（D-091 已寫進 `build-ticket` skill；`grep` 共用步驟的提醒在 #26）。不重新編號。 | 已被 CI 或 skill 取代 | 2026-11-17 | issue #38 選項 11A |
+| D-122 | 管理員可以重設 OWNER 的密碼嗎？ | 不行。系統內沒有人能重設 OWNER 的密碼（Q-046：在系統外重設）；ADMIN 嘗試時為 `FORBIDDEN` 並寫 `ACCESS_DENIED`。IAM-R20 新增 scenario「Nobody resets the owner's password」。OWNER 自己用 IAM-R30 改密碼。 | ADMIN 不能接管 OWNER 帳戶 | 2026-11-17 | issue #40 選項 1A；T-304 改 7 個 scenario |
+| D-123 | 改密碼或被重設後，該帳戶其他已登入的 session？ | 自己改密碼時保留目前這個 session、結束同一帳戶的其他 session；被管理員重設時結束該帳戶全部的 session。新增 IAM-R33（2 個 scenario）。 | 密碼外洩的人在對方改密碼後不能繼續使用 | 2026-11-17 | issue #40 選項 2A；T-308 |
+| D-124 | 改密碼時輸入錯誤的目前密碼要計入鎖定嗎？ | 要，與登入共用同一個帳戶失敗計數與鎖定（IAM-R04、R05）；鎖定期間改密碼為 `LOCKED`。不計入來源位址的頻率限制（IAM-R07）。新增 IAM-R34（2 個 scenario）。 | 否則攻擊者可以在登入頁與改密碼頁各試 4 次 | 2026-11-17 | issue #40 選項 3B（共用）；T-308 |
+| D-125 | issue #40 新增的 scenario 放哪張 ticket？ | D-122 併進 T-304；D-123、D-124 新增 T-308（排在 T-305 合併之後，與階段 2 平行）。T-305 照原定完成條件驗證與合併。T-304 依賴加上 T-308（兩張都改 `password_change_and_reset/`）。 | T-305 不必重做 | 2026-11-17 | issue #40 選項 4A；`spec/capabilities.md` 與 `spec/README.md` 的合計更正為 139 條規則、259 個 scenario（同時修正 MAT-F03、PAY-F01 先前未更新的列） |
 
 ## 待決定
 
