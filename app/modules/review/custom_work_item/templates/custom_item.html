@@ -1,0 +1,69 @@
+{#- 自訂工項（REV-F03；D-080、D-118）。extends T-200 的共用版型。
+    * 三個欄位：名稱、數量、單價；清空名稱再儲存就是移除（REV-R21）。數量與單價的限制由伺服器檢查（附錄 B）。
+    * 表單用 HTMX 送出（hx-post）；token 由版型 <body> 的 hx-headers 帶上，沒有隱藏欄位。
+    * HTMX 2 預設不把 4xx 換進畫面：下面的 htmx:beforeSwap 把拒絕的完整錯誤字串顯示在 #form-error，
+      不修改 base.html。伺服器的拒絕回應是 JSON：{"outcome": ..., "message": ...}（app/core/outcomes.py）。 -#}
+{% extends "base.html" %}
+{% block title %}自訂工項{% endblock %}
+{% block content %}
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, "Noto Sans TC", sans-serif; margin: 0; padding: 16px; max-width: 36rem; margin-inline: auto; line-height: 1.5; }
+  h1 { font-size: 1.25rem; margin: 0 0 .25rem; }
+  .who { margin: 0 0 1rem; opacity: .75; }
+  label { display: block; font-weight: 600; margin: .75rem 0 .25rem; }
+  .hint { font-size: .85rem; opacity: .7; margin: 0 0 .25rem; font-weight: 400; }
+  input, button { font: inherit; padding: .5rem .6rem; border-radius: 6px; border: 1px solid color-mix(in srgb, currentColor 35%, transparent); background: transparent; color: inherit; width: 100%; box-sizing: border-box; }
+  button { margin-top: 1rem; font-weight: 600; cursor: pointer; background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+  button[disabled] { opacity: .6; }
+  .notice { border: 1px solid #b45309; background: color-mix(in srgb, #b45309 12%, transparent); border-radius: 6px; padding: .6rem .75rem; margin: 0 0 1rem; }
+  #form-error { border: 1px solid #b91c1c; background: color-mix(in srgb, #b91c1c 12%, transparent); border-radius: 6px; padding: .6rem .75rem; margin: 0 0 1rem; }
+  #form-error[hidden] { display: none; }
+  .saved { border: 1px solid #15803d; background: color-mix(in srgb, #15803d 12%, transparent); border-radius: 6px; padding: .6rem .75rem; margin: 1rem 0 0; }
+  nav { margin: 0 0 1rem; }
+  nav a { color: inherit; }
+</style>
+
+<nav aria-label="審核"><a href="/review/queue/ordinary">← 一般確認佇列</a></nav>
+<h1>自訂工項：日報 #{{ report.id }}</h1>
+<p class="who">{{ report.submitter_name }}・{{ report.report_date.isoformat() }}・{{ report.catalogue }}・目前狀態 {{ report.status }}</p>
+{% if report.status == "CONFIRMED" %}
+<p class="notice" role="note">這張回報已確認。改自訂工項後會回到待確認（PENDING），已確認的結果與份額作廢，需要重新確認。</p>
+{% elif report.status == "REJECTED" %}
+<p class="notice" role="note">這張回報已被駁回。改自訂工項後會重新進入待確認（PENDING）。</p>
+{% endif %}
+
+<form id="custom-item-form" hx-post="/review/reports/{{ report.id }}/custom-item" hx-target="#result" hx-swap="innerHTML" autocomplete="off">
+  <div id="form-error" role="alert" aria-live="assertive" hidden></div>
+
+  <label for="custom_name">名稱 <span class="hint">最多 100 個字；清空名稱再儲存就是移除</span></label>
+  <input id="custom_name" type="text" name="{{ fields.name }}" value="{{ name }}">
+
+  <label for="custom_quantity">數量 <span class="hint">0 到 999.9，最小單位 0.1</span></label>
+  <input id="custom_quantity" type="text" inputmode="decimal" name="{{ fields.quantity }}" value="{{ quantity }}">
+
+  <label for="custom_price">單價 <span class="hint">0 或正整數（元）</span></label>
+  <input id="custom_price" type="text" inputmode="numeric" name="{{ fields.price }}" value="{{ price }}">
+
+  <button type="submit">儲存</button>
+</form>
+<div id="result" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  var form = document.getElementById("custom-item-form");
+  var error = document.getElementById("form-error");
+
+  // HTMX 2 預設不換進 4xx／5xx：把拒絕的完整錯誤字串顯示在 #form-error（沒有字串時只顯示結果類別）。
+  document.body.addEventListener("htmx:beforeSwap", function (event) {
+    if (event.detail.xhr.status < 400) { error.hidden = true; return; }
+    var body = {};
+    try { body = JSON.parse(event.detail.xhr.responseText); } catch (e) { body = {}; }
+    event.detail.shouldSwap = false;
+    document.getElementById("result").innerHTML = "";
+    error.textContent = body.message || ("操作被拒絕（" + (body.outcome || event.detail.xhr.status) + "）");
+    error.hidden = false;
+  });
+})();
+</script>
+{% endblock %}

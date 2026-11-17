@@ -1,0 +1,12 @@
+{#- 儲存成功後 HTMX 換進 #result 的片段（不 extends base.html）。autoescape 已開。 -#}
+<p class="saved" role="status" data-changed="{{ 'yes' if saved.changed else 'no' }}">
+  {%- if not saved.changed -%}
+  日報 #{{ saved.report_id }} 的自訂工項沒有變更。
+  {%- elif saved.item -%}
+  日報 #{{ saved.report_id }} 的自訂工項已儲存：{{ saved.item.text() }}。
+  {%- else -%}
+  日報 #{{ saved.report_id }} 的自訂工項已移除。
+  {%- endif -%}
+  {%- if saved.changed and saved.previous_status == "CONFIRMED" %}原本已確認，現在回到待確認，份額作廢，需要重新確認。
+  {%- elif saved.changed and saved.previous_status == "REJECTED" %}原本已駁回，現在重新待確認。{% endif %}
+</p>
