@@ -12,7 +12,6 @@ from datetime import timedelta
 
 import iam_f02_steps as f02
 import iam_f06_steps as f06
-import pytest
 from fastapi.testclient import TestClient
 
 from app.core.clock import clock
