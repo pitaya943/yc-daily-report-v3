@@ -1,0 +1,10 @@
+瀏覽器實際操作（Chromium／Playwright，viewport 520×640，應用程式在本機 127.0.0.1:8765，容器內 PostgreSQL）：
+以 Wen 登入（密碼 correct）→ 開 /account/password → 依序送出四組輸入，畫面上看到的內容（#form-error | #result）：
+
+wrong-current: 目前密碼不正確 |
+mismatch: 兩次輸入的密碼不一致 |
+too-short: 密碼長度須為 6 至 30 個字 |
+success:  | 密碼已變更。
+fields after success: ["","",""]      ← 成功後三個密碼欄位已清空
+
+截圖：01-password-page.png、02-wrong-current.png、03-confirmation-mismatch.png、04-too-short.png、05-success.png
