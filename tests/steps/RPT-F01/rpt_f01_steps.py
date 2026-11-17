@@ -242,10 +242,25 @@ def _submit(recorder, client, db, last, name, fields):
     recorder.perform(lambda: post_report(client, db, name, fields))
 
 
-@when(parsers.re(r'"(?P<name>[^"]+)" submits a report with "(?P<item>[^"]+)" = (?P<qty>.*)$'))
-def _submits_with_item(recorder, client, db, last, name, item, qty):
+@when(parsers.re(r'"(?P<name>[^"]+)" submits a report with "(?P<item>[^"]+)" = (?P<qty>.*?)(?: and "(?P<item2>[^"]+)" = (?P<qty2>.*))?$'))
+def _submits_with_item(recorder, client, db, last, name, item, qty, item2, qty2):
+    """RPT-R03：`… with "direct_13" = "<qty>" and "indirect_13" = 1.0`（D-096）：第二個工項讓這張回報至少有一個數量，
+    表格只檢查第一個工項的邊界。`last["item"]` 仍是第一個工項（`the stored quantity of …` 看的是它）。"""
     last["item"] = item
-    _submit(recorder, client, db, last, name, [("report_date", today()), (item, strip_quotes(qty))])
+    fields = [("report_date", today()), (item, strip_quotes(qty))]
+    if item2 is not None:
+        fields.append((item2, strip_quotes(qty2)))
+    _submit(recorder, client, db, last, name, fields)
+
+
+@when(parsers.re(r'"(?P<name>[^"]+)" submits a report with every quantity blank$'))
+def _submits_all_blank(recorder, client, db, last, name):
+    """RPT-R08：表單上這個人的每一個工項都送出空白（不是什麼都不送）。"""
+    from app.modules.reports.submit_a_daily_report import catalogue as product
+
+    catalogue_name = expected_catalogue(db, name)
+    fields = [("report_date", today())] + [(code, "") for code in product.item_codes(catalogue_name)]
+    _submit(recorder, client, db, last, name, fields)
 
 
 @when(parsers.re(r'"(?P<name>[^"]+)" submits a report dated "(?P<date>[^"]*)" with "(?P<item>[^"]+)" = (?P<qty>.*)$'))
@@ -330,9 +345,10 @@ def _date_default(recorder, date):
     assert parse_form(recorder.response.text).report_date == date
 
 
-@then(parsers.parse("the stored quantity is {tenths} tenths"))
-def _stored_quantity(db, last, tenths):
-    item = last["item"]
+@then(parsers.parse('the stored quantity of "{item}" is {tenths} tenths'))
+def _stored_quantity(db, last, item, tenths):
+    """D-096 之後規格的步驟文字寫明工項（表格只檢查 direct_13；另一個工項只是讓回報成立）。"""
+    assert item == last["item"], f"步驟檢查的工項 {item} 應是送出時被檢查的工項 {last['item']}"
     with db.cursor() as cur:
         cur.execute("select tenths from yc_v3.report_items where item_code = %s order by report_id", (item,))
         rows = [r[0] for r in cur.fetchall()]

@@ -71,7 +71,7 @@
   var result = document.getElementById("result");
   var button = form.querySelector("button[type=submit]");
 
-  function showError(text) { errorBox.textContent = text; errorBox.hidden = false; }
+  function showError(text) { errorBox.textContent = text; errorBox.hidden = false; errorBox.scrollIntoView({ block: "center" }); }  // 表單很長：錯誤要捲到看得見的位置
   function clearError() { errorBox.textContent = ""; errorBox.hidden = true; }
 
   form.addEventListener("htmx:beforeRequest", function () { clearError(); result.textContent = ""; button.disabled = true; });

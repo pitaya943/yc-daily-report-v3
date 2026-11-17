@@ -1,0 +1,22 @@
+baseline:
+56 passed, 3 skipped, 1566 deselected in 29.25s
+M1 edit skips the at-least-one check:
+5 failed, 51 passed, 3 skipped, 1566 deselected in 29.54s
+M2 edit ignores the stored custom item:
+2 failed, 54 passed, 3 skipped, 1566 deselected in 28.73s
+M3 submit skips the at-least-one check:
+4 failed, 52 passed, 3 skipped, 1566 deselected in 29.87s
+M4 duplicates allowed:
+2 failed, 54 passed, 3 skipped, 1566 deselected in 29.82s
+M5 eligibility not checked:
+14 failed, 42 passed, 3 skipped, 1566 deselected in 29.26s
+restored:
+56 passed, 3 skipped, 1566 deselected in 29.73s
+ M app/modules/reports/report_lifecycle/service.py
+ M app/modules/reports/submit_a_daily_report/service.py
+ M tests/implemented.txt
+ M tests/steps/RPT-F01/rpt_f01_steps.py
+ M tests/steps/RPT-F01/test_report_details.py
+ M tests/steps/RPT-F02/rpt_f02_steps.py
+ M tests/steps/RPT-F02/test_lifecycle_details.py
+?? docs/evidence/T-204/

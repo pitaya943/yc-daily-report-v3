@@ -1,0 +1,5 @@
+submit all blank: 請至少填寫一個工項數量
+submit ineligible collaborator: 共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工
+submit ok: 日報已送出（#1，2026-11-15），狀態：待確認（PENDING）。
+edit all zero: 請至少填寫一個工項數量
+edit ineligible collaborator: 共同作業者最多 6 人，且須為同一區域、同一類型的啟用員工
