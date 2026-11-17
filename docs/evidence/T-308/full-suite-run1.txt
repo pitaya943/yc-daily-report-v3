@@ -1,0 +1,6 @@
+# 完整測試（python3 -m pytest）第一次結果：1 個 lint 失敗（已修）＋ 2 個 IAM-R30 與 D-124 衝突（issue #47）
+FAILED tests/ci/test_tests_and_rules.py::test_the_real_repo_passes_lint - Ass...
+FAILED tests/test_spec.py::test_own_password_change[Wen-wrong-newpass1-newpass1-INVALID-\u76ee\u524d\u5bc6\u78bc\u4e0d\u6b63\u78ba]
+FAILED tests/test_spec.py::test_own_password_change[Admin1-wrong-newpass1-newpass1-INVALID-\u76ee\u524d\u5bc6\u78bc\u4e0d\u6b63\u78ba]
+3 failed, 1448 passed, 380 skipped in 442.60s (0:07:22)
+[lint] 通過

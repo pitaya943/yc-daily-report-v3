@@ -1,0 +1,8 @@
+tests/test_spec.py::test_changing_ones_own_password_keeps_only_the_current_session PASSED
+tests/test_spec.py::test_a_reset_ends_every_session_of_the_account PASSED
+tests/test_spec.py::test_the_fifth_wrong_password_across_signin_and_password_change_locks_the_account PASSED
+tests/test_spec.py::test_a_locked_account_cannot_change_its_password PASSED
+tests/test_spec.py::test_an_administrator_unlocks_a_user PASSED
+tests/test_spec.py::test_an_admin_cannot_unlock_another_admin PASSED
+tests/test_spec.py::test_the_owner_unlocks_an_admin PASSED
+====================== 7 passed, 1824 deselected in 9.43s ======================
