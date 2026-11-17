@@ -31,3 +31,7 @@
 | 28 | `async def` 的路由直接呼叫 scrypt 或同步 DB，會阻塞整個 event loop（4 個同時登入時 `/health` 要 1.9 s） | 需要 session、DB 或 CPU 密集計算的端點用 `def`；讀請求主體放在 async dependency | #14、#18 | M1 |
 | 29 | Builder 自己加嚴、超出規格的斷言（例如「登入失敗時整個資料庫不變」）會擋住後續 ticket，而改它要找 Kuei（issue #20、#21） | 比規格更嚴的斷言要在 PR 說明列出；改變寫入行為前先 `grep "diff(\|check_nothing_written" tests/` | #22 | M1 |
 | 30 | 金額四捨五入用內建 `round()` 是銀行家捨入，AD-2 的例子會錯；變異抽查時 Python 可能沿用舊的 `.pyc`，判讀錯誤 | 金額用 `Fraction` 與 `(2x+1)//2`；變異抽查時設 `PYTHONDONTWRITEBYTECODE=1` 並清 `__pycache__` | #13、#16 | M1 |
+| 31 | HTMX 2 預設不把 4xx 回應換進畫面；`htmx:beforeSwap` 的 `detail.elt` 是換入的目標，不是送出的表單 | 在各頁自己的模板處理 `htmx:beforeSwap`（參考 `app/modules/reports/submit_a_daily_report/templates/reports.html`），用 `detail.target` 判斷是哪張表單；不改 `base.html`。Playwright 讀畫面前要等該次的 `waitForResponse` 與 swap 完成，`networkidle` 不夠 | #26、#28、#32、#34 | M2 |
+| 32 | 補充測試寫死了規格已經推翻、只是程式還沒改的行為，下一張 ticket 會被 `no-weakened-tests` 與 D-052 卡住（T-202 第 1 輪 FAIL） | 改規格時，Chief 依 D-103 在同一個 commit 暫時移出受影響的規則並處理寫死舊行為的測試；Builder 的補充測試每個只放一個錯誤原因，不斷言規格已推翻的行為；Verifier 先模擬下一張 ticket 的新規則再跑全部測試 | #33、#36 | M2 |
+| 33 | 這個容器的 Playwright 只有 Node 版（`require('playwright')`），`import playwright` 會失敗；只有 `httpx2` 沒有 `httpx`；變異抽查要從 `tests/` 整體用 `-k` 收集 | 瀏覽器腳本用 Node 寫，放 scratchpad；直接打 app 用標準庫 `urllib` 或 `requests`；不要只跑 `tests/test_spec.py`（步驟不會註冊，見 #26） | #26、#28、#32、#33、#34 | M2 |
+
