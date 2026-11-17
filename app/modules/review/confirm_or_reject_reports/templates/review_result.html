@@ -1,0 +1,4 @@
+{#- 確認或駁回的結果（HTMX 片段，換進佇列頁的 #result）。 -#}
+<p class="result" role="status" data-decision="{{ result.decision }}">
+  {{ "已確認" if result.decision == "CONFIRMED" else "已駁回" }} {{ result.changed|length }} 筆{% if result.skipped %}；略過 {{ result.skipped|length }} 筆（已不是未確認）{% endif %}
+</p>
