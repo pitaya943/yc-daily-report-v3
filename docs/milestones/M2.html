@@ -180,7 +180,7 @@ python3 -m pytest -q                # 預期：1218 passed, 409 skipped（約 5 
     <tr><td>T-205</td><td>0</td><td>無；產品變異 3/3，畫面變異 2 個只有 Playwright 抓得到</td><td>等 T-202 合併後 merge milestone 才驗證；1 個規格問題 → #35</td></tr>
     <tr><td>T-204</td><td>0</td><td>無；7 個變異全部抓到</td><td>等 T-205 合併後 merge milestone 才驗證；2 個規格問題 → #35</td></tr>
   </table></div>
-  <p>Chief 這次的失誤：(1) T-202 第 1 輪 FAIL 的根源之一，是 Chief 改了規格（<code>ef17f8e</code>）之後，只告訴 T-202 Builder「這些不在你的範圍」，沒有提醒它「不要寫斷言舊行為的補充測試」；(2) T-201 Verifier 的指示寫了「不要推送任何分支」，讓它的截圖沒有提交；(3) 兩次 usage 上限都是你回來才發現，Chief 自己的 session 也在其中中斷。已把 (1) 寫成 pitfall #32。</p>
+  <p>Chief 這次的失誤：(1) T-202 第 1 輪 FAIL 的根源之一，是 Chief 改了規格（<code>ef17f8e</code>）之後，只告訴 T-202 Builder「這些不在你的範圍」，沒有提醒它「不要寫斷言舊行為的補充測試」；(2) T-201 Verifier 的指示寫了「不要推送任何分支」，讓它的截圖沒有提交；(3) 兩次 usage 上限都是你回來才發現，Chief 自己的 session 也在其中中斷。(4) 改規格時（<code>ef17f8e</code>）沒有同時更新 T-201 ticket 的 <code>RPT-R05</code> 數量（2 → 4），milestone PR 的 <code>done-when</code> 因此失敗一次，已在 <code>de3faba</code> 修正。ask-spec-question 的「Kuei 回覆之後」第 2 步本來就要求更新受影響 ticket 的完成條件，下一個 Chief 改規格後要用 <code>rule_ids_in()</code> 比對所有 ticket 的數量。已把 (1) 寫成 pitfall #32。</p>
 
   <h2>10. 這個 milestone 的學習重點</h2>
   <h3>10.1 為什麼「先查再寫」擋不住並行</h3>
