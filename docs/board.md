@@ -47,13 +47,14 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 | T-203 | M2 | 歷史與匯出 | merged | [#32](https://github.com/pitaya943/yc-daily-report-v3/pull/32) | 0 | Builder 第一輪：claude-sonnet-5-5（20:42 碰到 usage 上限，22:01 繼續）；Verifier 第 1 輪：claude-opus-5-5（PASS，14 個變異全抓到）；規格問題併入 issue #29；加嚴斷言「匯出只寫一列稽核」「一律斷言順序」可能影響 M4 匯出 |
 | T-204 | M2 | 至少一個工項與共同作業者資格（規格更新） | merged | [#36](https://github.com/pitaya943/yc-daily-report-v3/pull/36) | 0 | Builder 第一輪：claude-sonnet-5-5；T-205 合併後 merge milestone 重跑 CI；Verifier 第 1 輪：claude-opus-5-5（PASS，7 個變異全抓到）；RPT-R03、R05 已加回（D-103）；規格問題併入 issue #35 第 6、7 項 |
 | T-205 | M2 | 歷史篩選調整（規格更新） | merged | [#34](https://github.com/pitaya943/yc-daily-report-v3/pull/34) | 0 | Builder 第一輪：claude-sonnet-5-5；T-202 合併後 merge milestone 重跑 CI；Verifier 第 1 輪：claude-opus-5-5（PASS；產品變異 3/3，畫面變異 2 個只有 Playwright 抓得到）；PR 說明測試數字過時；規格問題併入 issue #35 第 5 項 |
-| T-301 | M3 | 確認或駁回回報，保存份額 | todo | — | — | — |
+| T-301 | M3 | 確認或駁回回報，保存份額 | verifying | [#43](https://github.com/pitaya943/yc-daily-report-v3/pull/43) | 0 | Builder 第一輪：claude-sonnet-5-5；allowed_paths 漏列 `app/modules/review/__init__.py` → issue #42，Chief 依先例補上；Verifier 第 1 輪：claude-opus-5-5（session_01LCMZdkfJjXYK3AuZ45a8Ld） |
 | T-302 | M3 | 自訂工項 | todo | — | — | — |
 | T-303 | M3 | 帳戶生命週期與薪資設定 | todo | — | — | — |
 | T-304 | M3 | OWNER 管理管理員 | todo | — | — | — |
-| T-305 | M3 | 密碼變更與重設 | todo | — | — | — |
+| T-305 | M3 | 密碼變更與重設 | building | [#41](https://github.com/pitaya943/yc-daily-report-v3/pull/41) | 0 | Builder 第一輪：claude-sonnet-5-5；規格問題 → issue #40（D-122～D-125）；交付後依 Bugbot 意見補表單 `method="post"` |
 | T-306 | M3 | 銀行帳號、發薪方式與遮罩 | todo | — | — | — |
-| T-307 | M3 | CI 的 Playwright 冒煙測試 | todo | — | — | — |
+| T-307 | M3 | CI 的 Playwright 冒煙測試 | merged | [#39](https://github.com/pitaya943/yc-daily-report-v3/pull/39) | 0 | Builder 第一輪：claude-sonnet-5-5；CI 第一次 no-weakened-tests 在 PostgreSQL 安裝步驟失敗（D-119 讓失敗直接顯示），重跑全綠；Verifier 第 1 輪：claude-opus-5-5（PASS，4 個變異全抓到）；規格問題：setup-node 只固定主版號 22（M3 報告列出） |
+| T-308 | M3 | 改密碼後的 session 與鎖定（規格更新） | todo | — | — | issue #40（D-122～D-125） |
 | T-401 | M4 | 單價與費率設定 | todo | — | — | — |
 | T-402 | M4 | 薪資計算與薪資批次 | todo | — | — | — |
 | T-403 | M4 | 封存帳戶的薪資 | todo | — | — | — |
