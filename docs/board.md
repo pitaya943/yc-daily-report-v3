@@ -22,6 +22,13 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 - 結果：6 張全部 merged；報告 `docs/milestones/M2.html`；未決 issue #35（不擋 M2）。
 - 模型：Chief claude-opus-5-5；Builder claude-sonnet-5-5；Verifier claude-opus-5-5；修正第二輪 Builder claude-opus-5-5。
 
+## M3（計畫：issue #38，待核准）
+
+- 順序（依建議）：階段 1 T-301 ‖ T-305 → 階段 2 T-303 ‖ T-302 → 階段 3 T-306 ‖ T-304；migration 依序 `0006`（T-301）、`0007`（T-303）、`0008`（T-306）。
+- 同時進行上限：2 張（issue #38 第 10 項選 A 時加 T-307，最多 3 張）。
+- issue #35 已記為 D-104～D-109 並關閉。
+- 模型：Chief claude-opus-5-5；Builder claude-sonnet-5-5；Verifier claude-opus-5-5；修正第二輪 Builder claude-opus-5-5。
+
 | Ticket | Milestone | 標題 | 狀態 | PR | 修正輪數 | 備註 |
 | --- | --- | --- | --- | --- | --- | --- |
 | T-001 | M0 | 專案骨架與測試框架 | merged | [#2](https://github.com/pitaya943/yc-daily-report-v3/pull/2) | 2 | Builder 第一輪：claude-sonnet-5-5；Verifier 第 1 輪：claude-opus-5-5（FAIL）；修正第 1 輪：claude-sonnet-5-5；Verifier 第 2 輪：claude-opus-5-5（FAIL：PGSERVICE）；修正第 2 輪：claude-opus-5-5（新 session）；Verifier 第 3 輪：claude-opus-5-5（PASS） |
