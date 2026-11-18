@@ -20,13 +20,16 @@ import re
 import psycopg
 
 from app.core import audit
-from app.core.actor import Actor, Role
+from app.core.actor import Actor
 from app.core.outcomes import Outcome, OutcomeError
-from app.core.permissions import authorize
 from app.core.session import hash_password
 from app.modules.iam.account_lifecycle_and_pay_settings import repo
-from app.modules.iam.account_lifecycle_and_pay_settings.access import authorize_account_action
-from app.modules.iam.owner_manages_administrators.access import OWNER_ONLY
+from app.modules.iam.account_lifecycle_and_pay_settings.access import (
+    authorize_account_action,
+    authorize_create,
+    refuse_archiving_owner,
+    refuse_archiving_yourself,
+)
 from app.modules.iam.sign_in_lockout_and_rate_limit import repo as lockout_repo
 from app.modules.iam.sign_in_lockout_and_rate_limit import service as lockout
 
@@ -42,8 +45,6 @@ MSG_DEDUCTION = "勞健保扣除額須為 0 或正整數"
 MSG_DEDUCTION_MIN = "已投保時，扣除額須至少為 1"
 MSG_RATE = "未投保扣除比例須為 0 到 100 之間，最多兩位小數"
 MSG_FIXED_SALARY = "固定薪資須為 0 或正整數"
-MSG_ARCHIVE_OWNER = "owner 帳戶不能封存"  # IAM-R22
-MSG_ARCHIVE_SELF = "不能封存自己目前登入的帳戶"  # IAM-R22
 
 ZONES = ("WEST", "SOUTH")
 _INT_MAX = 2**31 - 1  # 資料庫欄位是 integer；超過的值當成不合法，而不是讓資料庫丟出 500
@@ -138,8 +139,7 @@ def parse_fixed_salary(value: str | None) -> int:
 
 def create_account(conn: psycopg.Connection, actor: Actor, form: dict[str, list[str]]) -> int:
     authorize_account_action(actor, "create an account")
-    if _field(form, "role") == Role.ADMIN.value:
-        authorize(actor, "create an ADMIN account", OWNER_ONLY)  # IAM-R20：ADMIN 不能建立 ADMIN；先於欄位驗證，沒有權限的人探不到欄位規則
+    authorize_create(actor, _field(form, "role"))  # IAM-R20：ADMIN 不能建立 ADMIN（access.py）
     # D-139：先去掉前後空白（str.strip 含全形空白 U+3000），再檢查空白、長度與重複；存的也是去掉後的名字
     name = (_field(form, "name") or "").strip()
     if not name:
@@ -255,20 +255,9 @@ def update_account(conn: psycopg.Connection, actor: Actor, account_id: int, form
 # ───────────────────────── IAM-R17、R18 封存與復原 ─────────────────────────
 
 
-def _refuse_archiving_yourself(actor: Actor):
-    """IAM-R22：不能封存自己。對象是 OWNER 自己時用 owner 的那一句。"""
-
-    def guard(target: repo.Account) -> None:
-        if target.id == actor.id:
-            raise OutcomeError(Outcome.CONFLICT, MSG_ARCHIVE_OWNER if target.role == Role.OWNER.value else MSG_ARCHIVE_SELF)
-
-    return guard
-
-
 def archive_account(conn: psycopg.Connection, actor: Actor, account_id: int) -> repo.Account:
-    target = load_authorized(conn, actor, account_id, "archive an account", guard=_refuse_archiving_yourself(actor))
-    if target.role == Role.OWNER.value:
-        raise OutcomeError(Outcome.CONFLICT, MSG_ARCHIVE_OWNER)  # IAM-R22：OWNER 帳戶不能封存（通過 IAM-R20 的只有 OWNER 本人，已被上面的 guard 擋下；這是不變式的最後一道）
+    target = load_authorized(conn, actor, account_id, "archive an account", guard=lambda t: refuse_archiving_yourself(actor, t))
+    refuse_archiving_owner(target)  # IAM-R22
     if target.archived:
         raise OutcomeError(Outcome.CONFLICT)  # 資料合法但狀態不允許；規格沒有字串
     repo.set_archived(conn, account_id, True)

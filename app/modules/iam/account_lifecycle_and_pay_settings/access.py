@@ -8,10 +8,13 @@ USER 讀別人的勞健保扣除額與未投保比例同樣走這裡（D-114：G
 """
 from __future__ import annotations
 
-from app.core.actor import Actor
+from app.core.actor import Actor, Role
+from app.core.outcomes import Outcome, OutcomeError
 from app.core.permissions import Rule, authorize
-from app.core.actor import Role
-from app.modules.iam.owner_manages_administrators.access import authorize_on_target
+from app.modules.iam.owner_manages_administrators.access import OWNER_ONLY, authorize_on_target
+
+MSG_ARCHIVE_OWNER = "owner 帳戶不能封存"  # IAM-R22（附錄 B）
+MSG_ARCHIVE_SELF = "不能封存自己目前登入的帳戶"  # IAM-R22（附錄 B）
 
 # OWNER 擁有 ADMIN 的全部權限（permissions._effective_roles），所以只列 ADMIN
 MANAGE_ACCOUNTS = Rule(roles={Role.ADMIN})
@@ -27,3 +30,26 @@ def authorize_account_action(actor: Actor | None, action: str, target=None, *, m
     authorize(actor, action, MANAGE_ACCOUNTS)
     if target is not None and modifies:
         authorize_on_target(actor, action, target.role)
+
+
+def authorize_create(actor: Actor, role_field: str | None) -> None:
+    """IAM-R20：ADMIN 不能建立 ADMIN（FORBIDDEN）。先於欄位驗證：沒有權限的人探不到欄位規則。其他角色值由 service 驗證。"""
+    if role_field == Role.ADMIN.value:
+        authorize(actor, "create an ADMIN account", OWNER_ONLY)
+
+
+def refuse_archiving_yourself(actor: Actor, target) -> None:
+    """IAM-R22：不能封存自己（CONFLICT）。先於 IAM-R20 的角色判斷：ADMIN 封存自己是 CONFLICT，不是 FORBIDDEN（規格的 scenario）。"""
+    if target.id == actor.id:
+        raise OutcomeError(Outcome.CONFLICT, MSG_ARCHIVE_OWNER if target.role == Role.OWNER.value else MSG_ARCHIVE_SELF)
+
+
+def refuse_archiving_owner(target) -> None:
+    """IAM-R22：OWNER 帳戶不能封存（CONFLICT）。通過 IAM-R20 的只有 OWNER 本人，已被 `refuse_archiving_yourself` 擋下；這是不變式的最後一道。"""
+    if target.role == Role.OWNER.value:
+        raise OutcomeError(Outcome.CONFLICT, MSG_ARCHIVE_OWNER)
+
+
+def may_list_administrators(actor: Actor) -> bool:
+    """Q-056：ADMIN 的帳戶管理只列 USER；OWNER 另外看得到 ADMIN（D-126：OWNER 能解除 ADMIN 的鎖定）。"""
+    return actor.role is Role.OWNER

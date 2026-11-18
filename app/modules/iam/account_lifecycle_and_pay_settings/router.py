@@ -23,13 +23,13 @@ from urllib.parse import parse_qs
 import psycopg
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from app.core.actor import Actor, Role
+from app.core.actor import Actor
 from app.core.db import get_db
 from app.core.outcomes import Outcome, OutcomeError
 from app.core.pages import render_page
 from app.core.session import get_current_actor
 from app.modules.iam.account_lifecycle_and_pay_settings import repo, service
-from app.modules.iam.account_lifecycle_and_pay_settings.access import authorize_account_action
+from app.modules.iam.account_lifecycle_and_pay_settings.access import authorize_account_action, may_list_administrators
 
 router = APIRouter()
 TEMPLATES = Path(__file__).parent / "templates"
@@ -49,7 +49,7 @@ def accounts_page(request: Request, actor: Actor = Depends(get_current_actor), c
     users = repo.list_users(conn)
     # Q-056：ADMIN 的帳戶管理只列 USER；OWNER 另外看得到 ADMIN（D-126：OWNER 能解除 ADMIN 的鎖定）。
     # 每一列都是這個行為者能解除鎖定的對象（ADMIN → USER；OWNER → USER 與 ADMIN；OWNER 帳戶不列出，沒有人能解除）
-    administrators = repo.list_administrators(conn) if actor.role is Role.OWNER else []
+    administrators = repo.list_administrators(conn) if may_list_administrators(actor) else []
     locked = service.locked_account_ids(conn, users + administrators)
     return render_page(
         request,
