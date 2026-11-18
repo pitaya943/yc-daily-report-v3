@@ -54,7 +54,7 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 | T-305 | M3 | 密碼變更與重設 | merged | [#41](https://github.com/pitaya943/yc-daily-report-v3/pull/41) | 0 | Builder 第一輪：claude-sonnet-5-5；規格問題 → issue #40（D-122～D-125）；交付後依 Bugbot 意見補表單 `method="post"`；碰到 usage 上限一次；Verifier 第 1 輪：claude-opus-5-5（PASS，9 個變異全抓到）；規格問題 → issue #46 |
 | T-306 | M3 | 銀行帳號、發薪方式與遮罩 | merged | [#50](https://github.com/pitaya943/yc-daily-report-v3/pull/50) | 0 | Builder 第一輪：claude-sonnet-5-5（第一回合碰到 usage 上限，恢復後完成）；Verifier 第 1 輪：claude-opus-5-5（PASS，6 個變異全抓到；資料庫與紀錄無明碼、無金鑰）；規格問題 5 項記入 M3 報告 |
 | T-307 | M3 | CI 的 Playwright 冒煙測試 | merged | [#39](https://github.com/pitaya943/yc-daily-report-v3/pull/39) | 0 | Builder 第一輪：claude-sonnet-5-5；CI 第一次 no-weakened-tests 在 PostgreSQL 安裝步驟失敗（D-119 讓失敗直接顯示），重跑全綠；Verifier 第 1 輪：claude-opus-5-5（PASS，4 個變異全抓到）；規格問題：setup-node 只固定主版號 22（M3 報告列出） |
-| T-308 | M3 | 改密碼後的 session、鎖定與解除鎖定（規格更新） | building | [#48](https://github.com/pitaya943/yc-daily-report-v3/pull/48) | 0 | issue #40（D-122～D-125）、D-126；issue #47 → D-140（D-124 與 IAM-R30 既有 scenario 衝突，Chief 規劃遺漏）；Builder 第一輪：claude-sonnet-5-5（session_01LCMZdocvCBhsJSuGFNjGhC） |
+| T-308 | M3 | 改密碼後的 session、鎖定與解除鎖定（規格更新） | merged | [#48](https://github.com/pitaya943/yc-daily-report-v3/pull/48) | 0 | issue #40（D-122～D-125）、D-126；issue #47 → D-140（D-124 與 IAM-R30 既有 scenario 衝突，Chief 規劃遺漏）；Builder 第一輪：claude-sonnet-5-5（session_01LCMZdocvCBhsJSuGFNjGhC）；Builder 依 D-127、D-129、D-140、D-141 補改（用 `FOR NO KEY UPDATE`，`for update` 會與外鍵鎖死結）；Verifier 第 1 輪：claude-opus-5-5（PASS，14 個變異全抓到；測試缺口：保留重讀、拿掉鎖的變異 Builder 的競爭測試抓不到）；規格問題 5 項記入 M3 報告 |
 | T-401 | M4 | 單價與費率設定 | todo | — | — | — |
 | T-402 | M4 | 薪資計算與薪資批次 | todo | — | — | — |
 | T-403 | M4 | 封存帳戶的薪資 | todo | — | — | — |
