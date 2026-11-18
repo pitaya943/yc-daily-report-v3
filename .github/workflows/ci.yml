@@ -24,7 +24,7 @@ env:
 jobs:
   tests:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30  # D-138
     # 乾淨的 PostgreSQL 17（D-033）：每個 run 一個全新的 service container。
     # 對應到 runner 的 127.0.0.1:5433，與本機開發的預設連線字串（app/core/db.py）相同，
     # 所以 T-001 的「只連本機」防線不必為 CI 開例外。trust 驗證：容器只在這個 job 存活，裡面沒有任何真實資料。
@@ -161,7 +161,7 @@ jobs:
   no-weakened-tests:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 45  # D-138：兩輪全部測試，各約 10～11 分鐘
     # D-046：以結果判斷。目標分支的結果在這個 job 裡實際跑出來（不使用 PR 提供的檔案，也不用其他 job 的 artifact），
     # 再跑 PR 的結果；目標分支上通過的每個測試 ID，在 PR 上都必須被收集而且通過。
     # 兩次都在這個 job 自己的乾淨 postgres:17 上跑，每次先清掉 yc_v3、套用該版本自己的 migration。

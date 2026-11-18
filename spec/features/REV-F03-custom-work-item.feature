@@ -56,6 +56,7 @@ Feature: Custom work item
   Rule: REV-R24 A custom-item change on a report that is not PENDING is an administrator edit
 
     # 本規格定義（AD-10）：對已確認或已駁回的回報改自訂工項，等同管理員編輯，回報回到 PENDING（RPT-R12）。
+    # D-134：存檔但自訂工項沒有任何變更，不算「改」，回報維持原狀態、不寫資料。
     @assumed @AD-10
     Scenario: Attaching to a confirmed report
       Given a CONFIRMED report R1 with stored shares
