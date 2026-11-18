@@ -1,0 +1,21 @@
+# Verifier（第 1 輪）用 Node Playwright 操作 http://127.0.0.1:8011 的輸出（head c2f881b，本機 PostgreSQL）
+signed in Admin1 -> http://127.0.0.1:8011/review
+shot v01-admin-form-pending.png
+101 chars -> 422 自訂工項名稱最多 100 個字
+shot v02-name-101-rejected.png
+qty 0.05 -> 422 自訂工項數量須為 0 到 999.9，最小單位 0.1
+price 99.5 -> 422 自訂工項單價須為 0 或正整數
+shot v03-price-rejected.png
+valid -> 200 日報 #1 的自訂工項已儲存：夜間加班 2.0 只 × 500。
+shot v04-attach-saved.png
+prefill 夜間加班 2.0 500
+shot v05-prefilled.png
+remove only quantity -> 422 請至少填寫一個工項數量
+shot v06-remove-only-quantity-rejected.png
+shot v07-confirmed-notice.png
+confirmed attach -> 200 日報 #3 的自訂工項已儲存：搬運 1.0 只 × 300。原本已確認，現在回到待確認，份額作廢，需要重新確認。
+shot v08-confirmed-back-to-pending.png
+status line Wen・2026-11-12・WEST・目前狀態 PENDING
+signed in Wen -> http://127.0.0.1:8011/reports
+USER GET status 403
+shot v09-user-forbidden.png

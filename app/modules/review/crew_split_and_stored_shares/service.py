@@ -10,7 +10,7 @@
   * `account_id`：`accounts.id`（含已封存的帳戶：封存前送出、封存後確認仍計薪，AD-7、PAY-F03）。
   * `item_code`：附錄 A 的工項代碼（目錄工項）；`tenths`：該帳戶在期間內這個工項的總數量，**0.1 只的整數**（2.3 只 = 23）。
   * 期間內沒有任何已確認份額的帳戶不會出現（駁回或尚未確認的回報不計）；份額為 0 的工項會出現、值為 0。
-- 不含自訂工項：T-302 會加上（份額 × 自訂單價，資料在 `yc_v3.report_custom_shares`）。T-402 的薪資數量只能經由這個函式取得。
+- 不含自訂工項：自訂工項的金額在下面的 `confirmed_custom_money`（T-302）。T-402 的薪資數量只能經由這兩個函式取得。
 - 只讀、不提交。沿用呼叫端的連線與 transaction。
 
 ## 為什麼存份額（REV-R11）
@@ -22,6 +22,7 @@
 from __future__ import annotations
 
 from datetime import date
+from fractions import Fraction
 
 import psycopg
 
@@ -51,3 +52,19 @@ def _assign(crew: list[int], shares: list[int]) -> list[tuple[int, int, int]]:
 def confirmed_quantities(conn: psycopg.Connection, date_from: date, date_to: date) -> dict[int, dict[str, int]]:
     """見模組開頭：期間內每個帳戶在已確認回報上的各工項數量（tenths）。"""
     return repo.quantities_between(conn, date_from, date_to)
+
+
+def confirmed_custom_money(conn: psycopg.Connection, date_from: date, date_to: date) -> dict[int, Fraction]:
+    """期間內每個帳戶的自訂工項金額（REV-R23；D-111，T-302 新增）：每人的份額 × 這個工項自己的單價，元。
+
+        confirmed_custom_money(conn, date_from, date_to) -> dict[int, Fraction]
+
+    - 參數與讀取規則同 `confirmed_quantities`：`date_from`、`date_to` 含頭尾，以回報日期判斷，只讀份額表
+      （`report_custom_shares`），只算 CONFIRMED 的回報；只讀、不提交。
+    - 回傳 `{account_id: 元}`：期間內沒有任何已確認的自訂工項份額的帳戶不會出現；份額為 0 的人會出現、值為 0。
+    - **為什麼是 `Fraction` 而不是 `int`**：金額 = tenths × 單價 ÷ 10，不一定是整數（0.3 只 × 55 元，份額 0.1 的人是 5.5 元）。
+      AD-2 規定 gross 只在最後 half-up 一次；這裡先捨入會讓兩張回報各進位一次、加起來與一次進位不同。
+      `app.domain.payroll.calculate_row` 的 `custom_money` 本來就是加進 `Fraction` 的（`Fraction(custom_money)`），
+      傳 `Fraction` 進去不改變它的行為。`Fraction(20) == 20`，所以整數的比較照常成立。
+    """
+    return {account_id: Fraction(total, 10) for account_id, total in repo.custom_tenths_times_price_between(conn, date_from, date_to).items()}
