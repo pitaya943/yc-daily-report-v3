@@ -37,6 +37,7 @@ def sign_in(
     6. 密碼錯誤、查無帳戶、帳戶已封存、帳戶還沒設定密碼、沒給密碼：全部是同一個 UNAUTHENTICATED「密碼錯誤，請重試」
        （IAM-R03）。每一條路徑都付出一次完整的 scrypt 成本（見 verify_password），不能從回應時間分辨。
        只有「帳戶存在且未封存」才累計失敗次數；第 5 次改成 LOCKED 並寫 ACCOUNT_LOCKOUT。
+    7. 比對通過後、發出 session 前，在帳戶列的鎖內重新確認雜湊沒變（D-141）；變了與密碼錯誤相同。
     """
     lockout.ensure_not_rate_limited(conn, client_address)
     if not name or not name.strip():
@@ -57,6 +58,14 @@ def sign_in(
             lockout.record_failure(conn, account.id, name)  # 第 5 次在這裡改丟 LOCKED
         raise OutcomeError(Outcome.UNAUTHENTICATED, MSG_WRONG_PASSWORD)
 
+    # D-141（IAM-R33 的競爭）：scrypt 在任何鎖之外執行，期間這個帳戶可能剛改了密碼或被重設（並結束了它的 session）。
+    # 發出 session 之前，先鎖住帳戶列並重讀雜湊：與比對時的不同，代表比對用的是已被輪替掉的密碼，
+    # 與密碼錯誤相同處理（UNAUTHENTICATED、記一次失敗、不發 session）。鎖的順序固定是「帳戶列 → 帳戶的 advisory lock」，
+    # 與改密碼一致（password_change_and_reset/service.py），所以不會互相死結。
+    if repo.lock_password_hash(conn, account.id) != stored:
+        conn.rollback()  # 放掉帳戶列的鎖；record_failure 自己取帳戶的 advisory lock 並提交
+        lockout.record_failure(conn, account.id, name)
+        raise OutcomeError(Outcome.UNAUTHENTICATED, MSG_WRONG_PASSWORD)
     lockout.begin_success(conn, account.id)  # 確認沒被鎖定，並清掉失敗次數
     issued = issue_session(conn, account.id)
     conn.commit()
