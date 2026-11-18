@@ -30,6 +30,7 @@ MSG_NAME_EMPTY = "請輸入顯示名稱"
 MSG_NAME_TOO_LONG = "顯示名稱最多 50 個字"
 MSG_NAME_TAKEN = "此顯示名稱已被使用"
 MSG_PASSWORD = "密碼長度須為 6 至 30 個字"
+MSG_PASSWORD_MISMATCH = "兩次輸入的密碼不一致"
 MSG_ZONE = "請選擇施工區域"
 MSG_ROLE = "請選擇角色"
 MSG_BIG_METER = "請確認是否為大表帳戶"
@@ -110,14 +111,18 @@ def parse_fixed_salary(value: str | None) -> int:
 
 def create_account(conn: psycopg.Connection, actor: Actor, form: dict[str, list[str]]) -> int:
     authorize_account_action(actor, "create an account")
-    name = _field(form, "name") or ""
-    if not name.strip():
+    # D-139：先去掉前後空白（str.strip 含全形空白 U+3000），再檢查空白、長度與重複；存的也是去掉後的名字
+    name = (_field(form, "name") or "").strip()
+    if not name:
         raise OutcomeError(Outcome.INVALID, MSG_NAME_EMPTY)
     if len(name) > 50:
         raise OutcomeError(Outcome.INVALID, MSG_NAME_TOO_LONG)
     password = _field(form, "password") or ""
     if not 6 <= len(password) <= 30:
         raise OutcomeError(Outcome.INVALID, MSG_PASSWORD)
+    # D-127：確認欄缺少視同不一致（不以預設值補上）；逐字比對，不去空白、不分大小寫
+    if _field(form, "password_confirm") != password:
+        raise OutcomeError(Outcome.INVALID, MSG_PASSWORD_MISMATCH)
     zone = _field(form, "zone")
     if zone not in ZONES:
         raise OutcomeError(Outcome.INVALID, MSG_ZONE)

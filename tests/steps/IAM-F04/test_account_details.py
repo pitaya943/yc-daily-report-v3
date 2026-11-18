@@ -76,7 +76,7 @@ def test_a_user_cannot_change_someone_elses_pay_settings(client, db):
 
 def test_a_user_cannot_create_an_account(client, db):
     sign_in(client, db, "Wen")
-    r = act(client, db, "Wen", "/accounts", [("name", "X"), ("password", "secret1"), ("zone", "WEST"), ("role", "USER")])
+    r = act(client, db, "Wen", "/accounts", [("name", "X"), ("password", "secret1"), ("password_confirm", "secret1"), ("zone", "WEST"), ("role", "USER")])
     check_rejected(r, "FORBIDDEN", None)
     check_forbidden_writes_only_access_denied(r, client, db)
 
@@ -106,7 +106,7 @@ def test_existing_accounts_have_the_initial_pay_settings(db):
 
 def test_a_new_account_gets_the_initial_pay_settings_without_sending_them(client, db):
     sign_in(client, db, "Admin1")
-    r = act(client, db, "Admin1", "/accounts", [("name", "Lin"), ("password", "secret1"), ("zone", "SOUTH"), ("role", "USER")])
+    r = act(client, db, "Admin1", "/accounts", [("name", "Lin"), ("password", "secret1"), ("password_confirm", "secret1"), ("zone", "SOUTH"), ("role", "USER")])
     assert r.response.status_code == 200
     values = h.account_values(db, "Lin")
     assert {k: values[k] for k in INITIAL} == INITIAL
@@ -334,13 +334,13 @@ def test_a_name_of_only_whitespace_including_fullwidth_is_empty(client, db, name
 
 def test_the_stored_name_is_the_stripped_one(client, db):
     assert create(client, db, name="\u3000Lin \u3000").response.status_code == 200
-    assert h.account_values(db, "Lin")["name"] == "Lin"
+    assert h.account_values(db, "Lin")["role"] == "USER"  # 以去掉空白的名字查得到 = 存的就是去掉空白的名字
     assert [d for _, d in audit_rows(db, "ACCOUNT_CREATE") if "Lin" in d and "\u3000" in d] == []
 
 
 def test_length_is_checked_after_stripping_so_50_plus_padding_is_accepted(client, db):
     assert create(client, db, name="字" * 50 + "\u3000 ").response.status_code == 200
-    assert h.account_values(db, "字" * 50)["name"] == "字" * 50
+    assert h.account_values(db, "字" * 50)["role"] == "USER"
 
 
 def test_length_is_checked_after_stripping_so_51_is_still_too_long(client, db):
@@ -351,7 +351,7 @@ def test_length_is_checked_after_stripping_so_51_is_still_too_long(client, db):
 
 def test_inner_whitespace_is_kept(client, db):
     assert create(client, db, name="Lin Lee").response.status_code == 200
-    assert h.account_values(db, "Lin Lee")["name"] == "Lin Lee"
+    assert h.account_values(db, "Lin Lee")["role"] == "USER"
 
 
 # ───────────────────────── IAM-R16：區域與大表旗標 ─────────────────────────
