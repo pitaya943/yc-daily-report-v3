@@ -224,6 +224,8 @@ def test_the_update_audit_has_the_old_and_the_new_value_and_the_actor(client, db
 
 def create(client, db, **overrides):
     fields = {"name": "Lin", "password": "secret1", "zone": "SOUTH", "role": "USER", **overrides}
+    if "password_confirm" not in overrides:  # 表單一定會送確認欄（D-127）；預設與密碼相同
+        fields["password_confirm"] = fields["password"]
     if h.cookie_owner(client, db) is None:
         sign_in(client, db, "Admin1")
     return act(client, db, "Admin1", "/accounts", [(k, v) for k, v in fields.items() if v is not None])
@@ -276,6 +278,82 @@ def test_a_password_counts_characters_not_bytes(client, db):
     assert create(client, db, password="密" * 6).response.status_code == 200  # 6 個字、18 個位元組
 
 
+# ───────────────────────── D-127：密碼確認欄 ─────────────────────────
+
+MSG_MISMATCH = "兩次輸入的密碼不一致"
+
+
+@pytest.mark.parametrize("confirm", ["secret2", "secret", "secret1 ", "SECRET1", ""], ids=["differs", "prefix", "trailing-space", "case", "empty"])
+def test_a_mismatched_password_confirmation_is_invalid_and_writes_nothing(client, db, confirm):
+    r = create(client, db, password="secret1", password_confirm=confirm)
+    check_rejected(r, "INVALID", MSG_MISMATCH)
+    check_nothing_written(r)
+
+
+def test_a_missing_password_confirmation_is_invalid_not_defaulted(client, db):
+    r = create(client, db, password_confirm=None)
+    check_rejected(r, "INVALID", MSG_MISMATCH)
+    check_nothing_written(r)
+
+
+def test_a_matching_confirmation_creates_the_account(client, db):
+    assert create(client, db, password="secret1", password_confirm="secret1").response.status_code == 200
+    assert h.account_values(db, "Lin")["role"] == "USER"
+
+
+def test_a_too_short_password_is_reported_before_the_mismatch(client, db):
+    """單一錯誤原因：密碼長度不合先報長度（附錄 B 的欄位順序：密碼在密碼確認之前）。"""
+    r = create(client, db, password="12345", password_confirm="1234")
+    check_rejected(r, "INVALID", "密碼長度須為 6 至 30 個字")
+    check_nothing_written(r)
+
+
+def test_the_create_form_has_a_password_confirmation_field():
+    from pathlib import Path
+
+    html = (Path(__file__).parents[3] / "app/modules/iam/account_lifecycle_and_pay_settings/templates/accounts.html").read_text()
+    assert 'name="password_confirm"' in html
+
+
+# ───────────────────────── D-139：顯示名稱先去掉前後空白（含全形） ─────────────────────────
+
+
+@pytest.mark.parametrize("name", ["Wen ", " Wen", "Wen\u3000", "\u3000Wen\u3000", " \u3000 Wen\t"], ids=["trailing", "leading", "fullwidth-trailing", "fullwidth-both", "mixed"])
+def test_a_padded_copy_of_an_existing_name_is_a_duplicate(client, db, name):
+    r = create(client, db, name=name)
+    check_rejected(r, "INVALID", "此顯示名稱已被使用")
+    check_nothing_written(r)
+
+
+@pytest.mark.parametrize("name", ["\u3000", "\u3000\u3000", " \u3000 ", "\t"], ids=["one-fullwidth", "two-fullwidth", "mixed", "tab"])
+def test_a_name_of_only_whitespace_including_fullwidth_is_empty(client, db, name):
+    r = create(client, db, name=name)
+    check_rejected(r, "INVALID", "請輸入顯示名稱")
+    check_nothing_written(r)
+
+
+def test_the_stored_name_is_the_stripped_one(client, db):
+    assert create(client, db, name="\u3000Lin \u3000").response.status_code == 200
+    assert h.account_values(db, "Lin")["name"] == "Lin"
+    assert [d for _, d in audit_rows(db, "ACCOUNT_CREATE") if "Lin" in d and "\u3000" in d] == []
+
+
+def test_length_is_checked_after_stripping_so_50_plus_padding_is_accepted(client, db):
+    assert create(client, db, name="字" * 50 + "\u3000 ").response.status_code == 200
+    assert h.account_values(db, "字" * 50)["name"] == "字" * 50
+
+
+def test_length_is_checked_after_stripping_so_51_is_still_too_long(client, db):
+    r = create(client, db, name="\u3000" + "字" * 51 + " ")
+    check_rejected(r, "INVALID", "顯示名稱最多 50 個字")
+    check_nothing_written(r)
+
+
+def test_inner_whitespace_is_kept(client, db):
+    assert create(client, db, name="Lin Lee").response.status_code == 200
+    assert h.account_values(db, "Lin Lee")["name"] == "Lin Lee"
+
+
 # ───────────────────────── IAM-R16：區域與大表旗標 ─────────────────────────
 
 
@@ -326,6 +404,17 @@ def test_a_restored_account_does_not_get_its_old_session_back(client, db):
     act(admin, db, "Admin1", target(db) + "/archive", [])
     act(admin, db, "Admin1", target(db) + "/restore", [])
     assert client.get("/session").status_code == 401
+
+
+def test_a_later_request_from_an_archived_session_is_unauthenticated_and_writes_nothing(client, db):
+    """IAM-R17 只寫 `rejected as UNAUTHENTICATED`：補上資料斷言（D-129）。封存之後的請求不得寫入任何資料。"""
+    sign_in(client, db, "Wen")
+    admin = TestClient(create_app(), raise_server_exceptions=False)
+    sign_in(admin, db, "Admin1")
+    act(admin, db, "Admin1", target(db) + "/archive", [])
+    r = act(client, db, "Wen", "/session", [], method="get")
+    check_rejected(r, "UNAUTHENTICATED", None)
+    check_nothing_written(r)
 
 
 def test_archiving_an_archived_account_is_a_conflict(client, db):

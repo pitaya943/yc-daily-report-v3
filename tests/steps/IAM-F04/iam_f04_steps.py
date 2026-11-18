@@ -189,6 +189,9 @@ def _create_value(field: str, value: str) -> str:
 
 
 def _create(recorder, client, db, others, last, admin, fields):
+    # 表單一定會送密碼確認欄（D-127）；與密碼相同，除非步驟另外指定
+    fields = {**fields}
+    fields.setdefault("password_confirm", fields.get("password", ""))
     c = client_for(client, db, others, admin)
     last.update(created=fields.get("name"))
     recorder.perform(lambda: post(c, db, admin, ACCOUNTS, list(fields.items())))
