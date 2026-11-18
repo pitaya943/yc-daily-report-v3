@@ -144,6 +144,7 @@
 | D-138 | CI 的 `no-weakened-tests` 逾時？ | `no-weakened-tests` 的 `timeout-minutes` 改為 45，`tests` 改為 30，由 Chief 直接提交到 `milestone/M3`。 | 兩輪全部測試各約 10～11 分鐘，T-303 已跑到 19 分 55 秒 | 2026-11-18 | issue #46 選項 12A；Kuei 核准修改 `.github/**` |
 | D-139 | 顯示名稱前後的空白？ | 建立與修改時先去掉前後空白（含全形空白）再檢查長度與重複；只有空白時為「請輸入顯示名稱」。 | `Wen ` 與 `Wen` 在名稱清單上看起來一樣 | 2026-11-18 | issue #46 選項 13A；T-303 完成條件 |
 | D-140 | D-124 讓 IAM-R30 的兩列「錯誤的目前密碼」無法通過「資料不變」的共用步驟？ | 改規格：把那兩列移到 IAM-R34 的新 Scenario Outline「A wrong current password is rejected and counted」，斷言「唯一的變動是多一次失敗」，步驟由 T-308 在 `tests/steps/IAM-F06/` 定義；共用步驟不改。IAM-R30 仍為 3 個 scenario，IAM-R34 改為 3 個，規格合計 263 個 scenario。 | 例外寫在規格裡，不藏在共用步驟；記錄 D-124 時漏了這個衝突（D-103 的教訓） | 2026-11-18 | issue #47 選項 B′；T-308 改 8 個 scenario |
+| D-141 | 登入比對舊密碼通過後、建立 session 前，密碼被改掉，舊密碼仍拿到 session？ | 由 T-308 修正：`allowed_paths` 加 `app/modules/iam/sign_in/**`；建立 session 前在帳戶鎖內重新確認密碼雜湊沒有改變，改變了就與密碼錯誤相同處理；加並行補充測試。 | 不讓 M3 帶著已知的權限漏洞合併進 `main`；D-123 要在並行時也成立 | 2026-11-18 | issue #49 選項 A；Cursor 資安審查在 PR #48 提出 |
 
 ## 待決定
 
