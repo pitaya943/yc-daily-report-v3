@@ -2,7 +2,7 @@
 
     GET  /account/password         自己改密碼的頁面（所有登入者）
     POST /account/password         自己改密碼（IAM-R30）：current_password、new_password、password_confirm
-    POST /accounts/{id}/password   管理員重設（IAM-R31）：new_password；USER → FORBIDDEN
+    POST /accounts/{id}/password   管理員重設（IAM-R31）：new_password、password_confirm（D-127）；USER → FORBIDDEN
 
 沒有任何找回密碼的端點（IAM-R32）。做法與 T-201 相同：表單用 `parse_qs`（不用 `Form()`，pitfall #27）；端點用 `def`（pitfall #28）；
 anti-forgery token 由版型的 hx-headers 帶上（D-080）；成功回 200 與一小段 HTML，拒絕回結果類別的 status 與 JSON（outcomes.py）。
@@ -19,7 +19,7 @@ from app.core.actor import Actor
 from app.core.db import get_db
 from app.core.outcomes import Outcome, OutcomeError
 from app.core.pages import render_page
-from app.core.session import get_current_actor
+from app.core.session import SESSION_COOKIE, get_current_actor
 from app.modules.iam.password_change_and_reset import service
 
 router = APIRouter()
@@ -53,7 +53,8 @@ def change_password(
     form: dict[str, list[str]] = Depends(_read_form),
     conn: psycopg.Connection = Depends(get_db),
 ):
-    service.change_own_password(conn, actor, form)
+    # 目前這個 session 的憑證：成功後保留它、結束同帳戶的其他 session（IAM-R33）。get_current_actor 已確認它有效
+    service.change_own_password(conn, actor, form, request.cookies[SESSION_COOKIE])
     return render_page(request, conn, TEMPLATES, "password_changed.html")
 
 

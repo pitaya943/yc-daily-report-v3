@@ -8,6 +8,15 @@
   鎖定本來就是在最後一次失敗時開始，所以「鎖定結束」與「安靜滿 15 分鐘」是同一個時間點。
 - IAM-R06：次數依帳戶計，與來源位址無關。
 - IAM-R07：同一個來源位址每 60 秒最多 10 次被評估的嘗試；第 11 次 `RATE_LIMITED`。
+- IAM-R08（D-126）：管理員可以提前解除鎖定；鎖定與失敗次數一起清除。ADMIN 只能解除 USER，OWNER 能解除 USER 與 ADMIN，
+  OWNER 帳戶沒有人能解除（只能等鎖定結束）。稽核用 `ACCOUNT_UPDATE`（說明含「解除鎖定」，不新增稽核類型）。
+  來源位址的頻率限制（IAM-R07）不受影響：解除只動 `sign_in_failures` 那一列，不碰 `sign_in_attempts`。
+
+## 失敗計數與鎖定只有一份（D-124）
+
+登入與「改密碼時輸入錯誤的目前密碼」（IAM-R34，`password_change_and_reset/service.py`）共用下面的 `ensure_not_locked`、
+`record_failure`、`hold_not_locked`：同一張表、同一把帳戶鎖、同一個 `ACCOUNT_LOCKOUT`。改密碼那一側不計入來源位址的頻率限制
+（不呼叫 `ensure_not_rate_limited`／`record_attempt`），也不在密碼正確時重置失敗次數（IAM-R05 只有登入成功、鎖定結束、15 分鐘沒有失敗才重置）。
 
 ## 什麼會寫資料（D-069）
 
@@ -40,8 +49,10 @@ import psycopg
 
 from app.core import audit
 from app.core.actor import SYSTEM
+from app.core.actor import Actor, Role
 from app.core.clock import clock
 from app.core.outcomes import Outcome, OutcomeError
+from app.core.permissions import Rule, authorize
 from app.modules.iam.sign_in_lockout_and_rate_limit import repo
 from app.modules.iam.sign_in_lockout_and_rate_limit.repo import FailureState
 
@@ -126,6 +137,19 @@ def record_failure(conn: psycopg.Connection, account_id: int, account_name: str)
         raise OutcomeError(Outcome.LOCKED, MSG_LOCKED)
 
 
+def hold_not_locked(conn: psycopg.Connection, account_id: int) -> None:
+    """在帳戶的鎖內確認沒有被鎖定，並保持交易開著（鎖在交易結束時釋放）；鎖定中就回滾並 LOCKED。
+
+    給「驗證成功之後、寫入之前」的呼叫端（改密碼，IAM-R34）：驗證期間別的 worker 可能剛好寫入第 5 次失敗，
+    這時這次寫入不能算數。與 `record_failure`、`begin_success` 同一把鎖，所以三者互相序列化。
+    與 `begin_success` 的差別：這裡**不**清除失敗次數（IAM-R05：正確的目前密碼不是重置事件）。
+    """
+    repo.lock_account(conn, account_id)
+    if _is_locked(repo.get_failure_state(conn, account_id)):
+        conn.rollback()
+        raise OutcomeError(Outcome.LOCKED, MSG_LOCKED)
+
+
 def begin_success(conn: psycopg.Connection, account_id: int) -> None:
     """登入成功前，在帳戶的鎖內最後確認一次沒有被鎖定，然後清掉失敗次數（IAM-R05）。
 
@@ -137,3 +161,46 @@ def begin_success(conn: psycopg.Connection, account_id: int) -> None:
         conn.rollback()
         raise OutcomeError(Outcome.LOCKED, MSG_LOCKED)
     repo.clear_failure_state(conn, account_id)
+
+
+# ───────────────────────── 提前解除鎖定（IAM-R08，D-126）─────────────────────────
+
+# 誰能解除誰的鎖定（權限只寫在這一處）：key 是「被解除者」的角色。OWNER 不在表內 → 沒有人能解除（FORBIDDEN）。
+# `authorize` 把 OWNER 視為擁有 ADMIN 的全部權限，所以 USER 那一列的 `roles={ADMIN}` 也讓 OWNER 通過；ADMIN 的那一列只有 OWNER。
+_UNLOCK_RULES: dict[str, Rule] = {
+    Role.USER.value: Rule(roles={Role.ADMIN}),
+    Role.ADMIN.value: Rule(roles={Role.OWNER}),
+}
+
+
+class AccountNotFound(Exception):
+    """沒有這個帳戶（規格沒有「找不到」的結果類別；router 回 404，D-106）。"""
+
+
+def unlock(conn: psycopg.Connection, actor: Actor, target_id: int) -> str:
+    """提前解除 `target_id` 的鎖定與失敗次數；回傳被解除者的名稱。
+
+    檢查順序（先權限、後狀態）：
+    1. 行為者必須至少是 ADMIN（USER 在查目標之前就 FORBIDDEN：不能藉由 404 與 403 的差別探測哪些帳戶存在）。
+    2. 目標不存在 → AccountNotFound（404）。
+    3. 依目標的角色判斷（見 `_UNLOCK_RULES`）→ 不通過就 FORBIDDEN 並寫 ACCESS_DENIED。
+    4. 目標目前沒有鎖定中 → CONFLICT（沒有錯誤字串，規格沒寫；資料不變）。「鎖定中」與登入的判斷是同一個函式；
+       失敗次數還在、但鎖定已結束或從未鎖定的帳戶，也是 CONFLICT：這個動作解除的是「鎖定」。
+    5. 在帳戶的鎖內重讀狀態（與登入共用同一把鎖），刪除失敗次數那一列，寫一列 ACCOUNT_UPDATE，一起提交。
+    """
+    authorize(actor, "unlock an account", Rule(roles={Role.ADMIN}))
+    target = repo.find_account(conn, target_id)
+    conn.rollback()  # 只讀：不留下開啟的交易
+    if target is None:
+        raise AccountNotFound(target_id)
+    rule = _UNLOCK_RULES.get(target.role)
+    authorize(actor, f"unlock {target.name}", *([rule] if rule else []))
+
+    repo.lock_account(conn, target.id)
+    if not _is_locked(repo.get_failure_state(conn, target.id)):
+        conn.rollback()
+        raise OutcomeError(Outcome.CONFLICT)
+    repo.clear_failure_state(conn, target.id)
+    audit.write(actor, "ACCOUNT_UPDATE", f"解除鎖定：{target.name}（清除鎖定與失敗次數）", conn=conn)
+    conn.commit()
+    return target.name

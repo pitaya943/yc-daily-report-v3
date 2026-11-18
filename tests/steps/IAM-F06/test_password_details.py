@@ -125,7 +125,10 @@ def test_a_wrong_current_password_leaves_the_old_password_working(db, recorder):
     client = signed_in(db, "Wen")
     own(recorder, client, db, urlencode({**VALID, "current_password": "wrong"}))
     check_rejected(recorder, "INVALID", CURRENT_WRONG)
-    check_nothing_written(recorder)
+    # D-124（T-308）：錯誤的目前密碼與登入共用失敗計數，所以恰好寫一列失敗次數；帳戶、session、稽核等其他資料不變。
+    # 原本斷言整個資料庫不變，那是 D-124 推翻的行為（pitfall #32）；這裡改成更精確的「只有這一張表、只多這一列」。
+    assert set(recorder.changes()) == {"sign_in_failures"}, recorder.changes()
+    assert len(recorder.changes()["sign_in_failures"]["added"]) == 1 and recorder.changes()["sign_in_failures"]["removed"] == []
     assert can_sign_in(db, "Wen", TEST_PASSWORD)
 
 
@@ -223,20 +226,20 @@ def reset(recorder, client, db, target: str, body: str, *, target_id: int | None
 def test_a_reset_needs_no_current_password_and_replaces_the_old_one(db, recorder):
     client = signed_in(db, "Admin1")
     set_password(db, "Wen")  # 先讓 Wen 有一個舊密碼，才看得出被換掉
-    assert reset(recorder, client, db, "Wen", urlencode({"new_password": "newpass1"})).status_code == 200
+    assert reset(recorder, client, db, "Wen", urlencode({"new_password": "newpass1", "password_confirm": "newpass1"})).status_code == 200
     assert can_sign_in(db, "Wen", "newpass1") and not can_sign_in(db, "Wen", TEST_PASSWORD)
 
 
 def test_a_reset_by_the_owner_works_too(db, recorder):
     client = signed_in(db, "Kuei")
-    assert reset(recorder, client, db, "Wen", urlencode({"new_password": "newpass1"})).status_code == 200
+    assert reset(recorder, client, db, "Wen", urlencode({"new_password": "newpass1", "password_confirm": "newpass1"})).status_code == 200
     assert can_sign_in(db, "Wen", "newpass1")
 
 
 def test_a_reset_changes_only_the_target_password_and_writes_one_audit_row(db, recorder):
     client = signed_in(db, "Admin1")
     admin_hash, wei_hash = password_hash(db, "Admin1"), password_hash(db, "Wei")
-    reset(recorder, client, db, "Wen", urlencode({"new_password": "newpass1"}))
+    reset(recorder, client, db, "Wen", urlencode({"new_password": "newpass1", "password_confirm": "newpass1"}))
     assert set(recorder.changes()) == {"accounts", "audit_log"}
     assert (password_hash(db, "Admin1"), password_hash(db, "Wei")) == (admin_hash, wei_hash), "其他帳戶的密碼不可動"
     rows = new_audit_rows(recorder)
@@ -247,7 +250,7 @@ def test_a_reset_changes_only_the_target_password_and_writes_one_audit_row(db, r
 def test_a_user_cannot_reset_a_password_and_only_access_denied_is_written(db, recorder):
     client = signed_in(db, "Wei")
     wen_hash = password_hash(db, "Wen")
-    reset(recorder, client, db, "Wen", urlencode({"new_password": "newpass1"}))
+    reset(recorder, client, db, "Wen", urlencode({"new_password": "newpass1", "password_confirm": "newpass1"}))
     check_rejected(recorder, "FORBIDDEN", None)
     assert [t for t in recorder.changes() if t != "audit_log"] == [], "ACCESS_DENIED 以外不可有變動（accounts 沒變）"
     assert len(new_audit_rows(recorder)) == 1 and "ACCESS_DENIED" in new_audit_rows(recorder)[0] and "Wei" in new_audit_rows(recorder)[0]
@@ -257,13 +260,13 @@ def test_a_user_cannot_reset_a_password_and_only_access_denied_is_written(db, re
 def test_a_user_gets_forbidden_even_for_an_account_that_does_not_exist(db, recorder):
     # 先判斷權限、再查目標：USER 不能靠 404 與 403 的差別探測帳戶是否存在
     client = signed_in(db, "Wei")
-    reset(recorder, client, db, "", urlencode({"new_password": "newpass1"}), target_id=999999)
+    reset(recorder, client, db, "", urlencode({"new_password": "newpass1", "password_confirm": "newpass1"}), target_id=999999)
     check_rejected(recorder, "FORBIDDEN", None)
 
 
 def test_a_reset_of_a_missing_account_is_404_and_writes_nothing(db, recorder):
     client = signed_in(db, "Admin1")
-    reset(recorder, client, db, "", urlencode({"new_password": "newpass1"}), target_id=999999)
+    reset(recorder, client, db, "", urlencode({"new_password": "newpass1", "password_confirm": "newpass1"}), target_id=999999)
     assert recorder.response.status_code == 404
     check_nothing_written(recorder)
 
@@ -271,7 +274,7 @@ def test_a_reset_of_a_missing_account_is_404_and_writes_nothing(db, recorder):
 @pytest.mark.parametrize("new", ["12345", "x" * 31, ""])
 def test_a_reset_with_a_bad_length_is_rejected(db, recorder, new):
     client = signed_in(db, "Admin1")
-    reset(recorder, client, db, "Wen", urlencode({"new_password": new}))
+    reset(recorder, client, db, "Wen", urlencode({"new_password": new, "password_confirm": new}))
     check_rejected(recorder, "INVALID", LENGTH)
     check_nothing_written(recorder)
 
@@ -285,7 +288,7 @@ def test_a_reset_with_a_missing_password_is_rejected_and_never_defaulted(db, rec
 
 def test_a_reset_with_a_repeated_password_field_is_rejected(db, recorder):
     client = signed_in(db, "Admin1")
-    reset(recorder, client, db, "Wen", "new_password=newpass1&new_password=newpass2")
+    reset(recorder, client, db, "Wen", "new_password=newpass1&new_password=newpass2&password_confirm=newpass1")
     check_rejected(recorder, "INVALID", LENGTH)
     check_nothing_written(recorder)
 
@@ -293,14 +296,14 @@ def test_a_reset_with_a_repeated_password_field_is_rejected(db, recorder):
 def test_a_visitor_cannot_reset_a_password(db, recorder):
     client = TestClient(create_app(), raise_server_exceptions=False)
     path = f06.RESET_PATH.format(id=f06.account_id(db, "Wen"))
-    recorder.perform(lambda: client.post(path, content=urlencode({"new_password": "newpass1"}), headers={"content-type": "application/x-www-form-urlencoded"}))
+    recorder.perform(lambda: client.post(path, content=urlencode({"new_password": "newpass1", "password_confirm": "newpass1"}), headers={"content-type": "application/x-www-form-urlencoded"}))
     check_rejected(recorder, "UNAUTHENTICATED", None)
     check_nothing_written(recorder)
 
 
 def test_a_non_numeric_account_id_is_not_found(db, recorder):
     client = signed_in(db, "Admin1")
-    recorder.perform(lambda: post_raw(client, db, "/accounts/abc/password", urlencode({"new_password": "newpass1"})))
+    recorder.perform(lambda: post_raw(client, db, "/accounts/abc/password", urlencode({"new_password": "newpass1", "password_confirm": "newpass1"})))
     assert recorder.response.status_code in (404, 422)
     check_nothing_written(recorder)
 
@@ -383,7 +386,7 @@ def test_a_get_with_passwords_in_the_query_changes_nothing(db, recorder):
 
 def test_a_get_on_the_reset_path_is_not_allowed_and_changes_nothing(db, recorder):
     client = signed_in(db, "Admin1")
-    path = f06.RESET_PATH.format(id=f06.account_id(db, "Wen")) + "?" + urlencode({"new_password": "newpass1"})
+    path = f06.RESET_PATH.format(id=f06.account_id(db, "Wen")) + "?" + urlencode({"new_password": "newpass1", "password_confirm": "newpass1"})
     recorder.perform(lambda: client.get(path))
     assert recorder.response.status_code == 405
     check_nothing_written(recorder)

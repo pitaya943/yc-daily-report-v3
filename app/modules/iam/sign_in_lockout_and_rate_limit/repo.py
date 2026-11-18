@@ -17,6 +17,13 @@ _ACCOUNT_LOCK_CLASS = 1002
 
 
 @dataclass(frozen=True)
+class AccountRow:
+    id: int
+    name: str
+    role: str
+
+
+@dataclass(frozen=True)
 class FailureState:
     fail_count: int
     last_failed_at: datetime
@@ -49,6 +56,11 @@ def put_failure_state(conn: psycopg.Connection, account_id: int, state: FailureS
 
 def clear_failure_state(conn: psycopg.Connection, account_id: int) -> None:
     conn.execute("delete from yc_v3.sign_in_failures where account_id = %s", (account_id,))
+
+
+def find_account(conn: psycopg.Connection, account_id: int) -> AccountRow | None:
+    row = conn.execute("select id, name, role from yc_v3.accounts where id = %s", (account_id,)).fetchone()
+    return None if row is None else AccountRow(*row)
 
 
 def count_attempts_since(conn: psycopg.Connection, address: str, since: datetime) -> int:
