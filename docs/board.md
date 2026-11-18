@@ -52,7 +52,7 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 | T-303 | M3 | 帳戶生命週期與薪資設定 | merged | [#45](https://github.com/pitaya943/yc-daily-report-v3/pull/45) | 0 | Builder 第一輪：claude-sonnet-5-5（等 T-305 的共用步驟 S1；碰到 usage 上限兩次；依 D-127、D-129、D-139 補改）；no-weakened-tests 逾時 → D-138；Verifier 第 1 輪：claude-opus-5-5（PASS）；規格問題 3 項記入 M3 報告 |
 | T-304 | M3 | OWNER 管理管理員 | todo | — | — | — |
 | T-305 | M3 | 密碼變更與重設 | merged | [#41](https://github.com/pitaya943/yc-daily-report-v3/pull/41) | 0 | Builder 第一輪：claude-sonnet-5-5；規格問題 → issue #40（D-122～D-125）；交付後依 Bugbot 意見補表單 `method="post"`；碰到 usage 上限一次；Verifier 第 1 輪：claude-opus-5-5（PASS，9 個變異全抓到）；規格問題 → issue #46 |
-| T-306 | M3 | 銀行帳號、發薪方式與遮罩 | todo | — | — | — |
+| T-306 | M3 | 銀行帳號、發薪方式與遮罩 | building | — | 0 | Builder 第一輪：claude-sonnet-5-5（session_01LCMZdkAGj8g6hTpcVtCrGf） |
 | T-307 | M3 | CI 的 Playwright 冒煙測試 | merged | [#39](https://github.com/pitaya943/yc-daily-report-v3/pull/39) | 0 | Builder 第一輪：claude-sonnet-5-5；CI 第一次 no-weakened-tests 在 PostgreSQL 安裝步驟失敗（D-119 讓失敗直接顯示），重跑全綠；Verifier 第 1 輪：claude-opus-5-5（PASS，4 個變異全抓到）；規格問題：setup-node 只固定主版號 22（M3 報告列出） |
 | T-308 | M3 | 改密碼後的 session、鎖定與解除鎖定（規格更新） | building | [#48](https://github.com/pitaya943/yc-daily-report-v3/pull/48) | 0 | issue #40（D-122～D-125）、D-126；issue #47 → D-140（D-124 與 IAM-R30 既有 scenario 衝突，Chief 規劃遺漏）；Builder 第一輪：claude-sonnet-5-5（session_01LCMZdocvCBhsJSuGFNjGhC） |
 | T-401 | M4 | 單價與費率設定 | todo | — | — | — |
