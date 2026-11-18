@@ -1,0 +1,26 @@
+<script>
+(function () {
+  // HTMX 2 預設不把 4xx／5xx 換進畫面（pitfall #31）。換入的目標有兩種：
+  //   .result    表單下方的結果區（設定銀行帳號、設定發薪方式）：成功時換進訊息，拒絕時清空。
+  //   #bank-box  銀行帳號的值：成功時換成全碼；拒絕時保留原本的遮罩值（不清空），只顯示錯誤。
+  // beforeSwap 的 detail.target 是換入的目標，不是送出的表單；用目標往上找同一區塊的 .form-error。
+  document.body.addEventListener("htmx:beforeSwap", function (evt) {
+    var target = evt.detail.target;
+    if (!target || !(target.classList.contains("result") || target.id === "bank-box")) { return; }
+    var box = target.closest("section").querySelector(".form-error");
+    var xhr = evt.detail.xhr;
+    if (xhr.status < 400) { if (box) { box.hidden = true; box.textContent = ""; } return; }
+    evt.detail.shouldSwap = false;
+    evt.detail.isError = false;
+    if (xhr.status === 401) { window.location.assign("/sign-in"); return; }
+    var body = {};
+    try { body = JSON.parse(xhr.responseText); } catch (e) { /* 不是 JSON：用備用文字 */ }
+    if (box) {
+      // 有規格字串（附錄 B）就逐字顯示；規格沒有寫字串的拒絕只顯示結果類別
+      box.textContent = body.message ? body.message : "無法完成（" + (body.outcome || xhr.status) + "）";
+      box.hidden = false;
+    }
+    if (target.classList.contains("result")) { target.textContent = ""; }
+  });
+})();
+</script>

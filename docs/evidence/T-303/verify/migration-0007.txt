@@ -1,0 +1,55 @@
+== 0007 套用前插入 3 個既有帳戶
+== 第 1 次套用 0007
+ALTER TABLE
+exit=0
+== 第 2 次套用 0007（可重複）
+psql:migrations/0007_account_pay_settings.sql:52: NOTICE:  column "insured" of relation "accounts" already exists, skipping
+psql:migrations/0007_account_pay_settings.sql:52: NOTICE:  column "insurance_deduction" of relation "accounts" already exists, skipping
+psql:migrations/0007_account_pay_settings.sql:52: NOTICE:  column "uninsured_rate_bp" of relation "accounts" already exists, skipping
+psql:migrations/0007_account_pay_settings.sql:52: NOTICE:  column "uninsured_exempt" of relation "accounts" already exists, skipping
+psql:migrations/0007_account_pay_settings.sql:52: NOTICE:  column "fixed_salary" of relation "accounts" already exists, skipping
+psql:migrations/0007_account_pay_settings.sql:52: NOTICE:  column "pays_fixed_salary_every_period" of relation "accounts" already exists, skipping
+ALTER TABLE
+exit=0
+== 既有帳戶的值（D-116）
+name|insured|insurance_deduction|rate_blank|uninsured_exempt|fixed_salary|pays_fixed_salary_every_period
+PreA|f|0|t|f|0|f
+PreB|f|0|t|f|0|f
+PreC|f|0|t|f|0|f
+(3 rows)
+== 檔頭的套用後檢查
+   select (select count(*) from information_schema.columns
+            where table_schema = 'yc_v3' and table_name = 'accounts'
+              and column_name in ('insured', 'insurance_deduction', 'uninsured_rate_bp',
+                                  'uninsured_exempt', 'fixed_salary', 'pays_fixed_salary_every_period')) = 6
+          and (select count(*) from yc_v3.accounts
+                where insured or insurance_deduction <> 0 or uninsured_rate_bp is not null
+                   or uninsured_exempt or fixed_salary <> 0 or pays_fixed_salary_every_period) = 0;
+t
+== 約束數（不重複）
+accounts_fixed_salary_check
+accounts_insurance_deduction_check
+accounts_password_hash_format_check
+accounts_role_check
+accounts_uninsured_rate_bp_check
+accounts_zone_check
+== 約束：已投保扣除額 0 應被擋
+ERROR:  new row for relation "accounts" violates check constraint "accounts_insurance_deduction_check"
+DETAIL:  Failing row contains (1, PreA, USER, WEST, t, f, null, t, 0, null, f, 0, f).
+== 檔頭的回滾
+   alter table yc_v3.accounts
+       drop column pays_fixed_salary_every_period,
+       drop column fixed_salary,
+       drop column uninsured_exempt,
+       drop column uninsured_rate_bp,
+       drop column insurance_deduction,
+       drop column insured;
+ALTER TABLE
+exit=0
+7
+== 回滾後再套用
+ALTER TABLE
+exit=0
+t
+== 只碰 yc_v3：非註解行中的 schema 限定名稱
+yc_v3.accounts

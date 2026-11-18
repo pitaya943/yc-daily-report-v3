@@ -1,0 +1,40 @@
+sign in Admin1: HTTP 303
+list rows: Big/USER/WEST, Old/USER/WEST, Wan/USER/WEST, Wei/USER/WEST, Wen/USER/WEST, Nan/USER/SOUTH
+screenshot V01-list.png
+mismatch confirm: HTTP 422 message="兩次輸入的密碼不一致"
+screenshot V02-create-password-mismatch.png
+"\u3000Wen " duplicate: HTTP 422 message="此顯示名稱已被使用"
+screenshot V03-create-padded-duplicate.png
+fullwidth-only name: HTTP 422 message="請輸入顯示名稱"
+screenshot V04-create-fullwidth-blank.png
+create " Lin\u3000": HTTP 200 result="已建立帳戶　查看帳戶"
+screenshot V05-create-success.png
+Wen page http://127.0.0.1:8011/accounts/4: deduction="" rate="" fixed_salary="0" checked=not_enrolled_rate
+screenshot V06-wen-initial.png
+enrolled 0: HTTP 422 message="已投保時，扣除額須至少為 1"
+screenshot V07-enrolled-zero.png
+rate 3.25: HTTP 200 result="已儲存　查看帳戶"
+after reload rate="3.25"
+screenshot V08-rate-saved.png
+sign in Wen: HTTP 303
+Wen /reports before archive: url=http://127.0.0.1:8011/reports
+archive Wen: HTTP 200 dialogs=[]
+Wen page after archive: badge="已封存" restoreButton=1
+screenshot V09-archived.png
+Wen old session GET /session after archive: HTTP 401 body={"outcome":"UNAUTHENTICATED","message":null}
+Wen /reports after archive: url=http://127.0.0.1:8011/reports
+screenshot V10-wen-session-after-archive.png
+sign-in west list contains Wen=false Wan=true
+screenshot V11-sign-in-list-without-wen.png
+archived Wen signs in: HTTP 401
+sign in Wan: HTTP 303
+Wan collaborator picker contains Wen=false Wei=true
+screenshot V12-collaborator-picker-without-wen.png
+Wan reads Wei's page /accounts/5: body={"outcome":"FORBIDDEN","message":null}
+screenshot V13-user-reads-other-forbidden.png
+restore Wen: HTTP 200
+screenshot V14-restored.png
+restored Wen signs in: HTTP 303
+sign in Admin1: HTTP 303
+phone width scrollWidth/innerWidth=390,390
+screenshot V15-account-page-phone.png

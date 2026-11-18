@@ -1,0 +1,54 @@
+### M1 金額：固定薪資接受負數（_DIGITS → _SIGNED）
+ app/modules/iam/account_lifecycle_and_pay_settings/service.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+FAILED tests/test_spec.py::test_fixed_salary_is_a_whole_number_of_ntd_zero_or_more[-1-INVALID]
+1 failed, 3 passed, 1953 deselected in 3.80s
+### M2 狀態轉移：封存不刪 session（AD-13）
+ app/modules/iam/account_lifecycle_and_pay_settings/service.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+1 passed, 1956 deselected in 2.23s
+### M3 權限：authorize_account_action 不檢查（D-114）
+ app/modules/iam/account_lifecycle_and_pay_settings/access.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_user_cannot_read_account_management[list]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_user_cannot_read_account_management[someone-elses-page]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_user_cannot_change_someone_elses_pay_settings
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_user_cannot_create_an_account
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_user_asking_about_a_missing_account_gets_forbidden_not_404
+5 failed, 4 passed, 1948 deselected in 7.95s
+### M4 IAM-R16：大表旗標不檢查角色
+ app/modules/iam/account_lifecycle_and_pay_settings/service.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+FAILED tests/test_spec.py::test_the_bigmeter_flag_is_offered_for_user_accounts_only
+1 failed, 1956 deselected in 1.69s
+### M5 D-127：不檢查密碼確認
+ app/modules/iam/account_lifecycle_and_pay_settings/service.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_mismatched_password_confirmation_is_invalid_and_writes_nothing[differs]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_mismatched_password_confirmation_is_invalid_and_writes_nothing[prefix]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_mismatched_password_confirmation_is_invalid_and_writes_nothing[trailing-space]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_mismatched_password_confirmation_is_invalid_and_writes_nothing[case]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_mismatched_password_confirmation_is_invalid_and_writes_nothing[empty]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_missing_password_confirmation_is_invalid_not_defaulted
+6 failed, 1951 deselected in 7.80s
+### M6 D-139：名稱不去空白
+ app/modules/iam/account_lifecycle_and_pay_settings/service.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_padded_copy_of_an_existing_name_is_a_duplicate[trailing]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_padded_copy_of_an_existing_name_is_a_duplicate[leading]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_padded_copy_of_an_existing_name_is_a_duplicate[fullwidth-trailing]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_padded_copy_of_an_existing_name_is_a_duplicate[fullwidth-both]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_padded_copy_of_an_existing_name_is_a_duplicate[mixed]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_name_of_only_whitespace_including_fullwidth_is_empty[one-fullwidth]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_name_of_only_whitespace_including_fullwidth_is_empty[two-fullwidth]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_name_of_only_whitespace_including_fullwidth_is_empty[mixed]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_name_of_only_whitespace_including_fullwidth_is_empty[tab]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_the_stored_name_is_the_stripped_one
+10 failed, 1947 deselected in 11.62s
+### M7 IAM-R18：復原不改 archived
+ app/modules/iam/account_lifecycle_and_pay_settings/service.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+FAILED tests/test_spec.py::test_restore
+1 failed, 1956 deselected in 2.53s
+### 還原確認
+3b550343b6caf05211563f415ed9c35bf1033a72

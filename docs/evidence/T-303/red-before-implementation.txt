@@ -1,0 +1,14 @@
+$ python3 -m pytest -q --no-header -k "<IAM-F04 的 13 個 scenario>"   # 先紅：實作之前
+     11 E       AssertionError: HTTP status 應為 422，實際 404
+      4 E   pytest_bdd.exceptions.StepDefinitionNotFoundError: Step definition is not found: Then "the outcome is accepted with message """. Line 79 in scenario "Insurance settings" in the feature "/home/user/yc-daily-re
+      4 E       AssertionError: 建立應成功（200），實際 404：{"detail":"Not Found"}
+      2 E   pytest_bdd.exceptions.StepDefinitionNotFoundError: Step definition is not found: Then "the outcome is INVALID with message "未投保扣除比例須為 0 到 100 之間，最多兩位小數"". Line 79 in scen
+      2 E       AssertionError: 應被接受（200），實際 404：{"detail":"Not Found"}
+      1 E   pytest_bdd.exceptions.StepDefinitionNotFoundError: Step definition is not found: Then "the outcome is INVALID with message "已投保時，扣除額須至少為 1"". Line 79 in scenario "Insurance settings" i
+      1 E   pytest_bdd.exceptions.StepDefinitionNotFoundError: Step definition is not found: Then "the outcome is INVALID with message "勞健保扣除額須為 0 或正整數"". Line 79 in scenario "Insurance settings" 
+      1 E       AssertionError: 清單應為 200，實際 404：{"detail":"Not Found"}
+      1 E       AssertionError: 改區域應成功（200），實際 404：{"detail":"Not Found"}
+      1 E       AssertionError: 應能登入：401
+      1 E       AssertionError: 應為 401，實際 200
+      1 E       AssertionError: 封存的帳戶不能登入：303
+      1 30 failed, 1 passed, 1 skipped, 1675 deselected in 28.22s

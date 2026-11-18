@@ -1,0 +1,19 @@
+# T-303 條件 12–14 證據（D-127、D-139、D-129）
+
+## 紅：只有新測試、尚未實作時（commit 861b6b7；全量 pytest）
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_mismatched_password_confirmation_is_invalid_and_writes_nothing[differs]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_mismatched_password_confirmation_is_invalid_and_writes_nothing[prefix]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_mismatched_password_confirmation_is_invalid_and_writes_nothing[trailing-space]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_mismatched_password_confirmation_is_invalid_and_writes_nothing[case]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_mismatched_password_confirmation_is_invalid_and_writes_nothing[empty]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_missing_password_confirmation_is_invalid_not_defaulted
+FAILED tests/steps/IAM-F04/test_account_details.py::test_the_create_form_has_a_password_confirmation_field
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_padded_copy_of_an_existing_name_is_a_duplicate[trailing]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_padded_copy_of_an_existing_name_is_a_duplicate[leading]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_padded_copy_of_an_existing_name_is_a_duplicate[fullwidth-trailing]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_padded_copy_of_an_existing_name_is_a_duplicate[fullwidth-both]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_a_padded_copy_of_an_existing_name_is_a_duplicate[mixed]
+FAILED tests/steps/IAM-F04/test_account_details.py::test_the_stored_name_is_the_stripped_one
+FAILED tests/steps/IAM-F04/test_account_details.py::test_length_is_checked_after_stripping_so_50_plus_padding_is_accepted
+FAILED tests/steps/IAM-F04/test_account_details.py::test_inner_whitespace_is_kept
+15 failed, 1598 passed, 344 skipped in 619.06s (0:10:19)

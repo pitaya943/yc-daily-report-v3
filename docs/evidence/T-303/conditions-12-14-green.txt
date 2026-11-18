@@ -1,0 +1,6 @@
+# 綠：實作後（commit 57c689b 的程式；全量 pytest，容器內 PostgreSQL）
+1613 passed, 344 skipped in 618.72s (0:10:18)
+
+# python3 scripts/ci/run.py lint / strings
+[lint] 通過
+[strings] 通過
