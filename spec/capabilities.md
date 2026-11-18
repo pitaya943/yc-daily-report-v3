@@ -26,7 +26,7 @@ flowchart LR
 |  | [IAM-F03 Session 與登出](../spec/features/IAM-F03-session-and-sign-out.feature) | 3 | 8 | B-061, B-079 |
 |  | [IAM-F04 帳戶生命週期與薪資設定](../spec/features/IAM-F04-account-lifecycle-and-pay-settings.feature) | 7 | 16 | B-007, B-010, B-012, B-013, B-015, B-017, B-074, B-095 |
 |  | [IAM-F05 Owner 管理管理員](../spec/features/IAM-F05-owner-manages-administrators.feature) | 3 | 7 | B-096 |
-|  | [IAM-F06 密碼變更與重設](../spec/features/IAM-F06-password-change-and-reset.feature) | 5 | 9 | B-008 |
+|  | [IAM-F06 密碼變更與重設](../spec/features/IAM-F06-password-change-and-reset.feature) | 5 | 10 | B-008 |
 |  | [IAM-F07 銀行帳號遮罩與顯示](../spec/features/IAM-F07-bank-number-masking-and-reveal.feature) | 4 | 7 | B-014, B-081, B-082, B-093 |
 | **RPT** 日報 | [RPT-F01 送出日報](../spec/features/RPT-F01-submit-a-daily-report.feature) | 8 | 17 | B-062 |
 |  | [RPT-F02 回報生命週期](../spec/features/RPT-F02-report-lifecycle.feature) | 5 | 9 | B-023, B-064 |
@@ -52,4 +52,4 @@ flowchart LR
 | **ARC** 檔案庫 | [ARC-F01 日月報檔案庫](../spec/features/ARC-F01-scheduled-and-manual-archives.feature) | 6 | 11 | B-077, B-078 |
 | **CFG** 設定 | [CFG-F01 單價](../spec/features/CFG-F01-unit-prices.feature) | 4 | 5 | B-032, B-075, B-094 |
 |  | [CFG-F02 費率](../spec/features/CFG-F02-rates.feature) | 4 | 6 | B-033, B-034, B-092 |
-| | **合計** | **140** | **262** | |
+| | **合計** | **140** | **263** | |

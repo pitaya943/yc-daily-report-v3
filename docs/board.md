@@ -26,7 +26,7 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 
 - 順序：階段 1 T-301 ‖ T-305 ‖ T-307 → 階段 2 T-303 ‖ T-302 ‖ T-308（T-305 合併後）→ 階段 3 T-306 ‖ T-304；migration 依序 `0006`（T-301）、`0007`（T-303）、`0008`（T-306）。
 - 同時進行上限：3 張（階段 1）；之後 2 張。`tests/implemented.txt` 依 D-089 為例外。
-- issue #35 已記為 D-104～D-109 並關閉。CI 安裝步驟已修正（D-119）。
+- issue #35 已記為 D-104～D-109 並關閉。CI 安裝步驟已修正（D-119）；CI 時限調高（D-138）。
 - 模型：Chief claude-opus-5-5；Builder claude-sonnet-5-5；Verifier claude-opus-5-5；修正第二輪 Builder claude-opus-5-5。
 
 | Ticket | Milestone | 標題 | 狀態 | PR | 修正輪數 | 備註 |
@@ -54,7 +54,7 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 | T-305 | M3 | 密碼變更與重設 | merged | [#41](https://github.com/pitaya943/yc-daily-report-v3/pull/41) | 0 | Builder 第一輪：claude-sonnet-5-5；規格問題 → issue #40（D-122～D-125）；交付後依 Bugbot 意見補表單 `method="post"`；碰到 usage 上限一次；Verifier 第 1 輪：claude-opus-5-5（PASS，9 個變異全抓到）；規格問題 → issue #46 |
 | T-306 | M3 | 銀行帳號、發薪方式與遮罩 | todo | — | — | — |
 | T-307 | M3 | CI 的 Playwright 冒煙測試 | merged | [#39](https://github.com/pitaya943/yc-daily-report-v3/pull/39) | 0 | Builder 第一輪：claude-sonnet-5-5；CI 第一次 no-weakened-tests 在 PostgreSQL 安裝步驟失敗（D-119 讓失敗直接顯示），重跑全綠；Verifier 第 1 輪：claude-opus-5-5（PASS，4 個變異全抓到）；規格問題：setup-node 只固定主版號 22（M3 報告列出） |
-| T-308 | M3 | 改密碼後的 session、鎖定與解除鎖定（規格更新） | escalated | [#48](https://github.com/pitaya943/yc-daily-report-v3/pull/48) | 0 | issue #40（D-122～D-125）、D-126；卡在 issue #47（D-124 與 IAM-R30 既有 scenario 衝突，Chief 規劃遺漏）；Builder 第一輪：claude-sonnet-5-5（session_01LCMZdocvCBhsJSuGFNjGhC） |
+| T-308 | M3 | 改密碼後的 session、鎖定與解除鎖定（規格更新） | building | [#48](https://github.com/pitaya943/yc-daily-report-v3/pull/48) | 0 | issue #40（D-122～D-125）、D-126；issue #47 → D-140（D-124 與 IAM-R30 既有 scenario 衝突，Chief 規劃遺漏）；Builder 第一輪：claude-sonnet-5-5（session_01LCMZdocvCBhsJSuGFNjGhC） |
 | T-401 | M4 | 單價與費率設定 | todo | — | — | — |
 | T-402 | M4 | 薪資計算與薪資批次 | todo | — | — | — |
 | T-403 | M4 | 封存帳戶的薪資 | todo | — | — | — |

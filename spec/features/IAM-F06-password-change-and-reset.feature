@@ -14,11 +14,9 @@ Feature: Password change and reset
       Examples:
         | who    | current | new      | confirm  | outcome  | message                    |
         | Wen    | correct | newpass1 | newpass1 | accepted |                            |
-        | Wen    | wrong   | newpass1 | newpass1 | INVALID  | 目前密碼不正確             |
         | Wen    | correct | newpass1 | newpass2 | INVALID  | 兩次輸入的密碼不一致       |
         | Wen    | correct | short    | short    | INVALID  | 密碼長度須為 6 至 30 個字  |
         | Admin1 | correct | newpass1 | newpass1 | accepted |                            |
-        | Admin1 | wrong   | newpass1 | newpass1 | INVALID  | 目前密碼不正確             |
 
     @provisional @Q-053
     Scenario: The owner also enters the current password
@@ -64,6 +62,18 @@ Feature: Password change and reset
   Rule: IAM-R34 A wrong current password counts toward the sign-in lockout
 
     # D-124：改密碼時輸入錯誤的目前密碼，與登入共用同一個失敗計數與鎖定（IAM-R04、R05）。
+    # D-140：錯誤的目前密碼仍是 INVALID「目前密碼不正確」，但會多記一次失敗（原本在 IAM-R30 的兩列移到這裡）。
+    Scenario Outline: A wrong current password is rejected and counted
+      Given "<who>" is signed in
+      When "<who>" changes their password with current "wrong", new "newpass1", confirmation "newpass1"
+      Then the request is rejected as INVALID with message "目前密碼不正確"
+      And the only change is one more failed sign-in for "<who>"
+
+      Examples:
+        | who    |
+        | Wen    |
+        | Admin1 |
+
     Scenario: The fifth wrong password across sign-in and password change locks the account
       Given "Wen" is signed in
       And "Wen" has 4 failed sign-ins in the last 15 minutes
