@@ -121,13 +121,17 @@ def change_own_password(conn: psycopg.Connection, actor: Actor, form: dict[str, 
 
 
 def reset_password(conn: psycopg.Connection, actor: Actor, target_id: int, form: dict[str, list[str]]) -> ResetDone:
-    """管理員重設別人的密碼（不需要目前密碼；重設沒有確認欄，規格的動作是「重設為 X」）。"""
+    """管理員重設別人的密碼（不需要目前密碼；要有確認欄，D-127）。"""
     authorize_reset(actor)
     target = repo.find_account(conn, target_id)
     if target is None:
         raise AccountNotFound(target_id)
     authorize_reset(actor, target)  # T-304 在這裡加上依目標角色的判斷
-    new = validate_new_password(_single(form, "new_password"))
+    new = _single(form, "new_password")
+    confirm = _single(form, "password_confirm")
+    if new is not None and confirm != new:  # D-127：重設也有確認欄；缺少、為空、不一致都是同一句（順序與自己改密碼相同：確認 → 長度）
+        raise OutcomeError(Outcome.INVALID, MSG_CONFIRM_MISMATCH)
+    new = validate_new_password(new)
 
     repo.lock_password_hash(conn, target.id)
     repo.set_password_hash(conn, target.id, hash_password(new))

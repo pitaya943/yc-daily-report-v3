@@ -2,7 +2,7 @@
 
     GET  /account/password         自己改密碼的頁面（所有登入者）
     POST /account/password         自己改密碼（IAM-R30）：current_password、new_password、password_confirm
-    POST /accounts/{id}/password   管理員重設（IAM-R31）：new_password；USER → FORBIDDEN
+    POST /accounts/{id}/password   管理員重設（IAM-R31）：new_password、password_confirm（D-127）；USER → FORBIDDEN
 
 沒有任何找回密碼的端點（IAM-R32）。做法與 T-201 相同：表單用 `parse_qs`（不用 `Form()`，pitfall #27）；端點用 `def`（pitfall #28）；
 anti-forgery token 由版型的 hx-headers 帶上（D-080）；成功回 200 與一小段 HTML，拒絕回結果類別的 status 與 JSON（outcomes.py）。

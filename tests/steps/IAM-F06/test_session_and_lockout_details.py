@@ -187,7 +187,7 @@ def test_a_reset_ends_only_the_target_sessions_and_keeps_the_administrators_own(
     for d in wen:
         assert post_sign_in(d, "Wen", TEST_PASSWORD).status_code == 303
     r = Recorder(db)
-    r.perform(lambda: f06.post_form(admin, db, f06.RESET_PATH.format(id=f06.account_id(db, "Wen")), {"new_password": "newpass1"}))
+    r.perform(lambda: f06.post_form(admin, db, f06.RESET_PATH.format(id=f06.account_id(db, "Wen")), {"new_password": "newpass1", "password_confirm": "newpass1"}))
     assert r.response.status_code == 200
     assert session_rows(db, "Wen") == [] and [protected_status(d) for d in wen] == [401, 401]
     assert protected_status(admin) == 200 and protected_status(wei) == 200

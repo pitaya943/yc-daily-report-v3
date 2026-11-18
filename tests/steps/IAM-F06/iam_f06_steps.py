@@ -3,7 +3,7 @@
 設計：
 - 請求走真的 HTTP（TestClient）：`POST /account/password`（自己改）與 `POST /accounts/{id}/password`（管理員重設），
   帶 session cookie 與 `X-CSRF-Token`（D-080）。路徑固定（D-118）。表單欄位：current_password、new_password、password_confirm
-  （重設只有 new_password：規格的 scenario 是「重設為 newpass1」，沒有確認欄）。
+  （重設送 new_password 與 password_confirm：D-127 要求管理員重設也有確認欄；規格的「重設為 newpass1」步驟把兩欄填同一個值）。
 - 動作一律走 `recorder.perform`，「資料沒有變動」比對的是動作前後整個資料庫。
 - `the outcome is <outcome> with message "<message>"`、`"<name>" is signed in`、`an audit row ... with actor ...` 都是
   tests/steps/common/ 的共用步驟，這裡不重新定義（pitfall #26）；只新增 IAM-F06 專屬的句子。
@@ -149,7 +149,7 @@ def _reset(recorder, client, db, last, who, target, new):
         assert post_sign_in(client, who, TEST_PASSWORD).status_code == 303
     last.update(old=TEST_PASSWORD, new=new)
     path = RESET_PATH.format(id=account_id(db, target))
-    recorder.perform(lambda: post_form(client, db, path, {"new_password": new}))
+    recorder.perform(lambda: post_form(client, db, path, {"new_password": new, "password_confirm": new}))
     assert recorder.response.status_code == 200, f"重設應成功（200），實際 {recorder.response.status_code}：{recorder.response.text[:200]}"
 
 
@@ -254,3 +254,27 @@ def _second_device_rejected(db, devices, name):
 def _either_device_rejected(db, devices, name):
     for label, device in devices.items():
         assert_unauthenticated(db, device, label)
+
+
+# ───────────────────────── IAM-R34：錯誤的目前密碼（D-140）─────────────────────────
+
+
+def _failure_count_in(row: str) -> int:
+    """`sign_in_failures` 一列的快照文字 `(account_id,fail_count,last_failed_at,locked_at)` → fail_count。"""
+    return int(row.strip("()").split(",")[1])
+
+
+@then(parsers.parse('the only change is one more failed sign-in for "{who}"'))
+def _only_one_more_failed_sign_in(recorder, db, who):
+    """D-140：恰好新增或更新一列 `sign_in_failures`（該帳戶失敗次數加 1）；其他資料表（含 `sign_in_attempts`、`audit_log`）完全不變。
+
+    「更新」在快照裡是「舊的一列被移除、新的一列被加入」，所以比對的是那個帳戶的次數：新的 = 舊的 + 1（沒有舊的列就是 0 + 1）。
+    """
+    changes = recorder.changes()
+    assert set(changes) == {"sign_in_failures"}, f"唯一的變動應是失敗次數表，實際：{changes}"
+    added, removed = changes["sign_in_failures"]["added"], changes["sign_in_failures"]["removed"]
+    assert len(added) == 1 and len(removed) <= 1, f"應恰好新增或更新一列失敗次數：{changes['sign_in_failures']}"
+    account = account_id(db, who)
+    assert int(added[0].strip("()").split(",")[0]) == account, f"那一列應屬於 {who}：{added[0]}"
+    before = _failure_count_in(removed[0]) if removed else 0
+    assert _failure_count_in(added[0]) == before + 1, f"失敗次數應從 {before} 加 1：{added[0]}"
