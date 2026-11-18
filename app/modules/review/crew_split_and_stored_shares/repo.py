@@ -44,3 +44,19 @@ def quantities_between(conn: psycopg.Connection, date_from: date, date_to: date)
     for account_id, item_code, tenths in rows:
         out.setdefault(account_id, {})[item_code] = tenths
     return out
+
+
+def custom_tenths_times_price_between(conn: psycopg.Connection, date_from: date, date_to: date) -> dict[int, int]:
+    """期間內（含頭尾）每個帳戶在已確認回報上的自訂工項「份額（tenths）× 該回報自己的單價」總和 {account_id: Σ tenths × price}。
+
+    單位是「0.1 只 × 元」，所以要除以 10 才是元（T-302、D-111）；這裡不除，保留精確的整數。
+    份額讀 `report_custom_shares`，單價讀 `reports.custom_price`（每張回報自己的，不是目錄的預設單價）。
+    """
+    rows = conn.execute(
+        "select s.account_id, sum(s.tenths::bigint * r.custom_price)::bigint "
+        "from yc_v3.report_custom_shares s join yc_v3.reports r on r.id = s.report_id "
+        "where r.status = 'CONFIRMED' and r.custom_price is not null and r.report_date between %s and %s "
+        "group by s.account_id order by s.account_id",
+        (date_from, date_to),
+    ).fetchall()
+    return {account_id: total for account_id, total in rows}
