@@ -1,0 +1,18 @@
+$ 在全新的資料庫只套用 0001–0006，放 3 個既有帳戶，再套用 0007（暫存資料庫 evi，本機 127.0.0.1:5433）
+-- 套用 0007 之前，fixed_salary 欄位數（預期 0）：
+0
+-- 套用 0007 之後，既有帳戶的值：
+ name | insured | insurance_deduction | uninsured_rate_bp | uninsured_exempt | fixed_salary | pays_fixed_salary_every_period 
+------+---------+---------------------+-------------------+------------------+--------------+--------------------------------
+ Old1 | f       |                   0 |                   | f                |            0 | f
+ Old2 | f       |                   0 |                   | f                |            0 | f
+ Old3 | f       |                   0 |                   | f                |            0 | f
+(3 rows)
+
+-- 檔頭的「套用後檢查」查詢（預期 t）：
+t
+-- 第二次執行同一個檔案（ON_ERROR_STOP，無錯誤即成功；只印非 NOTICE 的輸出行數，預期 0）：
+0
+-- 約束：未投保卻有扣除額會被資料庫拒絕：
+ERROR:  new row for relation "accounts" violates check constraint "accounts_insurance_deduction_check"
+DETAIL:  Failing row contains (1, Old1, USER, WEST, f, f, null, f, 5, null, f, 0, f).

@@ -1,0 +1,36 @@
+................................                                         [100%]
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED tests/test_spec.py::test_create_a_user
+PASSED tests/test_spec.py::test_creation_is_validated[display name-(empty)-\u8acb\u8f38\u5165\u986f\u793a\u540d\u7a31]
+PASSED tests/test_spec.py::test_creation_is_validated[display name-51 characters-\u986f\u793a\u540d\u7a31\u6700\u591a 50 \u500b\u5b57]
+PASSED tests/test_spec.py::test_creation_is_validated[display name-Wen-\u6b64\u986f\u793a\u540d\u7a31\u5df2\u88ab\u4f7f\u7528]
+PASSED tests/test_spec.py::test_creation_is_validated[password-5 characters-\u5bc6\u78bc\u9577\u5ea6\u9808\u70ba 6 \u81f3 30 \u500b\u5b57]
+PASSED tests/test_spec.py::test_creation_is_validated[password-31 characters-\u5bc6\u78bc\u9577\u5ea6\u9808\u70ba 6 \u81f3 30 \u500b\u5b57]
+PASSED tests/test_spec.py::test_creation_is_validated[zone-EAST-\u8acb\u9078\u64c7\u65bd\u5de5\u5340\u57df]
+PASSED tests/test_spec.py::test_creation_is_validated[role-(empty)-\u8acb\u9078\u64c7\u89d2\u8272]
+PASSED tests/test_spec.py::test_boundary_values_that_are_accepted[display name-50 characters]
+PASSED tests/test_spec.py::test_boundary_values_that_are_accepted[password-6 characters]
+PASSED tests/test_spec.py::test_boundary_values_that_are_accepted[password-30 characters]
+PASSED tests/test_spec.py::test_account_management_lists_user_accounts_only_for_an_admin
+PASSED tests/test_spec.py::test_insurance_settings[enrolled-834-accepted-]
+PASSED tests/test_spec.py::test_insurance_settings[enrolled-1-accepted-]
+PASSED tests/test_spec.py::test_insurance_settings[enrolled-0-INVALID-\u5df2\u6295\u4fdd\u6642\uff0c\u6263\u9664\u984d\u9808\u81f3\u5c11\u70ba 1]
+PASSED tests/test_spec.py::test_insurance_settings[enrolled--5-INVALID-\u52de\u5065\u4fdd\u6263\u9664\u984d\u9808\u70ba 0 \u6216\u6b63\u6574\u6578]
+PASSED tests/test_spec.py::test_insurance_settings[not enrolled, rate-5-accepted-]
+PASSED tests/test_spec.py::test_insurance_settings[not enrolled, rate-100.01-INVALID-\u672a\u6295\u4fdd\u6263\u9664\u6bd4\u4f8b\u9808\u70ba 0 \u5230 100 \u4e4b\u9593\uff0c\u6700\u591a\u5169\u4f4d\u5c0f\u6578]
+PASSED tests/test_spec.py::test_insurance_settings[not enrolled, rate-3.333-INVALID-\u672a\u6295\u4fdd\u6263\u9664\u6bd4\u4f8b\u9808\u70ba 0 \u5230 100 \u4e4b\u9593\uff0c\u6700\u591a\u5169\u4f4d\u5c0f\u6578]
+PASSED tests/test_spec.py::test_insurance_settings[not enrolled, exempt--accepted-]
+PASSED tests/test_spec.py::test_fixed_salary_is_a_whole_number_of_ntd_zero_or_more[0-accepted]
+PASSED tests/test_spec.py::test_fixed_salary_is_a_whole_number_of_ntd_zero_or_more[5000-accepted]
+PASSED tests/test_spec.py::test_fixed_salary_is_a_whole_number_of_ntd_zero_or_more[-1-INVALID]
+PASSED tests/test_spec.py::test_fixed_salary_is_a_whole_number_of_ntd_zero_or_more[5000.5-INVALID]
+PASSED tests/test_spec.py::test_every_paysetting_change_is_audited
+PASSED tests/test_spec.py::test_a_zone_change_applies_to_the_next_report
+PASSED tests/test_spec.py::test_the_bigmeter_flag_is_offered_for_user_accounts_only
+PASSED tests/test_spec.py::test_archive
+PASSED tests/test_spec.py::test_an_archived_account_is_signed_out
+PASSED tests/test_spec.py::test_restore
+PASSED tests/test_spec.py::test_no_such_action_exists[permanently delete]
+PASSED tests/test_spec.py::test_no_such_action_exists[deactivate]
+32 passed, 1925 deselected in 31.34s

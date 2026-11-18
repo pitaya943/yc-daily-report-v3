@@ -1,0 +1,46 @@
+{#- 帳戶管理：USER 清單（西區在前）與建立表單（IAM-R13；D-118）。extends T-200 的共用版型。 -#}
+{% extends "base.html" %}
+{% block title %}帳戶管理{% endblock %}
+{% block content %}
+{% include "_style.html" %}
+<h1>帳戶管理</h1>
+<p class="sub">員工（USER）帳戶。帳戶不會被刪除，只能封存與復原。</p>
+
+<table aria-label="員工帳戶">
+  <thead><tr><th>顯示名稱</th><th>區域</th><th>大表</th><th>狀態</th></tr></thead>
+  <tbody>
+  {% for a in accounts %}
+    <tr data-account-name="{{ a.name }}" data-role="{{ a.role }}" data-zone="{{ a.zone }}">
+      <td><a href="/accounts/{{ a.id }}">{{ a.name }}</a></td>
+      <td>{{ "西區" if a.zone == "WEST" else "南區" }}</td>
+      <td>{{ "是" if a.big_meter else "否" }}</td>
+      <td>{% if a.archived %}<span class="badge archived">已封存</span>{% else %}使用中{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<section class="card">
+  <h2>新增員工帳戶</h2>
+  <form method="post" action="/accounts" hx-post="/accounts" hx-target="#create-result" hx-swap="innerHTML" autocomplete="off">
+    <div class="form-error" role="alert" aria-live="assertive" hidden></div>
+    <input type="hidden" name="role" value="USER">
+    <label for="name">顯示名稱</label>
+    <input id="name" type="text" name="name" autocomplete="off">
+    <label for="password">密碼（6 至 30 個字）</label>
+    <input id="password" type="password" name="password" autocomplete="new-password">
+    <label for="password_confirm">再輸入一次密碼</label>
+    <input id="password_confirm" type="password" name="password_confirm" autocomplete="new-password">
+    <label for="zone">施工區域</label>
+    <select id="zone" name="zone">
+      <option value="">請選擇</option>
+      <option value="WEST">西區</option>
+      <option value="SOUTH">南區</option>
+    </select>
+    <label class="inline"><input type="checkbox" name="big_meter" value="on"> 大表帳戶</label>
+    <button type="submit">建立帳戶</button>
+    <div id="create-result" class="result" aria-live="polite"></div>
+  </form>
+</section>
+{% include "_script.html" %}
+{% endblock %}

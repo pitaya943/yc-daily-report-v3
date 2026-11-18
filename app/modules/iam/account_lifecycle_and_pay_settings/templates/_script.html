@@ -1,0 +1,24 @@
+<script>
+(function () {
+  // HTMX 2 預設不把 4xx／5xx 換進畫面（pitfall #31）。每個表單有一個 .result（成功時換進）與一個 .form-error（拒絕時顯示完整字串）。
+  // beforeSwap 的 detail.target 是換入的目標（.result），不是送出的表單；用 target 找同一張表單的錯誤框。
+  document.body.addEventListener("htmx:beforeSwap", function (evt) {
+    var target = evt.detail.target;
+    if (!target || !target.classList.contains("result")) { return; }
+    var box = target.parentElement.querySelector(".form-error");
+    var xhr = evt.detail.xhr;
+    if (xhr.status < 400) { if (box) { box.hidden = true; box.textContent = ""; } return; }
+    evt.detail.shouldSwap = false;
+    evt.detail.isError = false;
+    if (xhr.status === 401) { window.location.assign("/sign-in"); return; }
+    var body = {};
+    try { body = JSON.parse(xhr.responseText); } catch (e) { /* 不是 JSON：用備用文字 */ }
+    if (box) {
+      // 有規格字串（附錄 B）就逐字顯示；規格沒有寫字串的拒絕只顯示結果類別
+      box.textContent = body.message ? body.message : "無法完成（" + (body.outcome || xhr.status) + "）";
+      box.hidden = false;
+    }
+    target.textContent = "";
+  });
+})();
+</script>

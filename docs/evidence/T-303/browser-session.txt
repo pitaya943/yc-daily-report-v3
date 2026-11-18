@@ -1,0 +1,33 @@
+sign in Admin1: HTTP 303
+list rows: Big/USER/WEST, Old/USER/WEST, Wan/USER/WEST, Wei/USER/WEST, Wen/USER/WEST, Nan/USER/SOUTH
+screenshot 01-account-list.png: 清單只有 USER，西區在南區之前，Old 標示已封存
+create with empty name: HTTP 422 message="請輸入顯示名稱"
+screenshot 02-create-empty-name.png: 請輸入顯示名稱
+create with duplicate name: HTTP 422 message="此顯示名稱已被使用"
+screenshot 03-create-duplicate-name.png: 此顯示名稱已被使用
+create Lin: HTTP 200 result="已建立帳戶　查看帳戶"
+screenshot 04-create-success.png: 已建立帳戶 Lin
+list after create: Big/WEST, Old/WEST, Wan/WEST, Wei/WEST, Wen/WEST, Lin/SOUTH, Nan/SOUTH
+Wen page initial: deduction="" rate="" fixed_salary="0"
+screenshot 05-wen-initial.png: 初始值：未投保、比例空白、固定薪資 0
+enrolled with 0: HTTP 422 message="已投保時，扣除額須至少為 1"
+screenshot 06-enrolled-zero.png: 已投保時，扣除額須至少為 1
+enrolled with 834: HTTP 200 result="已儲存　查看帳戶"
+screenshot 07-enrolled-834.png: 已儲存
+rate 3.333: HTTP 422 message="未投保扣除比例須為 0 到 100 之間，最多兩位小數"
+screenshot 08-rate-too-many-decimals.png: 未投保扣除比例須為 0 到 100 之間，最多兩位小數
+fixed salary 5000.5: HTTP 422 message="固定薪資須為 0 或正整數"
+screenshot 09-fixed-salary-invalid.png: 固定薪資須為 0 或正整數
+fixed salary 5000: HTTP 200 result="已儲存　查看帳戶"
+screenshot 10-fixed-salary-saved.png: 已儲存
+Admin1 page (id 2) has big_meter select: false
+archive Wen: HTTP 200 page now shows: USER　已封存; restore button present
+screenshot 11-archived.png: 已封存，出現復原按鈕
+archived Wen signs in: HTTP 401
+restore Wen: HTTP 200
+restored Wen signs in: HTTP 303
+sign in Admin1: HTTP 303
+screenshot 12-account-page-phone.png: 手機寬度（390px）
+sign in Wen: HTTP 303
+Wen reads Wei's account page: HTTP 403 body={"outcome":"FORBIDDEN","message":null}
+Wen opens account management: HTTP 403 body={"outcome":"FORBIDDEN","message":null}
