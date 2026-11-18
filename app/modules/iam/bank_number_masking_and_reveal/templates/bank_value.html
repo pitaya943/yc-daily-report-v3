@@ -1,0 +1,3 @@
+{#- 銀行帳號的值（遮罩或全碼）。reveal 的回應就是這一段；整頁也 include 它。
+    data-state：masked／revealed／unreadable／unset。autoescape 已開。 -#}
+<span id="bank-value" class="bank-value" data-state="{{ shown.state }}">{{ shown.text }}</span>

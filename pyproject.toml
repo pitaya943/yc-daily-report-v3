@@ -9,6 +9,7 @@ dependencies = [
     "jinja2>=3.1",
     "psycopg[binary]>=3.2",
     "openpyxl>=3.1.5,<3.2",
+    "cryptography>=46,<52",  # 銀行帳號的 AES-256-GCM（D-113）；上限擋掉未經驗證的下一個主版本
 ]
 
 [project.optional-dependencies]
