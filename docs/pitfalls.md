@@ -32,3 +32,6 @@
 | 32 | 補充測試寫死了規格已經推翻、只是程式還沒改的行為，下一張 ticket 會被 `no-weakened-tests` 與 D-052 卡住（T-202 第 1 輪 FAIL） | 改規格時，Chief 依 D-103 在同一個 commit 暫時移出受影響的規則並處理寫死舊行為的測試；Builder 的補充測試每個只放一個錯誤原因，不斷言規格已推翻的行為；Verifier 先模擬下一張 ticket 的新規則再跑全部測試 | #33、#36 | M2 |
 | 33 | 這個容器的 Playwright 只有 Node 版（`require('playwright')`），`import playwright` 會失敗；只有 `httpx2` 沒有 `httpx`；變異抽查要從 `tests/` 整體用 `-k` 收集 | 瀏覽器腳本用 Node 寫，放 scratchpad；直接打 app 用標準庫 `urllib` 或 `requests`；不要只跑 `tests/test_spec.py`（步驟不會註冊，見 #26） | #26、#28、#32、#33、#34 | M2 |
 
+| 34 | Chief 記錄改變行為的決定（D-124、D-095 的延伸）時沒有比對既有 scenario，新規則與舊 scenario 的「資料不變」斷言矛盾，ticket 中途停下兩次（#47、#51） | 記錄決定前 `grep -rn` 所有涉及同一張表、同一個端點的 scenario 與共用步驟（特別是 `nothing is written`、`no account is created`），矛盾就在同一個 commit 改規格（D-140、D-142），不在共用步驟開例外 | #47、#51 | M3 |
+| 35 | 在有外鍵指向的帳戶列上用 `select … for update`，會與子表插入時的 `for key share` 互相等待而死結（T-308） | 只需排除另一個寫入者時用 `for no key update`；並行測試要能控制等待點，否則像 D-141 的變異 40 輪只抓到 4～5 輪 | #49、T-308 Verifier | M3 |
+| 36 | 沒有 JS 時，`<form>` 沒寫 `method` 會以 GET 送出，密碼會進網址與存取紀錄（Cursor Bugbot 在 T-305 抓到） | 含密碼或個資的表單一律明寫 `method="post"`；Verifier 檢查畫面時順便停用 JS 送出一次 | PR #41 | M3 |

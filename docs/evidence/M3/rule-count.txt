@@ -1,0 +1,11 @@
+IAM-F02 ['IAM-R08'] {'passed': 3}
+IAM-F04 ['IAM-R13', 'IAM-R14', 'IAM-R15', 'IAM-R16', 'IAM-R17', 'IAM-R18', 'IAM-R19'] {'passed': 16}
+IAM-F05 ['IAM-R20', 'IAM-R21', 'IAM-R22'] {'passed': 7}
+IAM-F06 ['IAM-R30', 'IAM-R31', 'IAM-R32', 'IAM-R33', 'IAM-R34'] {'passed': 10}
+IAM-F07 ['IAM-R40', 'IAM-R41', 'IAM-R43'] {'passed': 6}
+REV-F01 ['REV-R01', 'REV-R02', 'REV-R03'] {'passed': 5}
+REV-F02 ['REV-R10', 'REV-R11'] {'passed': 6}
+REV-F03 ['REV-R20', 'REV-R21', 'REV-R22', 'REV-R23', 'REV-R24'] {'passed': 7}
+RPT-F02 ['RPT-R12'] {'passed': 1}
+M3 rules 30 scen {'passed': 61}
+all rules 140 {'skipped': 149, 'passed': 114}

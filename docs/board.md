@@ -22,7 +22,7 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 - 結果：6 張全部 merged；報告 `docs/milestones/M2.html`；未決 issue #35（不擋 M2）。
 - 模型：Chief claude-opus-5-5；Builder claude-sonnet-5-5；Verifier claude-opus-5-5；修正第二輪 Builder claude-opus-5-5。
 
-## M3（計畫：issue #38，D-110～D-121）
+## M3（計畫：issue #38，D-110～D-121；8 張全部 merged）
 
 - 順序：階段 1 T-301 ‖ T-305 ‖ T-307 → 階段 2 T-303 ‖ T-302 ‖ T-308（T-305 合併後）→ 階段 3 T-306 ‖ T-304；migration 依序 `0006`（T-301）、`0007`（T-303）、`0008`（T-306）。
 - 同時進行上限：3 張（階段 1）；之後 2 張。`tests/implemented.txt` 依 D-089 為例外。
@@ -50,7 +50,7 @@ Chief 是唯一能修改這個檔案的角色。Chief 每次開始工作時先�
 | T-301 | M3 | 確認或駁回回報，保存份額 | merged | [#43](https://github.com/pitaya943/yc-daily-report-v3/pull/43) | 0 | Builder 第一輪：claude-sonnet-5-5；allowed_paths 漏列 `app/modules/review/__init__.py` → issue #42，Chief 依先例補上；Verifier 第 1 輪：claude-opus-5-5（PASS，8 個變異全抓到；並行測試拿掉鎖後 180 輪有 166 輪異常）；規格問題 3 項記入 M3 報告；Builder 在 merge milestone 時碰到 usage 上限（12:44～16:10），恢復後完成 |
 | T-302 | M3 | 自訂工項 | merged | [#44](https://github.com/pitaya943/yc-daily-report-v3/pull/44) | 0 | Builder 第一輪：claude-sonnet-5-5（等 T-305 的共用步驟 S1；碰到 usage 上限一次）；Verifier 第 1 輪：claude-opus-5-5（PASS，5 個變異全抓到）；規格問題 → issue #46 第 8～11 項 |
 | T-303 | M3 | 帳戶生命週期與薪資設定 | merged | [#45](https://github.com/pitaya943/yc-daily-report-v3/pull/45) | 0 | Builder 第一輪：claude-sonnet-5-5（等 T-305 的共用步驟 S1；碰到 usage 上限兩次；依 D-127、D-129、D-139 補改）；no-weakened-tests 逾時 → D-138；Verifier 第 1 輪：claude-opus-5-5（PASS）；規格問題 3 項記入 M3 報告 |
-| T-304 | M3 | OWNER 管理管理員 | building | — | 0 | Builder 第一輪：claude-sonnet-5-5（session_01LCMZdjrvT1LkFucyawjrY1） |
+| T-304 | M3 | OWNER 管理管理員 | merged | [#52](https://github.com/pitaya943/yc-daily-report-v3/pull/52) | 0 | Builder 第一輪：claude-sonnet-5-5；規格不一致 → issue #51 → D-142；Verifier 第 1 輪：claude-opus-5-5（PASS，8 個變異全抓到、97 種權限組合實打）；規格問題 2 項記入 M3 報告 |
 | T-305 | M3 | 密碼變更與重設 | merged | [#41](https://github.com/pitaya943/yc-daily-report-v3/pull/41) | 0 | Builder 第一輪：claude-sonnet-5-5；規格問題 → issue #40（D-122～D-125）；交付後依 Bugbot 意見補表單 `method="post"`；碰到 usage 上限一次；Verifier 第 1 輪：claude-opus-5-5（PASS，9 個變異全抓到）；規格問題 → issue #46 |
 | T-306 | M3 | 銀行帳號、發薪方式與遮罩 | merged | [#50](https://github.com/pitaya943/yc-daily-report-v3/pull/50) | 0 | Builder 第一輪：claude-sonnet-5-5（第一回合碰到 usage 上限，恢復後完成）；Verifier 第 1 輪：claude-opus-5-5（PASS，6 個變異全抓到；資料庫與紀錄無明碼、無金鑰）；規格問題 5 項記入 M3 報告 |
 | T-307 | M3 | CI 的 Playwright 冒煙測試 | merged | [#39](https://github.com/pitaya943/yc-daily-report-v3/pull/39) | 0 | Builder 第一輪：claude-sonnet-5-5；CI 第一次 no-weakened-tests 在 PostgreSQL 安裝步驟失敗（D-119 讓失敗直接顯示），重跑全綠；Verifier 第 1 輪：claude-opus-5-5（PASS，4 個變異全抓到）；規格問題：setup-node 只固定主版號 22（M3 報告列出） |

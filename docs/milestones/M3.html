@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M3 報告 — 員工日報系統</title>
+<style>
+  :root { --bg:#f7f9f9; --card:#fff; --ink:#18282b; --muted:#5a6c6f; --line:#d6dfe0; --accent:#0d6b74; --warn:#b5560b; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111b1d; --card:#182628; --ink:#e5eced; --muted:#9db1b4; --line:#2d4144; --accent:#6cc7cf; --warn:#f0a45c; } }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.75 "Noto Sans TC", system-ui, sans-serif; }
+  main { max-width:860px; margin:0 auto; padding:40px 16px 80px; }
+  h1 { font-size:1.8rem; margin:0 0 4px; }
+  h2 { font-size:1.25rem; color:var(--accent); margin:44px 0 12px; border-bottom:1px solid var(--line); padding-bottom:6px; }
+  h3 { font-size:1.05rem; margin:28px 0 8px; }
+  p, li { max-width:68ch; }
+  .meta { color:var(--muted); font-size:.9rem; }
+  .verdict { background:var(--card); border:1px solid var(--line); border-left:5px solid var(--accent); padding:16px 20px; margin-top:20px; }
+  .todo { color:var(--warn); }
+  .scroll { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; font-size:.92rem; background:var(--card); }
+  th, td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { white-space:nowrap; }
+  code, pre { font-family:ui-monospace, Menlo, monospace; font-size:.88em; }
+  pre { background:var(--card); border:1px solid var(--line); padding:12px 14px; overflow-x:auto; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>M3 報告：審核與帳戶管理</h1>
+  <p class="meta">分支 <code>milestone/M3</code> · 報告日期 2026-11-19 · 撰寫者 Chief（模型 <code>claude-opus-5-5</code>）</p>
+
+  <div class="verdict">
+    <p><strong>結論。</strong>M3 的 8 張 ticket 都已合併進 <code>milestone/M3</code>（原計畫 6 張，加上 T-307 CI 冒煙測試與依 issue #40 新增的 T-308）。管理員可以確認或駁回回報，確認時保存每個人的份額；可以附加自訂工項；可以建立、封存、復原帳戶並設定勞健保、固定薪資、銀行帳號（只存密文）與發薪方式；OWNER 管理 ADMIN；所有人可以改自己的密碼，管理員可以重設 USER 的密碼並提前解除鎖定。Chief 在 T-304 合併後的 <code>4033803</code> 重跑：<code>1796 passed, 307 skipped</code>；M3 負責的 30 條規則 61 個 scenario 全部通過。</p>
+    <p><strong>沒完成的事：</strong>IAM-R42（USER 看不到別人的財務欄位）依 D-114 移到 M4 的 T-406，因為保留金與薪資要到 M4 才存在；M3 只用補充測試把關已存在的欄位。REV-R02、R11、R23 的「計算薪資」步驟目前讀的是 T-301 的份額讀取函式（D-111），要到 T-402 才改接真正的薪資計算。</p>
+    <p><strong>最該注意的一件事：</strong>這個 milestone 有 3 次規格本身不一致，都是 Chief 規劃或記錄決定時沒有比對到既有的 scenario（issue #47 → D-140、#49 的登入競爭、#51 → D-142）。另外，issue <a href="https://github.com/pitaya943/yc-daily-report-v3/issues/53">#53</a> 有 13 個規格問題在等你回覆；目前的實作都是建議的選項 A，不擋 M3 合併。</p>
+  </div>
+
+  <h2>1. 達成的 feature</h2>
+  <p>管理員登入後落在 <code>/review</code>，從一般與大表兩個佇列逐筆或批次確認、駁回員工的回報；確認時依小組分配規則把每個工項（含自訂工項）的數量分給每個人並存下來，之後薪資只讀這份資料。帳戶管理頁可以建立 USER、設定薪資相關欄位、封存與復原；OWNER 另外可以把 USER 升為 ADMIN、管理 ADMIN。銀行帳號只顯示末四碼，顯示完整帳號會留下稽核。</p>
+  <div class="scroll"><table>
+    <tr><th>Feature</th><th>規則</th><th>Scenario 通過／總數</th><th>Ticket</th><th>PR</th><th>證據</th><th>Builder／Verifier 的模型</th></tr>
+    <tr><td>CI 畫面冒煙測試（D-120）</td><td>—</td><td>不適用；Playwright 6 項</td><td>T-307</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/39">#39</a></td><td><code>docs/evidence/T-307/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/39#issuecomment-6947990594">T-307 PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>REV-F01 確認或駁回回報</td><td>REV-R01～R03</td><td>5／5</td><td>T-301</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/43">#43</a></td><td><code>docs/evidence/T-301/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/43#issuecomment-6948380169">T-301 PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>REV-F02 小組分配與保存份額</td><td>REV-R10、R11</td><td>6／6</td><td>T-301</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/43">#43</a></td><td><code>docs/evidence/T-301/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/43#issuecomment-6948380169">T-301 PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>RPT-F02 回報生命週期（M2 延過來）</td><td>RPT-R12</td><td>1／1</td><td>T-301</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/43">#43</a></td><td><code>docs/evidence/T-301/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/43#issuecomment-6948380169">T-301 PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>REV-F03 自訂工項</td><td>REV-R20～R24</td><td>7／7</td><td>T-302</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/44">#44</a></td><td><code>docs/evidence/T-302/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/44#issuecomment-6961863672">T-302 PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>IAM-F04 帳戶生命週期與薪資設定</td><td>IAM-R13、R15～R19（T-303）；R14（T-306，D-113）</td><td>16／16</td><td>T-303、T-306</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/45">#45</a>、<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/50">#50</a></td><td><code>docs/evidence/T-303/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/45#issuecomment-6980442594">T-303 PASS</a>、<code>docs/evidence/T-306/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/50#issuecomment-6987543884">T-306 PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>IAM-F05 OWNER 管理管理員</td><td>IAM-R20～R22</td><td>7／7</td><td>T-304</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/52">#52</a></td><td><code>docs/evidence/T-304/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/52#issuecomment-7010912587">T-304 PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>IAM-F06 改密碼與重設</td><td>IAM-R30～R32（T-305）；R33、R34（T-308）</td><td>10／10</td><td>T-305、T-308</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/41">#41</a>、<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/48">#48</a></td><td><code>docs/evidence/T-305/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/41#issuecomment-6955122426">T-305 PASS</a>、<code>docs/evidence/T-308/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/48#issuecomment-6993350885">T-308 PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>IAM-F07 銀行帳號遮罩與顯示</td><td>IAM-R40、R41、R43（R42 移到 T-406）</td><td>6／6</td><td>T-306</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/50">#50</a></td><td><code>docs/evidence/T-306/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/50#issuecomment-6987543884">T-306 PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+    <tr><td>IAM-F02 登入鎖定與限速（新增 R08）</td><td>IAM-R08</td><td>3／3</td><td>T-308</td><td><a href="https://github.com/pitaya943/yc-daily-report-v3/pull/48">#48</a></td><td><code>docs/evidence/T-308/</code>；<a href="https://github.com/pitaya943/yc-daily-report-v3/pull/48#issuecomment-6993350885">T-308 PASS</a></td><td>claude-sonnet-5-5／claude-opus-5-5</td></tr>
+  </table></div>
+  <p>模型名稱是各 session 用 <code>get_session</code> 讀出的實際設定，寫在各 PR 的交付留言與判定留言中。重算方式：在 <code>4033803</code>（T-304 合併後）用 CI 的 <code>rule_report</code> plugin 逐條統計，完整輸出在 <code>docs/evidence/M3/rerun.txt</code>：</p>
+  <pre>$ PYTHONPATH=. YC_RULE_REPORT=rule-report.json python3 -m pytest -q -p scripts.ci.rule_report
+1796 passed, 307 skipped in 619.26s (0:10:19)
+
+# docs/evidence/M3/rule-count.txt（M3 負責的 30 條規則；outline 算 1 個）
+REV-F01 5、REV-F02 6、RPT-F02 1、REV-F03 7、IAM-F04 16、IAM-F05 7、IAM-F06 10、IAM-F07 6、IAM-F02 3
+M3 rules 30 scen {'passed': 61}
+all rules 140 {'passed': 114, 'skipped': 149}   # skipped 的 149 個屬於 M4 以後的規則</pre>
+  <p>規格在這個 milestone 由 137 條規則、251 個 scenario（M2 報告的數字；當時的合計表其實少算 3 個，見 D-125）增為 140 條、263 個：新增 IAM-R08（D-126）、IAM-R33、R34（D-123、D-124）與 IAM-R20 的一個 scenario（D-122），IAM-R30 的兩列移到 IAM-R34（D-140）。</p>
+
+  <h2>2. 為何這樣設計</h2>
+  <h3>2.1 份額表是已確認數量的唯一來源（D-111、D-131）</h3>
+  <p>REV-R11 要求「份額在確認時保存，且是已確認數量的唯一來源」。T-301 的 <code>0006</code> 建了兩張表：目錄工項的 <code>report_shares</code>（一列 = 一張回報、一個工項、一個人）與自訂工項的 <code>report_custom_shares</code>；確認當下就存下小組順位，之後成員被封存或改區也不影響（AD-7）。問題是 REV-R02、R11、R23 的 scenario 用「計算薪資」判定，而薪資在 M4。比較過兩個做法：把這三條規則移到 T-402（A），或由 T-301 提供一個只讀份額表的函式、讓步驟先呼叫它（B）。你選 B：這樣「批次確認」「兩人同時確認」「份額保存」在 M3 就有 Gherkin 把關。代價：M4 之前「has no gross」實際檢查的是「沒有已確認的份額」，比完整毛額弱；T-402 的完成條件已寫明要改接真正的薪資計算。</p>
+  <h3>2.2 同一把鎖：確認、駁回、編輯、刪除、自訂工項（T-301 完成條件 8、T-302 完成條件 8）</h3>
+  <p>M2 的交接指出：如果確認不和提交者的編輯用同一把鎖，兩者可以同時進行，結果是「確認後內容又被改，份額卻是舊數量」。T-301、T-302 都呼叫 <code>report_lifecycle/repo.py</code> 既有的上鎖函式（<code>select … for update</code> 鎖住那張回報），批次依 id 由小到大上鎖避免死結。T-301 的 Verifier 做了並行測試：原始程式 60 輪 0 次異常；拿掉鎖後 180 輪有 166 輪異常。</p>
+  <h3>2.3 銀行帳號在應用程式內加密，不用資料庫加密（D-113）</h3>
+  <p>比較過三個做法：在 T-303 一開始就加密儲存（加密會在沒有 IAM-R43 scenario 的情況下實作）、用 PostgreSQL 的 <code>pgcrypto</code>（要建立 extension，違反 D-045「migration 不定義函式」）、把 IAM-R14 移到 T-306 由同一張 ticket 負責儲存與加密。你選了最後一個。T-306 用 <code>cryptography</code> 的 AES-256-GCM，每次加密用新的隨機 nonce，金鑰在環境變數 <code>BANK_NUMBER_KEY</code>；資料庫只存密文（<code>bytea</code>，至少 42 bytes），check 約束擋掉看起來像明文的值，並保證「轉帳一定有帳號」。代價：金鑰遺失時所有帳號都無法讀取（IAM-R43 的行為），部署時要另外保管金鑰。</p>
+  <h3>2.4 權限規則由一張 ticket 負責，即使要改別張的模組（D-115）</h3>
+  <p>IAM-R20「只有 OWNER 能動 ADMIN」涉及 T-303（封存、復原、改區）與 T-305（重設密碼）的端點。比較過讓 T-303、T-305 各自先做好（同一條權限規則寫兩份，而且沒有 scenario 把關）或讓 T-304 依賴兩者、擴大範圍去加檢查。你選後者。T-304 的 Verifier 用 USER、ADMIN、OWNER 對每個端點實打 97 種組合，沒有疏忽也沒有誤擋。</p>
+  <h3>2.5 登入與改密碼同時發生（D-141）</h3>
+  <p>Cursor 的資安審查指出：登入先在沒有鎖的情況下比對密碼，之後才建立 session；如果中間密碼被改，舊密碼仍拿到一個有效的 session，D-123「改密碼後其他 session 失效」在這個時間窗沒有做到。你選擇在 T-308 修正：建立 session 前在帳戶鎖內重新確認密碼雜湊沒有改變。完成條件寫的是 <code>for update</code>，Builder 改用 <code>for no key update</code>，因為 <code>for update</code> 會與 <code>sign_in_failures</code> 外鍵的 key share 鎖死結；Verifier 用兩條連線重現了死結，也實測兩個方向仍互相等待。ticket 文字已更正。</p>
+  <h3>2.6 規格裡寫明副作用，不在共用步驟開例外（D-140、D-142）</h3>
+  <p>D-124 讓「改密碼時打錯目前密碼」也寫一列失敗計數，和 IAM-R30 既有兩列「資料不變」的斷言衝突（#47）；IAM-R20 有一個 scenario 用了「沒有建立帳戶」（斷言全庫不變），和 FORBIDDEN 必寫 <code>ACCESS_DENIED</code> 衝突（#51）。兩次都有「在共用步驟針對某句話開例外」的做法可選，你都選了改規格：把例外寫在規格裡，下一個人看得到；共用步驟維持嚴格。</p>
+  <h3>2.7 CI 的時限與畫面測試（D-119、D-120、D-138）</h3>
+  <p>CI 的安裝步驟原本會吞掉失敗（M2 遇過），改成 <code>A &amp;&amp; { B || true; }</code> 後，T-307 第一次跑 CI 時 apt 失敗就直接在那一步顯示。T-307 在既有的 <code>tests</code> job 加了 Playwright 冒煙測試（D-099 的兩個畫面行為），多約 24 秒。M3 的測試數量增加後，<code>no-weakened-tests</code>（目標分支與 PR 各跑一輪全部測試）從約 15 分鐘增為約 25 分鐘，超過原本 20 分鐘的時限，所以 D-138 調為 45 分鐘、<code>tests</code> 調為 30 分鐘。</p>
+
+  <h2>3. 如何審查</h2>
+  <div class="scroll"><table>
+    <tr><th>順序</th><th>檔案</th><th>要看什麼</th></tr>
+    <tr><td>1</td><td><code>spec/features/IAM-F02…</code>、<code>IAM-F05…</code>、<code>IAM-F06…</code>、<code>REV-F03…</code></td><td>這個 milestone 由 Chief 依你的決定改了規格：IAM-R08（解除鎖定）、IAM-R33、R34、IAM-R20 新 scenario、IAM-R30 兩列移到 R34、IAM-R20 一行改寫、AD-10 註解。對照實際業務確認是你要的</td></tr>
+    <tr><td>2</td><td><code>migrations/0006_report_shares.sql</code>、<code>0007_account_pay_settings.sql</code>、<code>0008_bank_number_and_payment_method.sql</code></td><td>檔頭的設計說明、檢查查詢與回滾；份額的唯一性、比例以萬分之一的整數存、銀行帳號只存密文的 check 約束</td></tr>
+    <tr><td>3</td><td><code>app/modules/review/confirm_or_reject_reports/</code>、<code>crew_split_and_stored_shares/</code></td><td>確認與駁回怎麼上鎖、份額怎麼存；D-111 的讀取函式（T-402 會接著用）</td></tr>
+    <tr><td>4</td><td><code>app/modules/iam/bank_number_masking_and_reveal/crypto.py</code></td><td>金鑰怎麼讀、加解密、錯誤時不洩漏金鑰或帳號</td></tr>
+    <tr><td>5</td><td><code>app/modules/iam/account_lifecycle_and_pay_settings/</code>、<code>owner_manages_administrators/</code>、<code>password_change_and_reset/</code></td><td>「只有 OWNER 能動 ADMIN」與自我保護的檢查集中在哪裡；改密碼後結束其他 session</td></tr>
+    <tr><td>6</td><td><code>app/modules/iam/sign_in/</code>、<code>sign_in_lockout_and_rate_limit/</code></td><td>D-141 建立 session 前的重新確認；改密碼與登入共用失敗計數；解除鎖定的權限</td></tr>
+    <tr><td>7</td><td><code>tests/steps/common/outcome.py</code>、<code>audit_row.py</code></td><td>這個 milestone 新增的兩個共用步驟（D-117）與反例單元測試；之後每個 milestone 都會用</td></tr>
+    <tr><td>8</td><td><code>.github/workflows/ci.yml</code>、<code>tests/e2e/</code></td><td>D-119、D-120、D-138 的修改</td></tr>
+  </table></div>
+
+  <h2>4. 如何驗證</h2>
+  <h3>4.1 自動測試</h3>
+  <pre>scripts/dev/install-postgres        # PostgreSQL 17（需要 root）
+pip install -e '.[dev]'             # 這個 milestone 新增 cryptography
+scripts/dev/db-start                # 127.0.0.1:5433，資料庫 yc
+scripts/dev/migrate                 # 預期：套用到 0008、「migration 完成」
+python3 -m pytest -q                # 預期：1796 passed, 307 skipped（約 15 分鐘）
+npm ci &amp;&amp; npx playwright install chromium
+tests/e2e/run                       # 預期：6 行 ok</pre>
+  <p>只跑 <code>tests/test_spec.py</code> 會出現「Step definition is not found」，要跑完整的 <code>python3 -m pytest</code>（pitfall #26）。手動操作銀行帳號時要先設定金鑰：<code>export BANK_NUMBER_KEY=$(python3 -c "import os,base64;print(base64.b64encode(os.urandom(32)).decode())")</code>；不設定時畫面會顯示「無法讀取」（IAM-R43）。</p>
+  <h3>4.2 手動操作流程</h3>
+  <p>先照 M2 報告 4.2 載入背景帳戶並設定密碼，再執行 <code>scripts/dev/run</code>。這些畫面 Builder 與 Verifier 都已截圖（第 1 節的證據目錄）；Chief 這次沒有另外手動操作一遍。</p>
+  <div class="scroll"><table>
+    <tr><th>步驟</th><th>操作</th><th>預期結果</th><th>對應規則</th></tr>
+    <tr><td>1</td><td>用 Wen 送出一筆回報（共同作業者 Wei、Wan，直總-13 7.0）</td><td>待確認</td><td>RPT-R01</td></tr>
+    <tr><td>2</td><td>用 Admin1 登入</td><td>落在 <code>/review</code>，有一般、大表兩個佇列與兩個歷史頁的連結</td><td>D-057</td></tr>
+    <tr><td>3</td><td>在一般佇列確認那筆回報</td><td>變成已確認；份額表有 Wen 2.4、Wei 2.3、Wan 2.3</td><td>REV-R02、R10、R11</td></tr>
+    <tr><td>4</td><td>對它附加自訂工項「夜間加班」2.0、單價 500</td><td>回到待確認，份額刪除，稽核多 <code>REPORT_UNCONFIRM</code>、<code>REPORT_UPDATE</code></td><td>REV-R20、R24</td></tr>
+    <tr><td>5</td><td>開帳戶管理，建立 USER「Lin」（密碼與確認不一致一次）</td><td>不一致時「兩次輸入的密碼不一致」；一致後建立成功，大表旗標關</td><td>IAM-R13、D-127</td></tr>
+    <tr><td>6</td><td>設定 Wen 的勞健保為已投保 834、銀行帳號 123-45678901234，改為轉帳</td><td>帳號只顯示末四碼；按「顯示完整帳號」後 <code>audit_log</code> 多 <code>BANK_REVEAL</code></td><td>IAM-R14、R15、R40、R41</td></tr>
+    <tr><td>7</td><td>封存 Wen，再用 Wen 原本開著的分頁操作</td><td>被要求重新登入；登入頁的名單沒有 Wen</td><td>IAM-R17、AD-13</td></tr>
+    <tr><td>8</td><td>用 Wei 連續打錯密碼 5 次，再用 Admin1 按「解除鎖定」</td><td>第 5 次被鎖定；解除後 Wei 可以登入</td><td>IAM-R04、R08</td></tr>
+    <tr><td>9</td><td>用 Wei 在兩個瀏覽器登入，在其中一個改密碼</td><td>另一個被登出，改密碼的那個保留</td><td>IAM-R33</td></tr>
+    <tr><td>10</td><td>用 Admin1 嘗試封存 Admin2、重設 Kuei 的密碼</td><td>都被拒絕，<code>audit_log</code> 多 <code>ACCESS_DENIED</code></td><td>IAM-R20、D-122</td></tr>
+    <tr><td>11</td><td>用 Kuei 把 Wei 升為 ADMIN，再把 Big 升為 ADMIN</td><td>Wei 成功；Big「請先關閉大表旗標，再切換為管理員」</td><td>IAM-R21</td></tr>
+  </table></div>
+  <h3>4.3 建議的獨立驗證</h3>
+  <ul>
+    <li><strong>份額：</strong>用試算表照 REV-R10 的規則（以 0.1 為單位平分，餘數依小組順序給前面的人）算幾組數字，和確認後 <code>report_shares</code> 的內容比對。</li>
+    <li><strong>銀行帳號：</strong>用 <code>pg_dump -n yc_v3 -a | grep</code> 搜尋你設定的帳號，應該找不到；把 <code>BANK_NUMBER_KEY</code> 換成另一把，畫面應顯示「無法讀取」。</li>
+    <li><strong>並行：</strong>用兩個真的 uvicorn 行程，同時確認同一張回報 20 次，確認份額只存一份、稽核只有一列 <code>REPORT_CONFIRM</code>；同時用舊密碼登入與改密碼，最後不能留下有效的 session。</li>
+    <li><strong>權限：</strong>請另一個模型只讀 IAM-F04～F07 與附錄 B，列出每個端點、每種身分的預期結果，和 T-304 Verifier 的 97 種組合比對。</li>
+  </ul>
+
+  <h2>5. Migration 套用步驟</h2>
+  <p>依 D-050，migration 延到「部署準備」ticket 才套用。這個 milestone 新增 <code>0006</code>～<code>0008</code>（依賴 <code>0001</code>～<code>0005</code>），都只碰 <code>yc_v3</code>、可重複執行，已通過 CI 的 <code>migration-scope</code>，各 Verifier 都在拋棄式資料庫實際套用兩次並回滾一次（證據在各 PR 的判定留言）。</p>
+  <div class="scroll"><table>
+    <tr><th>檔案</th><th>內容</th><th>套用後檢查</th><th>回滾（只在沒有真實資料、且你同意時）</th></tr>
+    <tr><td><code>0006_report_shares.sql</code>（T-301）</td><td><code>reports</code> 加 <code>reviewer_id</code>、<code>reviewed_at</code>；新增 <code>report_shares</code>、<code>report_custom_shares</code></td><td>檔頭第 18～21 行的查詢，預期 1 列、四個值都是 t</td><td>檔頭第 23～27 行：drop 兩張表與兩個欄位，刪除 <code>schema_migrations</code> 的 <code>0006</code>；已確認的回報要改回待確認重新確認</td></tr>
+    <tr><td><code>0007_account_pay_settings.sql</code>（T-303）</td><td><code>accounts</code> 加 6 個薪資設定欄位，既有帳戶依 D-116 為初始值</td><td>檔頭第 17～23 行，預期 t</td><td>檔頭第 26～31 行：drop 6 個欄位</td></tr>
+    <tr><td><code>0008_bank_number_and_payment_method.sql</code>（T-306）</td><td><code>accounts</code> 加 <code>bank_number_cipher</code>（密文）、<code>payment_method</code>（既有帳戶為 CASH）與兩個 check 約束</td><td>檔頭第 12～16 行，預期 t</td><td>檔頭第 19～22 行：drop 兩個欄位；已存的密文無法復原</td></tr>
+  </table></div>
+  <p>部署檢查表（<code>docs/milestones/README.md</code>「部署準備 ticket 的檢查表」已更新）：<code>APP_ENV=production</code>（D-063）；uvicorn 加 <code>--proxy-headers --forwarded-allow-ips</code>；依序套用 <code>0003</code>～<code>0008</code> 並執行各自的檢查；部署環境要能安裝 <code>openpyxl</code> 與 <code>cryptography</code>；設定 <code>BANK_NUMBER_KEY</code> 並另外妥善保存（遺失則所有銀行帳號無法讀取）。</p>
+
+  <h2>6. Agent 自行做的判斷</h2>
+  <p>規格沒有明說、由 agent 決定，而且沒有經過你的事。已經由你在 issue 中決定的，列在第 7 節；Verifier 提出、等你決定的列在 issue #53。</p>
+  <div class="scroll"><table>
+    <tr><th>判斷</th><th>誰做的</th><th>理由</th><th>位置</th></tr>
+    <tr><td>T-301 的 <code>allowed_paths</code> 補上 <code>app/modules/review/__init__.py</code>，不等你回覆</td><td>Chief</td><td>規劃漏列；T-101、T-201 都明列模組的 <code>__init__.py</code>，M1 時 Chief 也自行建立過；已在 issue #42 說明並關閉，你可以重新開啟</td><td>commit <code>25896d3</code></td></tr>
+    <tr><td>請 T-305 在驗證前補表單 <code>method="post"</code></td><td>Chief</td><td>Cursor Bugbot 指出沒有 JS 時密碼會以 GET 進網址；在範圍內，放到下一張反而留在 milestone 裡</td><td>PR #41 第二則交付留言</td></tr>
+    <tr><td><code>.gitignore</code> 加 <code>node_modules/</code></td><td>Chief</td><td>T-307 的 Builder 與 Verifier 都提出；不在 T-307 的範圍</td><td>commit <code>81e585a</code></td></tr>
+    <tr><td>T-305 的 CI 因 runner 網路錯誤（curl 56）失敗時，重跑失敗的 job</td><td>Chief</td><td>日誌顯示與程式無關；沒有推空 commit</td><td>run 44084762653</td></tr>
+    <tr><td>共用步驟 S1 遇到空白的 message 欄、拒絕類別時，解讀為 message 為 null</td><td>T-305 Builder（Chief 同意）</td><td>與 <code>the request is rejected as X</code>（不帶 message）一致</td><td><code>tests/steps/common/outcome.py</code></td></tr>
+    <tr><td>改密碼的並行用帳戶列鎖，同時兩個用同一個舊密碼的變更只有一個成功</td><td>T-305 Builder</td><td>規格沒寫並行</td><td><code>password_change_and_reset/repo.py</code></td></tr>
+    <tr><td>沒有內容變更的自訂工項存檔不寫資料、不退回待確認</td><td>T-302 Builder</td><td>之後由你在 #46 第 8 項確認（D-134）</td><td><code>custom_work_item/service.py</code></td></tr>
+    <tr><td>自訂工項金額回傳精確分數（<code>Fraction</code>）</td><td>T-302 Builder</td><td>之後由你確認（D-136）；T-402 依 AD-2 在毛額層級捨入</td><td><code>crew_split_and_stored_shares/</code></td></tr>
+    <tr><td>未投保比例以萬分之一的整數存</td><td>T-303 Builder</td><td>附錄 B「最多兩位小數」；不用浮點數</td><td><code>0007</code></td></tr>
+    <tr><td>顯示名稱去空白只做在建立（沒有改名功能）</td><td>T-303 Builder</td><td>列入 #53 第 2 項</td><td>帳戶管理</td></tr>
+    <tr><td>「尚未設定」顯示文字；沒有金鑰時 reveal 不寫 <code>BANK_REVEAL</code>；先驗格式再查金鑰；銀行帳號與發薪方式的修改寫 <code>ACCOUNT_UPDATE</code></td><td>T-306 Builder</td><td>規格沒寫，採保守做法；前三項列入 #53 第 6～8 項</td><td><code>bank_number_masking_and_reveal/</code></td></tr>
+    <tr><td>用 <code>for no key update</code> 而不是完成條件寫的 <code>for update</code></td><td>T-308 Builder</td><td><code>for update</code> 會與外鍵鎖死結；Verifier 實測確認，Chief 更正 ticket 文字</td><td><code>sign_in/repo.py</code></td></tr>
+    <tr><td>修改 T-305 的一個補充測試（打錯目前密碼現在會多一列失敗計數）</td><td>T-308 Builder</td><td>D-124 推翻了舊行為；超出完成條件 14「只能改成送確認欄」的字面，但沒有放寬斷言（改成「恰好多一列失敗計數」）</td><td><code>tests/steps/IAM-F06/</code></td></tr>
+    <tr><td>對象是 OWNER 的角色切換為 <code>INVALID</code> 等 4 點</td><td>T-304 Builder</td><td>之後由你確認（D-142）</td><td><code>owner_manages_administrators/</code></td></tr>
+  </table></div>
+
+  <h2>7. 問過 Kuei 的問題與決定</h2>
+  <div class="scroll"><table>
+    <tr><th>Issue</th><th>問題</th><th>決定</th><th>影響</th></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/35">#35</a></td><td>M2 留下的 7 項（多個錯誤原因、舊回報編輯、不存在的回報等）</td><td>D-104～D-109，全部 A</td><td>不改程式；兩處規格註解</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/38">#38</a></td><td>M3 計畫與 11 項</td><td>D-110～D-121</td><td>T-302 不需 migration；IAM-R14 移到 T-306、IAM-R42 移到 T-406；新增 T-307；CI 安裝步驟修正</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/40">#40</a></td><td>重設 OWNER、改密碼後 session、錯誤的目前密碼計入鎖定</td><td>D-122～D-125</td><td>新增 IAM-R33、R34 與 T-308</td></tr>
+    <tr><td>Chief session</td><td>管理員能不能提前解除鎖定</td><td>D-126（A：新增解除鎖定；A2：沿用 <code>ACCOUNT_UPDATE</code>）</td><td>新增 IAM-R08</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/42">#42</a></td><td>T-301 漏列 <code>__init__.py</code></td><td>Chief 依先例補上（第 6 節）</td><td>—</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/46">#46</a></td><td>密碼確認欄、拒絕 scenario 的資料斷言、CI 時限等 13 項</td><td>D-127～D-139，全部 A</td><td>T-303、T-308 加確認欄；顯示名稱去空白；CI 時限 30／45 分</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/47">#47</a></td><td>D-124 與 IAM-R30 既有 scenario 衝突</td><td>D-140（B′：改規格）</td><td>IAM-R30 兩列移到 IAM-R34</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/49">#49</a></td><td>登入與改密碼同時發生</td><td>D-141（A：T-308 修正）</td><td>T-308 擴大到 <code>sign_in/</code></td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/51">#51</a></td><td>IAM-R20 的一個 scenario 與 D-095 矛盾</td><td>D-142（A：改規格）</td><td>規格改一行</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/53">#53</a></td><td>階段 2、3 Verifier 的 13 個規格問題</td><td class="todo">等你回覆</td><td>目前實作都是 A，不擋 M3</td></tr>
+  </table></div>
+
+  <h2>8. 已知風險與沒做到的事</h2>
+  <ul class="todo">
+    <li><strong>IAM-R42 沒有開啟。</strong>保留金與薪資要到 M4 才存在，依 D-114 移到 T-406；M3 已存在的欄位（勞健保、未投保比例、銀行帳號）用補充測試把關。</li>
+    <li><strong>REV-R02、R11、R23 的「計算薪資」目前讀的是份額讀取函式（D-111）。</strong>「has no gross」實際檢查的是「沒有已確認的份額」。T-402 的完成條件已要求改接真正的薪資計算。</li>
+    <li><strong>登入競爭的測試缺口。</strong>保留「重新確認」但拿掉鎖的變異，Builder 寫的競爭測試抓不到，只有 Verifier 自己的並行測試在 40 輪中抓到 4～5 輪。產品程式是對的。建議 M6 的 T-604 補上可控等待點的並行測試；M2 的 RPT-R04 並行測試也是同樣的問題。</li>
+    <li><strong>分頁（附錄 D）沒有做。</strong>歷史頁與確認佇列一次載入全部；依 D-132 交給 T-605。</li>
+    <li><strong>CI 越來越慢。</strong><code>no-weakened-tests</code> 現在約 25 分鐘、<code>tests</code> 約 15～19 分鐘；D-138 的時限是 45／30 分。照這個速度，M5 前後會再碰到，屆時要考慮把兩輪拆成平行的 job（#46 第 12 項的選項 B）。</li>
+    <li><strong>Node 只固定主版號 <code>22</code></strong>（D-133）。</li>
+    <li><strong>issue #53 的 13 個規格問題還沒有答案。</strong>選 B 的項目要在 M4 排 ticket。</li>
+    <li><strong>這個 repo 裝了 Cursor 的 GitHub App（Bugbot、Security Review）。</strong>它在 PR 上留言、觸發 CI 重跑，沒有推 commit。這次它抓到了兩個真的問題（密碼表單 GET、登入競爭）。如果不是你有意安裝的，請確認。</li>
+  </ul>
+
+  <h2>9. 過程紀錄</h2>
+  <div class="scroll"><table>
+    <tr><th>Ticket</th><th>修正輪數</th><th>Verifier 找到的問題</th><th>備註</th></tr>
+    <tr><td>T-307</td><td>0</td><td>無；規格問題 2（Node 版本、.gitignore）</td><td>CI 第一次在 PostgreSQL 安裝失敗（D-119 讓失敗直接顯示），重跑通過；4 個變異全抓到</td></tr>
+    <tr><td>T-301</td><td>0</td><td>無；規格問題 3（→ #46）</td><td><code>allowed_paths</code> 漏列（#42）；Builder 碰到 usage 上限（12:44～16:10）；8 個變異全抓到；並行測試拿掉鎖後 180 輪有 166 輪異常</td></tr>
+    <tr><td>T-305</td><td>0</td><td>無；規格問題 3（→ #46）</td><td>交付後依 Bugbot 補 <code>method="post"</code>；runner 網路錯誤重跑；碰到 usage 上限；9 個變異全抓到</td></tr>
+    <tr><td>T-302</td><td>0</td><td>無；規格問題 4（→ #46）</td><td>等 T-305 的共用步驟；碰到 usage 上限；5 個變異全抓到</td></tr>
+    <tr><td>T-303</td><td>0</td><td>無；規格問題 3（→ #53）</td><td>等 T-305 的共用步驟；<code>no-weakened-tests</code> 逾時（→ D-138）；依 #46 補改；碰到 usage 上限兩次</td></tr>
+    <tr><td>T-306</td><td>0</td><td>無；規格問題 5（→ #53）</td><td>第一回合就碰到 usage 上限；6 個變異全抓到；資料庫與紀錄沒有明碼與金鑰</td></tr>
+    <tr><td>T-308</td><td>0</td><td>無；規格問題 5（1 項 Chief 更正 ticket，其餘 → #53）</td><td>#47（規格衝突，Chief 規劃遺漏）、#49（Cursor 資安審查）兩次停下；14 個變異全抓到</td></tr>
+    <tr><td>T-304</td><td>0</td><td>無；規格問題 2（→ #53）</td><td>#51（規格不一致）；97 種權限組合實打；8 個變異全抓到</td></tr>
+  </table></div>
+  <p>8 張都在第 1 輪判 PASS，沒有修正輪。最花時間的是等待：usage 上限讓子 session 中斷 6 次（最長約 4 小時），等你回覆的 issue 有 7 個。模型：Builder 全部 <code>claude-sonnet-5-5</code>，Verifier 全部 <code>claude-opus-5-5</code>，Chief <code>claude-opus-5-5</code>；沒有用到修正第二輪。</p>
+
+  <h2>10. 這個 milestone 的學習重點</h2>
+  <h3>10.1 唯一來源（single source of truth）</h3>
+  <p>份額在確認當下存下來，之後薪資只讀份額，不再用回報內容與目前的小組重算（REV-R11、D-111）。好處是成員封存、改區、回報被改都不會回頭改變已確認的金額；代價是任何改變份額的路徑（管理員編輯、附加自訂工項）都必須明確刪除份額並退回待確認（RPT-R12、REV-R24）。T-402 要接手的也是這個介面。</p>
+  <h3>10.2 檢查與動作之間的時間窗（TOCTOU）</h3>
+  <p>D-141 的漏洞是典型的 time-of-check to time-of-use：先比對密碼、之後才建立 session，中間的狀態可能已經改變。修法是在同一把鎖內「重新確認」。同樣的思路出現在三個地方：每日上限（M2）、確認與編輯（2.2）、登入與改密碼（2.5）。選鎖的時候還要注意鎖的強度：<code>for update</code> 會擋住外鍵檢查用的 key share，在有外鍵指向的列上容易死結，<code>for no key update</code> 足以排除另一個寫入者。</p>
+  <h3>10.3 應用層加密與金鑰管理</h3>
+  <p>AES-GCM 同時提供保密與完整性（被竄改的密文解不開），但前提是每次加密用新的 nonce。金鑰放在環境變數、不進資料庫，所以資料庫外洩也讀不到帳號；反過來，金鑰遺失就永遠讀不到，這是 IAM-R43 要規定「沒有金鑰時其他功能照常」的原因。</p>
+  <h3>10.4 改規格要同時看所有既有的斷言</h3>
+  <p>M3 三次停下來（#47、#51、以及 M2 的同類問題）都是「新規則與舊 scenario 的斷言矛盾」。教訓已寫進 pitfalls：Chief 記錄改變行為的決定時，要 grep 既有 scenario 中所有涉及同一張表、同一個端點的「資料不變」斷言。</p>
+  <h3>四個問題（請你自己回答）</h3>
+  <ol>
+    <li>M3 做了什麼？為什麼要在 M4 薪資之前先做「確認並保存份額」與「帳戶薪資設定」？</li>
+    <li>為什麼選擇「份額讀取函式」（D-111）而不是把三條規則延到 M4？為什麼銀行帳號用應用層加密而不是 <code>pgcrypto</code>？</li>
+    <li>什麼情況下這些設計會失效？（例如：金鑰遺失、新的寫入路徑沒有拿同一把鎖、規格再改變而沒有檢查既有斷言）</li>
+    <li>你從這個 milestone 學到了什麼？</li>
+  </ol>
+</main>
+</body>
+</html>
