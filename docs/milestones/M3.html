@@ -33,7 +33,7 @@
   <div class="verdict">
     <p><strong>結論。</strong>M3 的 8 張 ticket 都已合併進 <code>milestone/M3</code>（原計畫 6 張，加上 T-307 CI 冒煙測試與依 issue #40 新增的 T-308）。管理員可以確認或駁回回報，確認時保存每個人的份額；可以附加自訂工項；可以建立、封存、復原帳戶並設定勞健保、固定薪資、銀行帳號（只存密文）與發薪方式；OWNER 管理 ADMIN；所有人可以改自己的密碼，管理員可以重設 USER 的密碼並提前解除鎖定。Chief 在 T-304 合併後的 <code>4033803</code> 重跑：<code>1796 passed, 307 skipped</code>；M3 負責的 30 條規則 61 個 scenario 全部通過。</p>
     <p><strong>沒完成的事：</strong>IAM-R42（USER 看不到別人的財務欄位）依 D-114 移到 M4 的 T-406，因為保留金與薪資要到 M4 才存在；M3 只用補充測試把關已存在的欄位。REV-R02、R11、R23 的「計算薪資」步驟目前讀的是 T-301 的份額讀取函式（D-111），要到 T-402 才改接真正的薪資計算。</p>
-    <p><strong>最該注意的一件事：</strong>這個 milestone 有 3 次規格本身不一致，都是 Chief 規劃或記錄決定時沒有比對到既有的 scenario（issue #47 → D-140、#49 的登入競爭、#51 → D-142）。另外，issue <a href="https://github.com/pitaya943/yc-daily-report-v3/issues/53">#53</a> 有 13 個規格問題在等你回覆；目前的實作都是建議的選項 A，不擋 M3 合併。</p>
+    <p><strong>最該注意的一件事：</strong>這個 milestone 有 3 次規格本身不一致，都是 Chief 規劃或記錄決定時沒有比對到既有的 scenario（issue #47 → D-140、#49 的登入競爭、#51 → D-142）。Verifier 提出的 13 個規格問題已在 issue <a href="https://github.com/pitaya943/yc-daily-report-v3/issues/53">#53</a> 由你決定（D-143～D-155，全部 A，不需要改程式）。</p>
   </div>
 
   <h2>1. 達成的 feature</h2>
@@ -135,7 +135,7 @@ tests/e2e/run                       # 預期：6 行 ok</pre>
   <p>部署檢查表（<code>docs/milestones/README.md</code>「部署準備 ticket 的檢查表」已更新）：<code>APP_ENV=production</code>（D-063）；uvicorn 加 <code>--proxy-headers --forwarded-allow-ips</code>；依序套用 <code>0003</code>～<code>0008</code> 並執行各自的檢查；部署環境要能安裝 <code>openpyxl</code> 與 <code>cryptography</code>；設定 <code>BANK_NUMBER_KEY</code> 並另外妥善保存（遺失則所有銀行帳號無法讀取）。</p>
 
   <h2>6. Agent 自行做的判斷</h2>
-  <p>規格沒有明說、由 agent 決定，而且沒有經過你的事。已經由你在 issue 中決定的，列在第 7 節；Verifier 提出、等你決定的列在 issue #53。</p>
+  <p>規格沒有明說、由 agent 決定，而且沒有經過你的事。已經由你在 issue 中決定的，列在第 7 節；Verifier 提出的規格問題由你在 issue #53 決定（D-143～D-155）。</p>
   <div class="scroll"><table>
     <tr><th>判斷</th><th>誰做的</th><th>理由</th><th>位置</th></tr>
     <tr><td>T-301 的 <code>allowed_paths</code> 補上 <code>app/modules/review/__init__.py</code>，不等你回覆</td><td>Chief</td><td>規劃漏列；T-101、T-201 都明列模組的 <code>__init__.py</code>，M1 時 Chief 也自行建立過；已在 issue #42 說明並關閉，你可以重新開啟</td><td>commit <code>25896d3</code></td></tr>
@@ -166,7 +166,7 @@ tests/e2e/run                       # 預期：6 行 ok</pre>
     <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/47">#47</a></td><td>D-124 與 IAM-R30 既有 scenario 衝突</td><td>D-140（B′：改規格）</td><td>IAM-R30 兩列移到 IAM-R34</td></tr>
     <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/49">#49</a></td><td>登入與改密碼同時發生</td><td>D-141（A：T-308 修正）</td><td>T-308 擴大到 <code>sign_in/</code></td></tr>
     <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/51">#51</a></td><td>IAM-R20 的一個 scenario 與 D-095 矛盾</td><td>D-142（A：改規格）</td><td>規格改一行</td></tr>
-    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/53">#53</a></td><td>階段 2、3 Verifier 的 13 個規格問題</td><td class="todo">等你回覆</td><td>目前實作都是 A，不擋 M3</td></tr>
+    <tr><td><a href="https://github.com/pitaya943/yc-daily-report-v3/issues/53">#53</a></td><td>階段 2、3 Verifier 的 13 個規格問題</td><td>D-143～D-155，全部 A</td><td>不改程式；封存確認交給 T-605、USER 看自己的薪資設定交給 T-406</td></tr>
   </table></div>
 
   <h2>8. 已知風險與沒做到的事</h2>
@@ -177,7 +177,7 @@ tests/e2e/run                       # 預期：6 行 ok</pre>
     <li><strong>分頁（附錄 D）沒有做。</strong>歷史頁與確認佇列一次載入全部；依 D-132 交給 T-605。</li>
     <li><strong>CI 越來越慢。</strong><code>no-weakened-tests</code> 現在約 25 分鐘、<code>tests</code> 約 15～19 分鐘；D-138 的時限是 45／30 分。照這個速度，M5 前後會再碰到，屆時要考慮把兩輪拆成平行的 job（#46 第 12 項的選項 B）。</li>
     <li><strong>Node 只固定主版號 <code>22</code></strong>（D-133）。</li>
-    <li><strong>issue #53 的 13 個規格問題還沒有答案。</strong>選 B 的項目要在 M4 排 ticket。</li>
+    <li><strong>封存帳戶前沒有確認步驟</strong>（附錄 D）；依 D-143 交給 T-605。</li>
     <li><strong>這個 repo 裝了 Cursor 的 GitHub App（Bugbot、Security Review）。</strong>它在 PR 上留言、觸發 CI 重跑，沒有推 commit。這次它抓到了兩個真的問題（密碼表單 GET、登入競爭）。如果不是你有意安裝的，請確認。</li>
   </ul>
 
