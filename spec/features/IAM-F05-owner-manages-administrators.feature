@@ -27,11 +27,12 @@ Feature: Owner manages administrators
       Then the request is rejected as FORBIDDEN
       And nothing is written except an audit row "ACCESS_DENIED" with actor "Admin1"
 
+    # D-142：與同一條規則其他 scenario 一致；FORBIDDEN 必寫 ACCESS_DENIED（D-095）。沒有建立帳戶由補充測試斷言。
     Scenario: An ADMIN cannot create an ADMIN
       Given "Admin1" is signed in
       When "Admin1" creates an account with role "ADMIN"
       Then the request is rejected as FORBIDDEN
-      And no account is created
+      And nothing is written except an audit row "ACCESS_DENIED" with actor "Admin1"
 
     Scenario: The owner archives and restores an ADMIN
       Given "Kuei" is signed in

@@ -145,6 +145,7 @@
 | D-139 | 顯示名稱前後的空白？ | 建立與修改時先去掉前後空白（含全形空白）再檢查長度與重複；只有空白時為「請輸入顯示名稱」。 | `Wen ` 與 `Wen` 在名稱清單上看起來一樣 | 2026-11-18 | issue #46 選項 13A；T-303 完成條件 |
 | D-140 | D-124 讓 IAM-R30 的兩列「錯誤的目前密碼」無法通過「資料不變」的共用步驟？ | 改規格：把那兩列移到 IAM-R34 的新 Scenario Outline「A wrong current password is rejected and counted」，斷言「唯一的變動是多一次失敗」，步驟由 T-308 在 `tests/steps/IAM-F06/` 定義；共用步驟不改。IAM-R30 仍為 3 個 scenario，IAM-R34 改為 3 個，規格合計 263 個 scenario。 | 例外寫在規格裡，不藏在共用步驟；記錄 D-124 時漏了這個衝突（D-103 的教訓） | 2026-11-18 | issue #47 選項 B′；T-308 改 8 個 scenario |
 | D-141 | 登入比對舊密碼通過後、建立 session 前，密碼被改掉，舊密碼仍拿到 session？ | 由 T-308 修正：`allowed_paths` 加 `app/modules/iam/sign_in/**`；建立 session 前在帳戶鎖內重新確認密碼雜湊沒有改變，改變了就與密碼錯誤相同處理；加並行補充測試。 | 不讓 M3 帶著已知的權限漏洞合併進 `main`；D-123 要在並行時也成立 | 2026-11-18 | issue #49 選項 A；Cursor 資安審查在 PR #48 提出 |
+| D-142 | IAM-R20「An ADMIN cannot create an ADMIN」的 `no account is created` 斷言全庫不變，與 FORBIDDEN 必寫 `ACCESS_DENIED` 矛盾？ | 改規格：最後一步改為 `nothing is written except an audit row "ACCESS_DENIED" with actor "Admin1"`，與同一條規則其他 scenario 一致；沒有建立帳戶由 T-304 的補充測試斷言。另外確認 T-304 的保守做法：對象是 OWNER 的角色切換為 `INVALID`、相同角色不寫資料、ADMIN 可降回 USER 並寫 `ACCOUNT_ROLE_CHANGE`；OWNER 不能直接建立 ADMIN（先建 USER 再切換）；帳戶管理頁對 OWNER 另列 ADMIN、ADMIN 只看到 USER；打開 ADMIN／OWNER 的帳戶頁（唯讀）不受 IAM-R20 限制。 | 規格本身不一致，規劃時沒有比對到 | 2026-11-19 | issue #51 選項 A 與 1～4；scenario 數不變 |
 
 ## 待決定
 
