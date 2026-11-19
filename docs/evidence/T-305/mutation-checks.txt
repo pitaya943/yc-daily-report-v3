@@ -1,0 +1,19 @@
+## M1 加一個 /forgot-password 路由 → IAM-R32 應失敗
+E       AssertionError: 規格沒有自助找回密碼，但路由表有：[('POST', '/forgot-password')]
+1 failed, 1714 deselected in 1.13s
+## M2 不檢查目前密碼 → IAM-R30（wrong current）應失敗
+E       AssertionError: HTTP status 應為 422，實際 200
+1 failed, 1 passed, 1709 deselected in 3.48s
+## M3 稽核說明帶出新密碼 → IAM-R30 audit scenario 應失敗
+E           AssertionError: 稽核說明不可含新密碼：'變更自己的密碼為 newpass1'
+1 failed, 1714 deselected in 2.62s
+## M4 重設不做權限檢查 → USER 重設應失敗（補充測試）
+E       AssertionError: HTTP status 應為 403，實際 200
+1 failed, 1714 deselected in 2.22s
+## M5 重設忘了寫稽核 → IAM-R31 應失敗
+E       AssertionError: 沒有新增 actor 為 "Admin1" 的 "PASSWORD_CHANGE" 稽核列（或都已被前面的步驟斷言過）；新增的列：[]
+1 failed, 1714 deselected in 2.70s
+## M6 不鎖帳戶列 → 同時變更測試應失敗
+E       AssertionError: 同時兩個變更用同一個舊密碼，只能有一個成功：[200, 200]
+E       assert [200, 200] == [200, 422]
+E         

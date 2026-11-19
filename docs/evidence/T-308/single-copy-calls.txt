@@ -1,0 +1,3 @@
+100:    lockout.ensure_not_locked(conn, actor.id)  # 只讀；LOCKED 時不做 scrypt、不寫東西
+105:        lockout.record_failure(conn, actor.id, actor.name)  # 提交失敗次數（與登入同一份）；第 5 次丟 LOCKED
+110:    lockout.hold_not_locked(conn, actor.id)  # 驗證期間別的 worker 可能剛鎖定了這個帳戶：這次寫入不能算數

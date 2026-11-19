@@ -1,0 +1,53 @@
+{#- 銀行帳號與發薪方式（IAM-F07、IAM-R14；D-118）。持有人自己與管理員能打開；USER 看別人的 → FORBIDDEN（D-114）。
+    預設只顯示末四碼；「顯示完整帳號」是 POST（寫 BANK_REVEAL）。管理員另有設定銀行帳號與發薪方式的表單。 -#}
+{% extends "base.html" %}
+{% block title %}{{ holder.name }}・銀行帳號{% endblock %}
+{% block content %}
+{% include "_style.html" %}
+<h1>{{ holder.name }}</h1>
+<p class="sub">銀行帳號與發薪方式</p>
+
+<section class="card">
+  <h2>銀行帳號</h2>
+  <div class="form-error" role="alert" aria-live="assertive" hidden></div>
+  <p id="bank-box">{% include "bank_value.html" %}</p>
+  {% if shown.state == "masked" %}
+  <form hx-post="/accounts/{{ holder.id }}/bank-number/reveal" hx-target="#bank-box" hx-swap="innerHTML" autocomplete="off">
+    <p class="hint">顯示完整帳號會留下紀錄。</p>
+    <button type="submit" class="secondary">顯示完整帳號</button>
+  </form>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>發薪方式</h2>
+  <p id="payment-method" data-method="{{ holder.payment_method }}">{{ "轉帳" if holder.payment_method == "TRANSFER" else "現金" }}</p>
+</section>
+
+{% if can_edit %}
+<section class="card">
+  <h2>設定銀行帳號</h2>
+  <form hx-post="/accounts/{{ holder.id }}/bank-number" hx-target="#bank-result" hx-swap="innerHTML" autocomplete="off">
+    <div class="form-error" role="alert" aria-live="assertive" hidden></div>
+    <label for="bank_number">銀行帳號（14 位數字，可含 -）</label>
+    <input id="bank_number" type="text" inputmode="numeric" name="bank_number" autocomplete="off">
+    <button type="submit">儲存銀行帳號</button>
+    <div id="bank-result" class="result" aria-live="polite"></div>
+  </form>
+</section>
+
+<section class="card">
+  <h2>設定發薪方式</h2>
+  <form hx-post="/accounts/{{ holder.id }}/payment-method" hx-target="#method-result" hx-swap="innerHTML" autocomplete="off">
+    <div class="form-error" role="alert" aria-live="assertive" hidden></div>
+    <label for="payment_method">發薪方式</label>
+    <select id="payment_method" name="payment_method">
+      {% for m in methods %}<option value="{{ m }}"{% if m == holder.payment_method %} selected{% endif %}>{{ "轉帳" if m == "TRANSFER" else "現金" }}</option>{% endfor %}
+    </select>
+    <button type="submit">儲存發薪方式</button>
+    <div id="method-result" class="result" aria-live="polite"></div>
+  </form>
+</section>
+{% endif %}
+{% include "_script.html" %}
+{% endblock %}

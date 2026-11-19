@@ -1,0 +1,4 @@
+FAILED tests/steps/IAM-F06/test_reset_confirmation_details.py::test_a_reset_whose_confirmation_does_not_match_is_invalid_and_changes_nothing[different]
+FAILED tests/steps/IAM-F06/test_reset_confirmation_details.py::test_a_reset_whose_confirmation_does_not_match_is_invalid_and_changes_nothing[empty]
+FAILED tests/steps/IAM-F06/test_reset_confirmation_details.py::test_a_reset_whose_confirmation_does_not_match_is_invalid_and_changes_nothing[missing]
+3 failed, 19 passed, 1881 deselected in 36.44s

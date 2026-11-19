@@ -61,7 +61,8 @@ Feature: History and export
         | big-meter | date, account, the BIG_METER items, custom item, confirmation             |
 
   Rule: RPT-R23 Filter values are validated
-    # D-099：畫面上，篩選無效時清空清單並停用匯出連結（畫面行為，不寫成 scenario）。
+    # D-099：畫面上，從表單送出的篩選無效時，清空清單並停用匯出連結（畫面行為，不寫成 scenario）。
+    # D-108：直接開啟帶無效篩選的網址時回 422 JSON，不屬於 D-099 的範圍。
     # D-101：USER 歷史只接受日期與「有自訂工項」兩種篩選。
 
     Scenario Outline: Invalid filters

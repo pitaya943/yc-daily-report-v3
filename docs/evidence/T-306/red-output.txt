@@ -1,0 +1,54 @@
+# 先紅：模組 app/modules/iam/bank_number_masking_and_reveal 尚未存在時，IAM-R14／R40／R41／R43 的 9 個 scenario（16 個測試列）全部失敗
+# 指令：python3 -m pytest -q --no-header --tb=line -k "test_bank_number_format or test_the_banknumber_error_message or test_default_view or test_reveal or test_view_without_the_key or test_edit_without_the_key or test_other_features_keep_working or test_storage_never_holds or test_switching_to_transfer"
+FFFFFFFFFFFFFFFF                                                         [100%]
+=================================== FAILURES ===================================
+E   AssertionError: 應被接受（200），實際 404：{"detail":"Not Found"}
+/home/user/yc-daily-report-v3/tests/steps/common/outcome.py:79: AssertionError: 應被接受（200），實際 404：{"detail":"Not Found"}
+E   AssertionError: 應被接受（200），實際 404：{"detail":"Not Found"}
+/home/user/yc-daily-report-v3/tests/steps/common/outcome.py:79: AssertionError: 應被接受（200），實際 404：{"detail":"Not Found"}
+E   AssertionError: HTTP status 應為 422，實際 404
+/home/user/yc-daily-report-v3/tests/steps/common/steps.py:109: AssertionError: HTTP status 應為 422，實際 404
+E   AssertionError: HTTP status 應為 422，實際 404
+/home/user/yc-daily-report-v3/tests/steps/common/steps.py:109: AssertionError: HTTP status 應為 422，實際 404
+E   AssertionError: HTTP status 應為 422，實際 404
+/home/user/yc-daily-report-v3/tests/steps/common/steps.py:109: AssertionError: HTTP status 應為 422，實際 404
+E   AssertionError: HTTP status 應為 422，實際 404
+/home/user/yc-daily-report-v3/tests/steps/common/steps.py:109: AssertionError: HTTP status 應為 422，實際 404
+E   AssertionError: HTTP status 應為 409，實際 404
+/home/user/yc-daily-report-v3/tests/steps/common/steps.py:109: AssertionError: HTTP status 應為 409，實際 404
+E   ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+/home/user/yc-daily-report-v3/tests/steps/IAM-F07/iam_f07_steps.py:145: ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+E   ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+/home/user/yc-daily-report-v3/tests/steps/IAM-F07/iam_f07_steps.py:145: ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+E   ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+/home/user/yc-daily-report-v3/tests/steps/IAM-F07/iam_f07_steps.py:145: ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+E   ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+/home/user/yc-daily-report-v3/tests/steps/IAM-F07/iam_f07_steps.py:145: ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+E   ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+/home/user/yc-daily-report-v3/tests/steps/IAM-F07/iam_f07_steps.py:145: ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+E   ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+/home/user/yc-daily-report-v3/tests/steps/IAM-F07/iam_f07_steps.py:145: ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+E   ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+/home/user/yc-daily-report-v3/tests/steps/IAM-F07/iam_f07_steps.py:145: ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+E   ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+/home/user/yc-daily-report-v3/tests/steps/IAM-F07/iam_f07_steps.py:145: ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+E   ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+/home/user/yc-daily-report-v3/tests/steps/IAM-F07/iam_f07_steps.py:145: ModuleNotFoundError: No module named 'app.modules.iam.bank_number_masking_and_reveal'
+=========================== short test summary info ============================
+FAILED tests/test_spec.py::test_bank_number_format[12345678901234-accepted-14 digits]
+FAILED tests/test_spec.py::test_bank_number_format[123-45678901234-accepted-hyphens are ignored]
+FAILED tests/test_spec.py::test_bank_number_format[1234567890123-INVALID-13 digits]
+FAILED tests/test_spec.py::test_bank_number_format[123456789012345-INVALID-15 digits]
+FAILED tests/test_spec.py::test_bank_number_format[1234567890123A-INVALID-not all digits]
+FAILED tests/test_spec.py::test_the_banknumber_error_message - AssertionError...
+FAILED tests/test_spec.py::test_switching_to_transfer_without_a_bank_number
+FAILED tests/test_spec.py::test_default_view[Wen] - ModuleNotFoundError: No m...
+FAILED tests/test_spec.py::test_default_view[Admin1] - ModuleNotFoundError: N...
+FAILED tests/test_spec.py::test_default_view[Kuei] - ModuleNotFoundError: No ...
+FAILED tests/test_spec.py::test_reveal[Wen] - ModuleNotFoundError: No module ...
+FAILED tests/test_spec.py::test_reveal[Admin1] - ModuleNotFoundError: No modu...
+FAILED tests/test_spec.py::test_view_without_the_key - ModuleNotFoundError: N...
+FAILED tests/test_spec.py::test_edit_without_the_key - ModuleNotFoundError: N...
+FAILED tests/test_spec.py::test_other_features_keep_working - ModuleNotFoundE...
+FAILED tests/test_spec.py::test_storage_never_holds_the_plain_number - Module...
+16 failed, 1941 deselected in 6.43s

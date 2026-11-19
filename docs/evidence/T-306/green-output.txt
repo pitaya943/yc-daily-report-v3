@@ -1,0 +1,29 @@
+# 先綠：模組實作後，同一組指令（IAM-R14／R40／R41／R43 的 9 個 scenario、16 個測試列）
+$ python3 -m pytest -q --no-header -k "test_bank_number_format or test_the_banknumber_error_message or test_default_view or test_reveal or test_view_without_the_key or test_edit_without_the_key or test_other_features_keep_working or test_storage_never_holds or test_switching_to_transfer" -v
+tests/steps/IAM-F07/test_bank_number_details.py::test_switching_to_transfer_with_a_number_is_accepted_and_audited PASSED [  5%]
+tests/steps/IAM-F07/test_bank_number_details.py::test_revealing_without_the_key_shows_unreadable_and_writes_no_audit PASSED [ 11%]
+tests/test_spec.py::test_bank_number_format[12345678901234-accepted-14 digits] PASSED [ 16%]
+tests/test_spec.py::test_bank_number_format[123-45678901234-accepted-hyphens are ignored] PASSED [ 22%]
+tests/test_spec.py::test_bank_number_format[1234567890123-INVALID-13 digits] PASSED [ 27%]
+tests/test_spec.py::test_bank_number_format[123456789012345-INVALID-15 digits] PASSED [ 33%]
+tests/test_spec.py::test_bank_number_format[1234567890123A-INVALID-not all digits] PASSED [ 38%]
+tests/test_spec.py::test_the_banknumber_error_message PASSED             [ 44%]
+tests/test_spec.py::test_switching_to_transfer_without_a_bank_number PASSED [ 50%]
+tests/test_spec.py::test_default_view[Wen] PASSED                        [ 55%]
+tests/test_spec.py::test_default_view[Admin1] PASSED                     [ 61%]
+tests/test_spec.py::test_default_view[Kuei] PASSED                       [ 66%]
+tests/test_spec.py::test_reveal[Wen] PASSED                              [ 72%]
+tests/test_spec.py::test_reveal[Admin1] PASSED                           [ 77%]
+tests/test_spec.py::test_view_without_the_key PASSED                     [ 83%]
+tests/test_spec.py::test_edit_without_the_key PASSED                     [ 88%]
+tests/test_spec.py::test_other_features_keep_working PASSED              [ 94%]
+tests/test_spec.py::test_storage_never_holds_the_plain_number PASSED     [100%]
+===================== 18 passed, 1995 deselected in 15.57s =====================
+
+# 補充測試（tests/steps/IAM-F07/test_bank_number_details.py）
+........................................................                 [100%]
+56 passed in 40.63s
+
+# 全部測試（本機，退出碼 0）
+$ python3 -m pytest -q --no-header
+1685 passed, 328 skipped in 635.52s (0:10:35)

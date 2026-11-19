@@ -1,0 +1,20 @@
+$ python3 -m pytest -q -k "<REV-R20/R21/R23/R24 的 6 個 scenario>"
+E       AssertionError: R1 的自訂工項應為 ('夜間加班', '2.0', '500')，實際 (None, None, None)
+tests/steps/REV-F03/rev_f03_steps.py:158: AssertionError
+E       AssertionError: HTTP status 應為 403，實際 404
+tests/steps/common/steps.py:109: AssertionError
+E       AssertionError: R1 應只有自訂工項 ('搬運', '1.0', '300')，實際 ('夜間加班', 20, 500)
+tests/steps/REV-F03/rev_f03_steps.py:165: AssertionError
+E       AssertionError: R1 不應有自訂工項（三個欄位都是 null），實際 ('夜間加班', 20, 500)
+tests/steps/REV-F03/rev_f03_steps.py:171: AssertionError
+E       AttributeError: module 'app.modules.review.crew_split_and_stored_shares.service' has no attribute 'confirmed_custom_money'
+tests/steps/REV-F03/rev_f03_steps.py:194: AttributeError
+E       AssertionError: R1 應為 PENDING 且沒有審核者，實際 ('CONFIRMED', 'Admin2', datetime.datetime(2026, 11, 15, 10, 0, tzinfo=zoneinfo.ZoneInfo(key='Asia/Taipei')))
+tests/steps/REV-F03/rev_f03_steps.py:177: AssertionError
+FAILED tests/test_spec.py::test_attach - AssertionError: R1 的自訂工項應為 ('...
+FAILED tests/test_spec.py::test_a_user_cannot_attach - AssertionError: HTTP s...
+FAILED tests/test_spec.py::test_attaching_again_replaces_the_item - Assertion...
+FAILED tests/test_spec.py::test_remove - AssertionError: R1 不應有自訂工項（...
+FAILED tests/test_spec.py::test_money_by_share - AttributeError: module 'app....
+FAILED tests/test_spec.py::test_attaching_to_a_confirmed_report - AssertionEr...
+6 failed, 984 deselected in 5.68s

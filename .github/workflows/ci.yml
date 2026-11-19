@@ -24,7 +24,7 @@ env:
 jobs:
   tests:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30  # D-138
     # 乾淨的 PostgreSQL 17（D-033）：每個 run 一個全新的 service container。
     # 對應到 runner 的 127.0.0.1:5433，與本機開發的預設連線字串（app/core/db.py）相同，
     # 所以 T-001 的「只連本機」防線不必為 CI 開例外。trust 驗證：容器只在這個 job 存活，裡面沒有任何真實資料。
@@ -57,7 +57,7 @@ jobs:
           echo "runner 上設定的 PG* 變數名稱：$(env | grep -o '^PG[A-Z_]*' | tr '\n' ' ' || true)"
           python3 -m app.core.local_url
       - name: 安裝 PostgreSQL 17 用戶端（migrate 腳本需要 psql 17）
-        run: sudo scripts/dev/install-postgres && sudo systemctl stop postgresql || true
+        run: sudo scripts/dev/install-postgres && { sudo systemctl stop postgresql || true; }  # D-119：安裝失敗要在這一步失敗
       - name: 守衛：tests job 本身不能把失敗吞掉或縮小範圍（scripts/ci/checks.py 的 check_tests）
         run: python3 scripts/ci/run.py tests
       - run: pip install -e '.[dev]'
@@ -67,6 +67,19 @@ jobs:
         run: scripts/dev/migrate
       - name: 單元測試與 tests/implemented.txt 列出的規則
         run: python3 -m pytest -p scripts.ci.rule_report -p no:cacheprovider
+      # T-307、D-120：用真的瀏覽器跑歷史頁的冒煙測試（D-099 的畫面行為只有瀏覽器抓得到）。
+      # 放在 tests job 內，所以已是必要檢查；放在單元測試之後，那邊失敗時不浪費瀏覽器的安裝時間。
+      # 版本固定：Node 22（setup-node）、Playwright 以 package-lock.json 為準（npm ci）、只安裝 Chromium。
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: E2E：安裝 Playwright 與 Chromium
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: E2E：歷史頁冒煙測試（tests/e2e/run：種資料、啟動 app、操作瀏覽器、清資料）
+        run: tests/e2e/run
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
@@ -148,7 +161,7 @@ jobs:
   no-weakened-tests:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 45  # D-138：兩輪全部測試，各約 10～11 分鐘
     # D-046：以結果判斷。目標分支的結果在這個 job 裡實際跑出來（不使用 PR 提供的檔案，也不用其他 job 的 artifact），
     # 再跑 PR 的結果；目標分支上通過的每個測試 ID，在 PR 上都必須被收集而且通過。
     # 兩次都在這個 job 自己的乾淨 postgres:17 上跑，每次先清掉 yc_v3、套用該版本自己的 migration。
@@ -180,7 +193,7 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - name: 安裝 PostgreSQL 17 用戶端（migrate 腳本需要 psql 17）
-        run: sudo scripts/dev/install-postgres && sudo systemctl stop postgresql || true
+        run: sudo scripts/dev/install-postgres && { sudo systemctl stop postgresql || true; }  # D-119：安裝失敗要在這一步失敗
       - run: pip install -e '.[dev]'
       - name: 安裝 ruff（與 tests job 相同版本；否則 lint 的測試在這裡會失敗，比對就看不到它們）
         run: pip install ruff==0.16.9

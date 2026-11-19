@@ -14,11 +14,9 @@ Feature: Password change and reset
       Examples:
         | who    | current | new      | confirm  | outcome  | message                    |
         | Wen    | correct | newpass1 | newpass1 | accepted |                            |
-        | Wen    | wrong   | newpass1 | newpass1 | INVALID  | 目前密碼不正確             |
         | Wen    | correct | newpass1 | newpass2 | INVALID  | 兩次輸入的密碼不一致       |
         | Wen    | correct | short    | short    | INVALID  | 密碼長度須為 6 至 30 個字  |
         | Admin1 | correct | newpass1 | newpass1 | accepted |                            |
-        | Admin1 | wrong   | newpass1 | newpass1 | INVALID  | 目前密碼不正確             |
 
     @provisional @Q-053
     Scenario: The owner also enters the current password
@@ -46,3 +44,46 @@ Feature: Password change and reset
       When a visitor asks to recover the password of "Wen"
       Then no such action exists
       # 員工請管理員重設；owner 的密碼在系統外重設（Q-046）。
+
+  Rule: IAM-R33 A password change ends the account's other sessions; a reset ends all of them
+
+    # D-123：自己改密碼時保留目前這個 session；被管理員重設時，該帳戶全部的 session 都結束。
+    Scenario: Changing one's own password keeps only the current session
+      Given "Wen" is signed in on two devices
+      When "Wen" changes their password successfully on the first device
+      Then the first device of "Wen" can still make protected requests
+      And a protected request from the second device of "Wen" is rejected as UNAUTHENTICATED
+
+    Scenario: A reset ends every session of the account
+      Given "Wen" is signed in on two devices
+      When "Admin1" resets the password of "Wen" to "newpass1"
+      Then a protected request from either device of "Wen" is rejected as UNAUTHENTICATED
+
+  Rule: IAM-R34 A wrong current password counts toward the sign-in lockout
+
+    # D-124：改密碼時輸入錯誤的目前密碼，與登入共用同一個失敗計數與鎖定（IAM-R04、R05）。
+    # D-140：錯誤的目前密碼仍是 INVALID「目前密碼不正確」，但會多記一次失敗（原本在 IAM-R30 的兩列移到這裡）。
+    Scenario Outline: A wrong current password is rejected and counted
+      Given "<who>" is signed in
+      When "<who>" changes their password with current "wrong", new "newpass1", confirmation "newpass1"
+      Then the request is rejected as INVALID with message "目前密碼不正確"
+      And the only change is one more failed sign-in for "<who>"
+
+      Examples:
+        | who    |
+        | Wen    |
+        | Admin1 |
+
+    Scenario: The fifth wrong password across sign-in and password change locks the account
+      Given "Wen" is signed in
+      And "Wen" has 4 failed sign-ins in the last 15 minutes
+      When "Wen" changes their password with a wrong current password
+      Then the request is rejected as LOCKED with message "密碼錯誤次數過多，請在 15 分鐘後再試"
+      And an audit row "ACCOUNT_LOCKOUT" is written with actor SYSTEM
+
+    Scenario: A locked account cannot change its password
+      Given "Wen" is signed in
+      And "Wen" was locked 5 minutes ago
+      When "Wen" changes their password with current "correct", new "newpass1", confirmation "newpass1"
+      Then the request is rejected as LOCKED with message "密碼錯誤次數過多，請在 15 分鐘後再試"
+      And nothing is written

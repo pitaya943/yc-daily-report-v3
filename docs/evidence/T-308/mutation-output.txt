@@ -1,0 +1,4 @@
+# 變異：拿掉登入的重新確認（`if repo.lock_password_hash(...) != stored:` 改成 `if False:`）→ 競爭測試必須失敗
+FAILED tests/steps/IAM-F06/test_sign_in_race_details.py::test_a_password_change_between_the_compare_and_the_session_leaves_no_new_session
+FAILED tests/steps/IAM-F06/test_sign_in_race_details.py::test_a_reset_between_the_compare_and_the_session_leaves_no_session_at_all
+2 failed, 1 passed, 2051 deselected in 5.17s

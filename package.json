@@ -1,0 +1,12 @@
+{
+  "name": "yc-daily-report-e2e",
+  "private": true,
+  "description": "E2E 冒煙測試（tests/e2e）的工具；產品本身是 Python，這裡只有 Playwright。",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "e2e": "tests/e2e/run"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

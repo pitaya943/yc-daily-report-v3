@@ -6,6 +6,9 @@
 - 「When」一律走真正的 `POST /sign-in`，並透過 `recorder.perform` 記下前後快照。
 - 被拒絕的登入一定會寫那兩張表（D-069）。規格的 scenario 沒有寫 `nothing is written`，所以這裡的 Then 步驟自己明確斷言：
   那兩張表各多出預期的那一列，而且其他所有表（sessions、accounts…）完全不變（audit_log 只有鎖定當下那一列）。
+- IAM-R08（T-308，D-126）：「When」走真正的 `POST /accounts/{id}/unlock`（帶 session cookie 與 `X-CSRF-Token`）。
+  `the failure count for … is …` 維持原義（斷言登入寫入的列）；解除鎖定用另一句 `… is no longer locked and has no failed sign-ins`，
+  它斷言失敗次數那一列被刪除、嘗試次數表（IAM-R07）完全不變、除了稽核之外沒有其他資料表有變動。
 - `RATE_LIMITED` 與鎖定期間的拒絕不寫任何資料：前者在 When 步驟內斷言（規格沒有再寫 And），後者由共用的
   `the outcome is LOCKED`（tests/steps/common/outcome.py）斷言 nothing is written。
 """
@@ -19,6 +22,7 @@ import pytest
 from fastapi.testclient import TestClient
 from pytest_bdd import given, parsers, then, when
 
+from app.core import session as session_core
 from app.core.clock import clock
 from app.main import create_app
 from tests.steps.common.outcome import *  # noqa: F401,F403  (the outcome is ...)
@@ -164,6 +168,34 @@ def _failure_count(recorder, db, name, count):
 def _not_locked(db, name):
     row = failure_row(db, name)
     assert row is not None and row[2] is None, f"{name} 不應被鎖定：{row}"
+
+
+# ───────────────────────── IAM-R08：解除鎖定（D-126）─────────────────────────
+
+UNLOCK_PATH = "/accounts/{id}/unlock"
+
+
+def post_unlock(client, db, target_id: int):
+    """以 client 目前登入的人解除 `target_id` 的鎖定。沒有請求主體；anti-forgery token 放在標頭（D-080）。"""
+    token = session_core.anti_forgery_token_for(db, client.cookies.get(session_core.SESSION_COOKIE))
+    db.rollback()
+    assert token, "動作的人必須已登入（沒有有效的 session）"
+    return client.post(UNLOCK_PATH.format(id=target_id), headers={"X-CSRF-Token": token})
+
+
+@when(parsers.re(r'"(?P<who>[^"]+)" unlocks "(?P<target>[^"]+)"'))
+def _unlocks(recorder, client, db, who, target):
+    recorder.perform(lambda: post_unlock(client, db, _account_id(db, target)))
+
+
+@then(parsers.re(r'"(?P<name>[^"]+)" is no longer locked and has no failed sign-ins'))
+def _unlocked(recorder, db, name):
+    assert recorder.response.status_code == 200, f"解除鎖定應成功（200），實際 {recorder.response.status_code}：{recorder.response.text[:200]}"
+    assert failure_row(db, name) is None, f"{name} 的失敗次數與鎖定應一起清除：{failure_row(db, name)}"
+    # 比規格更嚴格（D-091）：只有「失敗次數那一列被刪除」與一列稽核；嘗試次數（IAM-R07）與其他資料表都不變
+    changes = assert_only_lock_tables_written(recorder, allow_audit=True)
+    assert ATTEMPTS not in changes, f"解除鎖定不得動來源位址的頻率限制：{changes.get(ATTEMPTS)}"
+    assert len(changes[FAILURES]["removed"]) == 1 and not changes[FAILURES]["added"], f"應只刪除 1 列失敗次數：{changes[FAILURES]}"
 
 
 # ───────────────────────── IAM-R07：頻率限制 ─────────────────────────

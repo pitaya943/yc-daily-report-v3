@@ -1,4 +1,4 @@
-"""RPT-F02 回報生命週期的步驟（RPT-R10、R11、R13；RPT-R12 由 T-301 補，D-085）。
+"""RPT-F02 回報生命週期的步驟（RPT-R10、R11、R12、R13；RPT-R12 由 T-301 補，D-085）。
 
 設計：
 - 動作一律走 `recorder.perform`，所以「nothing is written」比對的是動作前後整個資料庫。
@@ -18,8 +18,10 @@ from urllib.parse import urlencode
 import pytest
 from pytest_bdd import given, parsers, then, when
 
+from app.core import session as session_core
 from app.core.clock import clock
 from tests.steps.common.audit_description import *  # noqa: F401,F403  (the audit description contains ...)
+from tests.steps.common.audit_row import *  # noqa: F401,F403  (an audit row "X" is written，D-117 S2)
 from tests.steps.common.outcome import *  # noqa: F401,F403  (the outcome is ...)
 from tests.steps.common.session import *  # noqa: F401,F403  ("<name>" is signed in)
 from tests.steps.common.session import session_rows, sign_in_with_correct_password
@@ -174,6 +176,25 @@ def _a_pending_report_with_custom_item(db, lifecycle, name, custom, qty, tenth, 
     _remember(lifecycle, rid, _DATE, "PENDING")
 
 
+@given(parsers.re(r'a CONFIRMED report by "(?P<name>[^"]+)" with stored shares$'))
+def _a_confirmed_report_with_shares(db, lifecycle, name):
+    """RPT-R12：已確認、份額已存的回報。小組是提交者加 Wei（份額 1.0、1.0），審核者是 Admin2。"""
+    rid = insert_report(db, name, _DATE, "CONFIRMED", items={EDIT_ITEM: 20}, crew=("Wei",))
+    submitter_id, wei_id = account_row(db, name)[0], account_row(db, "Wei")[0]
+    with db.cursor() as cur:
+        cur.execute(
+            "update yc_v3.reports set reviewer_id = (select id from yc_v3.accounts where name = 'Admin2'), reviewed_at = %s where id = %s",
+            (clock.now(), rid),
+        )
+        for position, account_id in enumerate((submitter_id, wei_id)):
+            cur.execute(
+                "insert into yc_v3.report_shares(report_id, item_code, account_id, position, tenths) values (%s, %s, %s, %s, 10)",
+                (rid, EDIT_ITEM, account_id, position),
+            )
+    db.commit()
+    _remember(lifecycle, rid, _DATE, "CONFIRMED")
+
+
 @given(parsers.re(r'a CONFIRMED report by "(?P<name>[^"]+)"$'))
 def _a_confirmed_report_by(db, lifecycle, name):
     _remember(lifecycle, insert_report(db, name, _DATE, "CONFIRMED", items={EDIT_ITEM: 20}), _DATE, "CONFIRMED")
@@ -225,6 +246,11 @@ def _tries_to(recorder, client, db, lifecycle, name, action):
 @when(parsers.re(r'"(?P<name>[^"]+)" edits the PENDING report to "(?P<item>[^"]+)" = (?P<qty>.+)$'))
 def _edits_pending_to(recorder, client, db, lifecycle, name, item, qty):
     _the_report(db, lifecycle, name)  # 先找出「那張 PENDING 回報」並記下它的日期，才能組出表單
+    _edit(recorder, client, db, lifecycle, name, [("report_date", lifecycle["date"]), (item, quantity_text(qty))])
+
+
+@when(parsers.re(r'"(?P<name>[^"]+)" edits it to "(?P<item>[^"]+)" = (?P<qty>.+)$'))
+def _edits_it_to(recorder, client, db, lifecycle, name, item, qty):
     _edit(recorder, client, db, lifecycle, name, [("report_date", lifecycle["date"]), (item, quantity_text(qty))])
 
 
@@ -286,11 +312,27 @@ def _still_has(db, name, n, date):
     assert count == int(n), f"{name} 在 {date} 應仍有 {n} 張自己的回報（編輯不佔額度），實際 {count}"
 
 
-@then(parsers.re(r'an audit row "(?P<type_>[A-Z_]+)" is written$'))
-def _audit_row_written(recorder, db, lifecycle, type_):
-    claim_audit_row(recorder, db, type_, lifecycle["actor"])
-
-
 @then("the report no longer exists")
 def _report_gone(db, lifecycle):
     assert report_state(db, lifecycle["report_id"]) is None, "回報應已不存在"
+
+
+@then("the report has no stored shares")
+def _report_has_no_stored_shares(db, lifecycle):
+    with db.cursor() as cur:
+        cur.execute("select (select count(*) from yc_v3.report_shares where report_id = %s), (select count(*) from yc_v3.report_custom_shares where report_id = %s)", (lifecycle["report_id"],) * 2)
+        shares, custom = cur.fetchone()
+    db.rollback()
+    assert (shares, custom) == (0, 0), f"份額應已作廢：目錄工項 {shares} 列、自訂工項 {custom} 列"
+
+
+@then(parsers.re(r'audit rows "(?P<first>[A-Z_]+)" and "(?P<second>[A-Z_]+)" are written$'))
+def _two_audit_rows_written(recorder, client, db, first, second):
+    """步驟是全域註冊的（T-302 的 REV-R24 也用同一句），所以不依賴 `lifecycle` 等本 feature 專用的 fixture：
+    行為者取發出請求的 session 的主人。"""
+    token = client.cookies.get(session_core.SESSION_COOKIE)
+    actor = session_core.actor_for_token(db, token) if token else None
+    db.rollback()
+    assert actor is not None, "要有已登入的 session 才知道行為者"
+    claim_audit_row(recorder, db, first, actor.name)
+    claim_audit_row(recorder, db, second, actor.name)

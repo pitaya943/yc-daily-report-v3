@@ -1,0 +1,76 @@
+{#- 帳戶資料與薪資設定（IAM-R15～R18；D-118）。只有管理員與 OWNER 能打開（USER → FORBIDDEN，D-114）。
+    不含銀行帳號與發薪方式：那是 T-306 的（D-113）。 -#}
+{% extends "base.html" %}
+{% block title %}{{ account.name }}・帳戶{% endblock %}
+{% block content %}
+{% include "_style.html" %}
+<p class="sub"><a href="/accounts">← 帳戶管理</a></p>
+<h1>{{ account.name }}</h1>
+<p class="sub">{{ account.role }}{% if account.archived %}　<span class="badge archived">已封存</span>{% endif %}</p>
+
+<section class="card">
+  <h2>基本資料</h2>
+  <form hx-post="/accounts/{{ account.id }}" hx-target="#profile-result" hx-swap="innerHTML" autocomplete="off">
+    <div class="form-error" role="alert" aria-live="assertive" hidden></div>
+    <label for="zone">施工區域（只影響之後送出的回報）</label>
+    <select id="zone" name="zone">
+      {% for z in zones %}<option value="{{ z }}"{% if z == account.zone %} selected{% endif %}>{{ "西區" if z == "WEST" else "南區" }}</option>{% endfor %}
+    </select>
+    {% if account.role == "USER" %}
+    <label for="big_meter">大表旗標（只適用員工帳戶）</label>
+    <select id="big_meter" name="big_meter">
+      <option value="off"{% if not account.big_meter %} selected{% endif %}>關</option>
+      <option value="on"{% if account.big_meter %} selected{% endif %}>開</option>
+    </select>
+    {% endif %}
+    <button type="submit">儲存基本資料</button>
+    <div id="profile-result" class="result" aria-live="polite"></div>
+  </form>
+</section>
+
+<section class="card">
+  <h2>勞健保</h2>
+  <form hx-post="/accounts/{{ account.id }}" hx-target="#insurance-result" hx-swap="innerHTML" autocomplete="off">
+    <div class="form-error" role="alert" aria-live="assertive" hidden></div>
+    <label class="inline"><input type="radio" name="insurance" value="enrolled"{% if account.insured %} checked{% endif %}> 已投保</label>
+    <label for="deduction">勞健保扣除額（NTD，已投保時至少 1）</label>
+    <input id="deduction" type="text" inputmode="numeric" name="deduction" value="{{ account.insurance_deduction if account.insured else '' }}">
+    <label class="inline"><input type="radio" name="insurance" value="not_enrolled_rate"{% if not account.insured and not account.uninsured_exempt %} checked{% endif %}> 未投保，按比例扣除</label>
+    <label for="rate">個人未投保扣除比例（%，0–100，最多兩位小數；空白＝用區域比例）</label>
+    <input id="rate" type="text" inputmode="decimal" name="rate" value="{{ rate }}">
+    <label class="inline"><input type="radio" name="insurance" value="not_enrolled_exempt"{% if not account.insured and account.uninsured_exempt %} checked{% endif %}> 未投保，免扣</label>
+    <button type="submit">儲存勞健保</button>
+    <div id="insurance-result" class="result" aria-live="polite"></div>
+  </form>
+</section>
+
+<section class="card">
+  <h2>固定薪資</h2>
+  <form hx-post="/accounts/{{ account.id }}" hx-target="#salary-result" hx-swap="innerHTML" autocomplete="off">
+    <div class="form-error" role="alert" aria-live="assertive" hidden></div>
+    <label for="fixed_salary">固定薪資（NTD，0 或正整數）</label>
+    <input id="fixed_salary" type="text" inputmode="numeric" name="fixed_salary" value="{{ account.fixed_salary }}">
+    <button type="submit">儲存固定薪資</button>
+    <div id="salary-result" class="result" aria-live="polite"></div>
+  </form>
+</section>
+
+<section class="card">
+  <h2>封存</h2>
+  <p class="hint">封存後不能登入，也不會出現在登入名單與共同作業者選單；所有紀錄都保留，可以復原。</p>
+  {% if account.archived %}
+  <form hx-post="/accounts/{{ account.id }}/restore" hx-target="#life-result" hx-swap="innerHTML">
+    <div class="form-error" role="alert" aria-live="assertive" hidden></div>
+    <button type="submit">復原帳戶</button>
+    <div id="life-result" class="result" aria-live="polite"></div>
+  </form>
+  {% else %}
+  <form hx-post="/accounts/{{ account.id }}/archive" hx-target="#life-result" hx-swap="innerHTML">
+    <div class="form-error" role="alert" aria-live="assertive" hidden></div>
+    <button type="submit" class="secondary">封存帳戶</button>
+    <div id="life-result" class="result" aria-live="polite"></div>
+  </form>
+  {% endif %}
+</section>
+{% include "_script.html" %}
+{% endblock %}

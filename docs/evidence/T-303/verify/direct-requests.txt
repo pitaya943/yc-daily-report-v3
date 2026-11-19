@@ -1,0 +1,30 @@
+== 已存資料：Lin 的名字與稽核
+[('[Lin]', 'USER', 'SOUTH')]
+[('ACCOUNT_CREATE', 'Admin1', '建立帳戶 Lin（USER、SOUTH、大表關）'), ('ACCOUNT_UPDATE', 'Admin1', '修改帳戶 Wen：勞健保設定 未投保（區域比例） → 未投保（3.25%）'), ('ACCOUNT_ARCHIVE', 'Admin1', '封存帳戶 Wen'), ('ACCOUNT_RESTORE', 'Admin1', '復原帳戶 Wen')]
+== 9. 伺服器驗證（繞過介面）
+缺 zone 建立: HTTP 422 {"outcome":"INVALID","message":"請選擇施工區域"} | accounts changed=False audit+={} sessions 8→8
+role=ADMIN 建立: HTTP 422 {"outcome":"INVALID","message":"請選擇角色"} | accounts changed=False audit+={} sessions 8→8
+role=OWNER 建立: HTTP 422 {"outcome":"INVALID","message":"請選擇角色"} | accounts changed=False audit+={} sessions 8→8
+缺 password_confirm: HTTP 422 {"outcome":"INVALID","message":"兩次輸入的密碼不一致"} | accounts changed=False audit+={} sessions 8→8
+扣除額 2147483648（超出 integer）: HTTP 422 {"outcome":"INVALID","message":"勞健保扣除額須為 0 或正整數"} | accounts changed=False audit+={} sessions 8→8
+比例 100.001: HTTP 422 {"outcome":"INVALID","message":"未投保扣除比例須為 0 到 100 之間，最多兩位小數"} | accounts changed=False audit+={} sessions 8→8
+固定薪資 全形數字 ５０００: HTTP 422 {"outcome":"INVALID","message":"固定薪資須為 0 或正整數"} | accounts changed=False audit+={} sessions 8→8
+區域 west（小寫）: HTTP 422 {"outcome":"INVALID","message":"請選擇施工區域"} | accounts changed=False audit+={} sessions 8→8
+USER 讀別人的頁 (D-114): HTTP 403 {"outcome":"FORBIDDEN","message":null} | accounts changed=False audit+={'ACCESS_DENIED': 1} sessions 8→8
+USER 讀自己的頁: HTTP 403 {"outcome":"FORBIDDEN","message":null} | accounts changed=False audit+={'ACCESS_DENIED': 1} sessions 8→8
+USER 改自己的固定薪資: HTTP 403 {"outcome":"FORBIDDEN","message":null} | accounts changed=False audit+={'ACCESS_DENIED': 1} sessions 8→8
+USER 封存別人: HTTP 403 {"outcome":"FORBIDDEN","message":null} | accounts changed=False audit+={'ACCESS_DENIED': 1} sessions 8→8
+USER 刪除 (R19): HTTP 422 {"outcome":"INVALID","message":null} | accounts changed=False audit+={} sessions 8→8
+ADMIN deactivate (R19): HTTP 422 {"outcome":"INVALID","message":null} | accounts changed=False audit+={} sessions 8→8
+沒有 CSRF token 的封存: HTTP 401 {"outcome":"UNAUTHENTICATED","message":null} | accounts changed=False audit+={} sessions 8→8
+有 cookie、無 CSRF header 的修改: HTTP 403 {"outcome":"FORBIDDEN","message":null} | accounts changed=False audit+={'ACCESS_DENIED': 1} sessions 8→8
+== 10. 規則邊界
+比例 0.5 → 儲存 50 bp: HTTP 200 <div class="saved" role="status">已儲存　<a href="/accounts/4">查 | accounts changed=True audit+={'ACCOUNT_UPDATE': 1} sessions 8→8
+  stored: [(50,)]
+已投保 834 → 再改 not_enrolled_exempt: HTTP 200 <div class="saved" role="status">已儲存　<a href="/accounts/4">查 | accounts changed=True audit+={'ACCOUNT_UPDATE': 1} sessions 8→8
+  → exempt: HTTP 200 <div class="saved" role="status">已儲存　<a href="/accounts/4">查 | accounts changed=True audit+={'ACCOUNT_UPDATE': 1} sessions 8→8
+  stored: [(False, 0, 50, True)]
+建立：名稱等於已封存帳戶 Old: HTTP 422 {"outcome":"INVALID","message":"此顯示名稱已被使用"} | accounts changed=False audit+={} sessions 8→8
+建立：名稱含 NBSP 前後 '\xa0Wei\xa0': HTTP 422 {"outcome":"INVALID","message":"此顯示名稱已被使用"} | accounts changed=False audit+={} sessions 8→8
+建立：密碼 30 字 + 全形確認: HTTP 200 <div class="saved" role="status">已建立帳戶　<a href="/accounts/11 | accounts changed=True audit+={'ACCOUNT_CREATE': 1} sessions 8→8
+封存 ADMIN 帳戶 Admin2（D-115→T-304）: HTTP 200 <div class="saved" role="status">已封存　<a href="/accounts/3">查 | accounts changed=True audit+={'ACCOUNT_ARCHIVE': 1} sessions 8→8

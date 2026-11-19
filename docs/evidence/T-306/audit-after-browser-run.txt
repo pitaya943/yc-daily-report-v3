@@ -1,0 +1,5 @@
+ACCOUNT_UPDATE|Admin1|修改帳戶 Wen：銀行帳號已更新
+ACCOUNT_UPDATE|Admin1|修改帳戶 Wen：發薪方式 CASH → TRANSFER
+BANK_REVEAL|Admin1|顯示 Wen 的銀行帳號全碼
+BANK_REVEAL|Wen|顯示 Wen 的銀行帳號全碼
+ACCESS_DENIED|Wei|嘗試執行但被拒絕：view a bank number

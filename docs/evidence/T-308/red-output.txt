@@ -1,0 +1,17 @@
+E       AssertionError: HTTP status 應為 401，實際 200
+E       AssertionError: HTTP status 應為 401，實際 200
+E       AssertionError: HTTP status 應為 423，實際 422
+E       AssertionError: HTTP status 應為 423，實際 200
+    @then(parsers.re(r'"(?P<name>[^"]+)" is no longer locked and has no failed sign-ins'))
+E       AssertionError: 解除鎖定應成功（200），實際 404：{"detail":"Not Found"}
+E       AssertionError: HTTP status 應為 403，實際 404
+    @then(parsers.re(r'"(?P<name>[^"]+)" is no longer locked and has no failed sign-ins'))
+E       AssertionError: 解除鎖定應成功（200），實際 404：{"detail":"Not Found"}
+FAILED tests/test_spec.py::test_changing_ones_own_password_keeps_only_the_current_session
+FAILED tests/test_spec.py::test_a_reset_ends_every_session_of_the_account - A...
+FAILED tests/test_spec.py::test_the_fifth_wrong_password_across_signin_and_password_change_locks_the_account
+FAILED tests/test_spec.py::test_a_locked_account_cannot_change_its_password
+FAILED tests/test_spec.py::test_an_administrator_unlocks_a_user - AssertionEr...
+FAILED tests/test_spec.py::test_an_admin_cannot_unlock_another_admin - Assert...
+FAILED tests/test_spec.py::test_the_owner_unlocks_an_admin - AssertionError: ...
+7 failed, 1792 deselected in 9.89s

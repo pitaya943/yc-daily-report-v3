@@ -49,6 +49,32 @@ Feature: Sign-in lockout and rate limit
       When "Wei" signs in with the correct password
       Then "Wei" is signed in
 
+  Rule: IAM-R08 An administrator may end a lock early; only the owner may unlock an ADMIN
+
+    # D-126：管理員確認是人為失誤時，可以提前解除鎖定，鎖定與失敗計數一起清除。
+    # 稽核沿用 ACCOUNT_UPDATE，說明含「解除鎖定」。來源位址的頻率限制（IAM-R07）不受影響；owner 被鎖定時只能等鎖定結束。
+    Scenario: An administrator unlocks a USER
+      Given "Wen" was locked 5 minutes ago
+      And "Admin1" is signed in
+      When "Admin1" unlocks "Wen"
+      Then "Wen" is no longer locked and has no failed sign-ins
+      And an audit row "ACCOUNT_UPDATE" is written with actor "Admin1"
+      And the audit description contains "解除鎖定"
+
+    Scenario: An ADMIN cannot unlock another ADMIN
+      Given "Admin2" was locked 5 minutes ago
+      And "Admin1" is signed in
+      When "Admin1" unlocks "Admin2"
+      Then the request is rejected as FORBIDDEN
+      And nothing is written except an audit row "ACCESS_DENIED" with actor "Admin1"
+
+    Scenario: The owner unlocks an ADMIN
+      Given "Admin2" was locked 5 minutes ago
+      And "Kuei" is signed in
+      When "Kuei" unlocks "Admin2"
+      Then "Admin2" is no longer locked and has no failed sign-ins
+      And an audit row "ACCOUNT_UPDATE" is written with actor "Kuei"
+
   Rule: IAM-R07 One client address may attempt sign-in at most 10 times per minute
 
     Scenario: The eleventh attempt in a minute is limited

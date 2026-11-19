@@ -1,0 +1,4 @@
+# merge origin/milestone/M3（ab397bf：D-142 把「An ADMIN cannot create an ADMIN」最後一步改為 ACCESS_DENIED 斷言）之後
+$ python3 -m pytest -q -k "an_admin_cannot_touch or nobody_resets or an_admin_cannot_create or owner_archives_and_restores or user_to_admin or bigmeter_account_cannot or selfprotection or owner_manages_administrators_details or test_audit_row"
+60 passed, 2043 deselected in 41.30s
+# 含 IAM-F05 的 12 個 scenario 案例（IAM-R20 8、IAM-R21 2、IAM-R22 2）、補充測試 42 個、audit_row 反例 6 個

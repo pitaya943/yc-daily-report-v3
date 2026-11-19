@@ -1,0 +1,15 @@
+$ 在拋棄式資料庫 t306_check（本機）套用 0001–0007，插入既有帳戶，再套用 0008
+$ psql -f migrations/0008_bank_number_and_payment_method.sql（第一次）
+OK
+$ psql -f migrations/0008_bank_number_and_payment_method.sql（第二次：可重複執行）
+第二次沒有錯誤：只有 NOTICE（欄位已存在，略過）；上面的 grep 沒有輸出，所以 exit=1 是 grep 的，不是 psql 的
+--- 既有帳戶的發薪方式與銀行帳號：
+Old1|CASH|t
+Old2|CASH|t
+--- migration 檔頭的「套用後檢查」查詢（預期 t）：
+t
+--- 約束：沒有帳號就改 TRANSFER 會被資料庫擋下：
+ERROR:  new row for relation "accounts" violates check constraint "accounts_payment_method_check"
+DETAIL:  Failing row contains (1, Old1, USER, WEST, f, f, null, f, 0, null, f, 0, f, null, TRANSFER).
+--- 回滾（檔頭的步驟）後欄位消失：
+0
