@@ -1,0 +1,23 @@
+E       AssertionError: HTTP status 應為 403，實際 200
+E       AssertionError: HTTP status 應為 403，實際 409
+E       AssertionError: HTTP status 應為 403，實際 200
+E       AssertionError: HTTP status 應為 403，實際 200
+E       AssertionError: HTTP status 應為 403，實際 404
+E       AssertionError: HTTP status 應為 403，實際 200
+E       AssertionError: HTTP status 應為 403，實際 422
+E       AssertionError: 切換應成功（200），實際 404：{"detail":"Not Found"}
+E       AssertionError: HTTP status 應為 409，實際 404
+E       AssertionError: HTTP status 應為 409，實際 200
+E       AssertionError: HTTP status 應為 409，實際 200
+FAILED tests/test_spec.py::test_an_admin_cannot_touch_another_admin[archive]
+FAILED tests/test_spec.py::test_an_admin_cannot_touch_another_admin[restore]
+FAILED tests/test_spec.py::test_an_admin_cannot_touch_another_admin[reset the password of]
+FAILED tests/test_spec.py::test_an_admin_cannot_touch_another_admin[change the zone of]
+FAILED tests/test_spec.py::test_an_admin_cannot_touch_another_admin[change the role of]
+FAILED tests/test_spec.py::test_nobody_resets_the_owners_password - Assertion...
+FAILED tests/test_spec.py::test_an_admin_cannot_create_an_admin - AssertionEr...
+FAILED tests/test_spec.py::test_user_to_admin - AssertionError: 切換應成功（2...
+FAILED tests/test_spec.py::test_a_bigmeter_account_cannot_become_admin - Asse...
+FAILED tests/test_spec.py::test_selfprotection[Kuei-archive "Kuei"-CONFLICT-owner \u5e33\u6236\u4e0d\u80fd\u5c01\u5b58]
+FAILED tests/test_spec.py::test_selfprotection[Admin1-archive "Admin1"-CONFLICT-\u4e0d\u80fd\u5c01\u5b58\u81ea\u5df1\u76ee\u524d\u767b\u5165\u7684\u5e33\u6236]
+11 failed, 1 passed, 2049 deselected in 12.88s

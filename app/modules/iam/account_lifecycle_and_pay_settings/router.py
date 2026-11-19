@@ -1,6 +1,6 @@
 """帳戶管理（IAM-F04，D-118）。路徑固定：
 
-    GET  /accounts                     清單（USER，西區在前）與建立表單
+    GET  /accounts                     清單（USER，西區在前；OWNER 另列 ADMIN；鎖定中的有「解除鎖定」按鈕，D-126）與建立表單
     POST /accounts                     建立 USER 帳戶（IAM-R13）
     GET  /accounts/{id}                資料與薪資設定（USER 讀取 → FORBIDDEN，D-114）
     POST /accounts/{id}                修改區域、大表旗標、勞健保、固定薪資（IAM-R15、R16）
@@ -29,7 +29,7 @@ from app.core.outcomes import Outcome, OutcomeError
 from app.core.pages import render_page
 from app.core.session import get_current_actor
 from app.modules.iam.account_lifecycle_and_pay_settings import repo, service
-from app.modules.iam.account_lifecycle_and_pay_settings.access import authorize_account_action
+from app.modules.iam.account_lifecycle_and_pay_settings.access import authorize_account_action, may_list_administrators
 
 router = APIRouter()
 TEMPLATES = Path(__file__).parent / "templates"
@@ -46,7 +46,18 @@ async def _read_form(request: Request) -> dict[str, list[str]]:
 @router.get("/accounts")
 def accounts_page(request: Request, actor: Actor = Depends(get_current_actor), conn: psycopg.Connection = Depends(get_db)):
     authorize_account_action(actor, "open account management")
-    return render_page(request, conn, TEMPLATES, "accounts.html", {"accounts": repo.list_users(conn), "zones": service.ZONES})
+    users = repo.list_users(conn)
+    # Q-056：ADMIN 的帳戶管理只列 USER；OWNER 另外看得到 ADMIN（D-126：OWNER 能解除 ADMIN 的鎖定）。
+    # 每一列都是這個行為者能解除鎖定的對象（ADMIN → USER；OWNER → USER 與 ADMIN；OWNER 帳戶不列出，沒有人能解除）
+    administrators = repo.list_administrators(conn) if may_list_administrators(actor) else []
+    locked = service.locked_account_ids(conn, users + administrators)
+    return render_page(
+        request,
+        conn,
+        TEMPLATES,
+        "accounts.html",
+        {"accounts": users, "administrators": administrators, "locked": locked, "zones": service.ZONES},
+    )
 
 
 @router.post("/accounts")
@@ -63,7 +74,7 @@ def create(
 @router.get("/accounts/{account_id:int}")
 def account_page(account_id: int, request: Request, actor: Actor = Depends(get_current_actor), conn: psycopg.Connection = Depends(get_db)):
     try:
-        account = service.load_authorized(conn, actor, account_id, "open an account page", lock=False)
+        account = service.load_authorized(conn, actor, account_id, "open an account page", lock=False, modifies=False)
     except service.AccountNotFound:
         raise HTTPException(status_code=404) from None
     rate = "" if account.uninsured_rate_bp is None else service.format_rate(account.uninsured_rate_bp)

@@ -1,0 +1,5 @@
+# 瀏覽器操作（Playwright Node 版，本機資料庫；Wen（USER）與 Admin2（ADMIN）剛被鎖定）
+admin: buttons 1 admin rows 0          # Admin1 登入：只有 Wen 有「解除鎖定」，Admin2（ADMIN）不列出
+owner: buttons 2 admin rows 2          # Kuei 登入：Wen 與 Admin2 都有按鈕，列出 ADMIN 兩列，不列出 OWNER
+unlock Admin2 status 200 已解除 Admin2 的鎖定。   # 按下 Admin2 的按鈕 → POST /accounts/{id}/unlock → 200
+after: data-locked no                  # 按鈕與「鎖定中」標示隱藏

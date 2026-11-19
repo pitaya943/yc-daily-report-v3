@@ -21,6 +21,7 @@ from pytest_bdd import given, parsers, then, when
 from app.core import session as session_core
 from app.core.clock import clock
 from tests.steps.common.audit_description import *  # noqa: F401,F403  (the audit description contains ...)
+from tests.steps.common.audit_row import *  # noqa: F401,F403  (an audit row "X" is written，D-117 S2)
 from tests.steps.common.outcome import *  # noqa: F401,F403  (the outcome is ...)
 from tests.steps.common.session import *  # noqa: F401,F403  ("<name>" is signed in)
 from tests.steps.common.session import session_rows, sign_in_with_correct_password
@@ -309,11 +310,6 @@ def _still_has(db, name, n, date):
         count = cur.fetchone()[0]
     db.rollback()
     assert count == int(n), f"{name} 在 {date} 應仍有 {n} 張自己的回報（編輯不佔額度），實際 {count}"
-
-
-@then(parsers.re(r'an audit row "(?P<type_>[A-Z_]+)" is written$'))
-def _audit_row_written(recorder, db, lifecycle, type_):
-    claim_audit_row(recorder, db, type_, lifecycle["actor"])
 
 
 @then("the report no longer exists")

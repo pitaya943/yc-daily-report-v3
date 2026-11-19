@@ -1,0 +1,8 @@
+$ python3 -m pytest -q -rf        （修正前、container 重啟後重跑；耗時 13 分 14 秒）
+FAILED tests/steps/IAM-F04/test_account_details.py::test_every_endpoint_goes_through_the_single_authorization_function  → 已修正（角色判斷全部移進 access.py）
+FAILED tests/test_spec.py::test_an_admin_cannot_create_an_admin  → issue #51（`no account is created` 與 FORBIDDEN 的 ACCESS_DENIED 矛盾）
+2 failed, 1794 passed, 307 skipped
+
+$ python3 -m pytest -q -rf -k "IAM-F04 or IAM-F05 or owner_manages or test_account_details or Account or selfprotection or an_admin"   （修正後）
+FAILED tests/test_spec.py::test_an_admin_cannot_create_an_admin
+1 failed, 258 passed, 10 skipped

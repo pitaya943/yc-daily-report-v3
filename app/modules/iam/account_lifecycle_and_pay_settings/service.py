@@ -24,7 +24,14 @@ from app.core.actor import Actor
 from app.core.outcomes import Outcome, OutcomeError
 from app.core.session import hash_password
 from app.modules.iam.account_lifecycle_and_pay_settings import repo
-from app.modules.iam.account_lifecycle_and_pay_settings.access import authorize_account_action
+from app.modules.iam.account_lifecycle_and_pay_settings.access import (
+    authorize_account_action,
+    authorize_create,
+    refuse_archiving_owner,
+    refuse_archiving_yourself,
+)
+from app.modules.iam.sign_in_lockout_and_rate_limit import repo as lockout_repo
+from app.modules.iam.sign_in_lockout_and_rate_limit import service as lockout
 
 MSG_NAME_EMPTY = "請輸入顯示名稱"
 MSG_NAME_TOO_LONG = "顯示名稱最多 50 個字"
@@ -50,6 +57,18 @@ class AccountNotFound(Exception):
     """沒有這個帳戶（規格沒有「找不到」的結果類別；router 回 404，D-106）。"""
 
 
+def locked_account_ids(conn: psycopg.Connection, accounts: list[repo.Account]) -> set[int]:
+    """這些帳戶之中目前鎖定中的 id（D-126：帳戶管理頁對它們顯示「解除鎖定」）。
+
+    「鎖定中」與登入、`POST /accounts/{id}/unlock` 是同一個判斷（`lockout._is_locked`），這裡不另寫一份 15 分鐘。
+    取底線開頭的名稱是因為 sign_in_lockout_and_rate_limit 不在這張 ticket 的範圍內；PR 說明提議在那邊加公開的 `is_locked`。
+    只讀；結束時回滾，不留下開啟的交易。
+    """
+    ids = {a.id for a in accounts if lockout._is_locked(lockout_repo.get_failure_state(conn, a.id))}
+    conn.rollback()
+    return ids
+
+
 def _field(form: dict[str, list[str]], key: str) -> str | None:
     """同名欄位取最後一個；沒有送這個欄位回傳 None（與「送了空白」不同）。"""
     values = form.get(key)
@@ -61,13 +80,22 @@ def _flag(value: str | None) -> bool | None:
     return {"on": True, "off": False}.get(value) if value is not None else None
 
 
-def load_authorized(conn: psycopg.Connection, actor: Actor, account_id: int, action: str, *, lock: bool = True) -> repo.Account:
-    """先判斷「這個人能不能做這件事」（沒有權限的人不能靠 404 與否探到帳戶是否存在），再讀帳戶，再針對這個帳戶判斷一次。"""
+def load_authorized(
+    conn: psycopg.Connection, actor: Actor, account_id: int, action: str, *, lock: bool = True, modifies: bool = True, guard=None
+) -> repo.Account:
+    """先判斷「這個人能不能做這件事」（沒有權限的人不能靠 404 與否探到帳戶是否存在），再讀帳戶，再針對這個帳戶判斷一次。
+
+    `guard(account)`：在「依目標角色的權限判斷」之前呼叫，用於自我保護（IAM-R22）：ADMIN 封存自己是 CONFLICT，
+    不是 FORBIDDEN（規格的 scenario），所以自我保護必須先於 IAM-R20 的角色判斷。
+    `modifies=False`：只讀（打開帳戶頁），不做 IAM-R20 的角色判斷。
+    """
     authorize_account_action(actor, action)
     account = repo.get(conn, account_id, lock=lock)
     if account is None:
         raise AccountNotFound(account_id)
-    authorize_account_action(actor, action, account)  # T-304 在 access.py 加「只有 OWNER 能動 ADMIN」時，這一行就會生效
+    if guard is not None:
+        guard(account)
+    authorize_account_action(actor, action, account, modifies=modifies)  # IAM-R20：只有 OWNER 能動 ADMIN 與 OWNER（access.py）
     return account
 
 
@@ -111,6 +139,7 @@ def parse_fixed_salary(value: str | None) -> int:
 
 def create_account(conn: psycopg.Connection, actor: Actor, form: dict[str, list[str]]) -> int:
     authorize_account_action(actor, "create an account")
+    authorize_create(actor, _field(form, "role"))  # IAM-R20：ADMIN 不能建立 ADMIN（access.py）
     # D-139：先去掉前後空白（str.strip 含全形空白 U+3000），再檢查空白、長度與重複；存的也是去掉後的名字
     name = (_field(form, "name") or "").strip()
     if not name:
@@ -227,7 +256,8 @@ def update_account(conn: psycopg.Connection, actor: Actor, account_id: int, form
 
 
 def archive_account(conn: psycopg.Connection, actor: Actor, account_id: int) -> repo.Account:
-    target = load_authorized(conn, actor, account_id, "archive an account")
+    target = load_authorized(conn, actor, account_id, "archive an account", guard=lambda t: refuse_archiving_yourself(actor, t))
+    refuse_archiving_owner(target)  # IAM-R22
     if target.archived:
         raise OutcomeError(Outcome.CONFLICT)  # 資料合法但狀態不允許；規格沒有字串
     repo.set_archived(conn, account_id, True)

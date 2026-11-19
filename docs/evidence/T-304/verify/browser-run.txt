@@ -1,0 +1,13 @@
+# Verifier 第 1 輪：Playwright Node 版（本機資料庫、port 8011；Wen（USER）與 Admin2（ADMIN）剛被鎖定）
+Wen sign-in 423
+Wen GET /accounts 401
+Admin1 sign-in 303
+Admin1 GET /accounts 200
+Admin1 [{"name":"Wen","role":"USER","locked":"yes","button":true,"hxpost":"/accounts/4/unlock"}]
+Kuei sign-in 303
+Kuei GET /accounts 200
+Kuei [{"name":"Wen","role":"USER","locked":"yes","button":true,"hxpost":"/accounts/4/unlock"},{"name":"Admin1","role":"ADMIN","locked":"no","button":false,"hxpost":null},{"name":"Admin2","role":"ADMIN","locked":"yes","button":true,"hxpost":"/accounts/3/unlock"}]
+Kuei click unlock Admin2 -> POST /accounts/3/unlock 200
+Kuei-reload [{"name":"Wen","role":"USER","locked":"yes","button":true,"hxpost":"/accounts/4/unlock"},{"name":"Admin1","role":"ADMIN","locked":"no","button":false,"hxpost":null},{"name":"Admin2","role":"ADMIN","locked":"no","button":false,"hxpost":null}]
+Wei sign-in 303
+Wei GET /accounts 403 unlock buttons: 0

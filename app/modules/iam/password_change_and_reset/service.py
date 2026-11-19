@@ -24,6 +24,7 @@ from app.core.actor import Actor, Role
 from app.core.outcomes import Outcome, OutcomeError
 from app.core.permissions import Rule, authorize
 from app.core.session import hash_password, verify_password
+from app.modules.iam.owner_manages_administrators.access import NOBODY, authorize_on_target
 from app.core.session import _token_hash as session_token_hash  # 見 change_own_password：session.py 不在這張 ticket 的範圍內
 from app.modules.iam.password_change_and_reset import repo
 from app.modules.iam.sign_in_lockout_and_rate_limit import service as lockout
@@ -39,7 +40,8 @@ MAX_LENGTH = 30
 # ───────────────────────── 誰能重設誰（權限只寫在這一處）─────────────────────────
 #
 # IAM-R31：管理員（ADMIN 與擁有 ADMIN 全部權限的 OWNER）重設 USER 的密碼；USER 不行 → FORBIDDEN（並寫 ACCESS_DENIED）。
-# T-304（D-115、IAM-R22）會在 `authorize_reset` 加上「只有 OWNER 能重設 ADMIN」；規則請改這個函式，不要散到端點裡。
+# T-304（D-115、IAM-R20、D-122）：只有 OWNER 能重設 ADMIN（「誰能動誰」的表在 owner_manages_administrators/access.py，只有那一份）；
+# 系統內沒有人能重設 OWNER 的密碼：ADMIN 嘗試 → FORBIDDEN；OWNER 對自己用這個端點 → INVALID（沒有這個動作，改用 IAM-R30）。
 RESET_RULE = Rule(roles={Role.ADMIN})
 
 
@@ -47,9 +49,16 @@ def authorize_reset(actor: Actor, target: repo.AccountRow | None = None) -> None
     """通過就回傳；否則 UNAUTHENTICATED／FORBIDDEN。
 
     `target` 預設 None：第一步只看行為者的角色（還沒查目標，所以 USER 不會藉由 404 與 403 的差別探測哪些帳戶存在）；
-    T-304 要依目標的角色判斷時，在查到目標之後再呼叫一次（傳入 target）。
+    查到目標之後再呼叫一次（傳入 target），依目標的角色判斷（IAM-R20、D-122）。
     """
     authorize(actor, "reset a password", RESET_RULE)
+    if target is None:
+        return
+    if target.role == Role.OWNER.value:
+        if actor.role is Role.OWNER:
+            raise OutcomeError(Outcome.INVALID)  # D-122：沒有這個動作（OWNER 的密碼用 IAM-R30 自己改）；規格沒有字串
+        authorize(actor, f"reset the password of {target.name}", NOBODY)  # 其他人 → FORBIDDEN，寫 ACCESS_DENIED
+    authorize_on_target(actor, f"reset the password of {target.name}", target.role)
 
 
 class AccountNotFound(Exception):
@@ -126,7 +135,7 @@ def reset_password(conn: psycopg.Connection, actor: Actor, target_id: int, form:
     target = repo.find_account(conn, target_id)
     if target is None:
         raise AccountNotFound(target_id)
-    authorize_reset(actor, target)  # T-304 在這裡加上依目標角色的判斷
+    authorize_reset(actor, target)  # IAM-R20、D-122：依目標的角色判斷
     new = _single(form, "new_password")
     confirm = _single(form, "password_confirm")
     if new is not None and confirm != new:  # D-127：重設也有確認欄；缺少、為空、不一致都是同一句（順序與自己改密碼相同：確認 → 長度）

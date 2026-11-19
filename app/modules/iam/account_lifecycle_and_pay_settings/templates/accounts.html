@@ -6,19 +6,45 @@
 <h1>帳戶管理</h1>
 <p class="sub">員工（USER）帳戶。帳戶不會被刪除，只能封存與復原。</p>
 
-<table aria-label="員工帳戶">
-  <thead><tr><th>顯示名稱</th><th>區域</th><th>大表</th><th>狀態</th></tr></thead>
-  <tbody>
-  {% for a in accounts %}
-    <tr data-account-name="{{ a.name }}" data-role="{{ a.role }}" data-zone="{{ a.zone }}">
+{#- 一列帳戶。鎖定中的帳戶多一個「鎖定中」標示與「解除鎖定」按鈕，呼叫 T-308 的 POST /accounts/{id}/unlock（D-126）。
+    這份清單的每一列都是這個行為者能解除鎖定的對象，所以不另外判斷角色；伺服器端仍會重新判斷權限。 -#}
+{% macro account_row(a) %}
+    <tr data-account-name="{{ a.name }}" data-role="{{ a.role }}" data-zone="{{ a.zone }}" data-locked="{{ 'yes' if a.id in locked else 'no' }}">
       <td><a href="/accounts/{{ a.id }}">{{ a.name }}</a></td>
       <td>{{ "西區" if a.zone == "WEST" else "南區" }}</td>
       <td>{{ "是" if a.big_meter else "否" }}</td>
-      <td>{% if a.archived %}<span class="badge archived">已封存</span>{% else %}使用中{% endif %}</td>
+      <td>
+        {% if a.archived %}<span class="badge archived">已封存</span>{% else %}使用中{% endif %}
+        {% if a.id in locked %}
+        <span class="badge locked lock-badge">鎖定中</span>
+        <form class="unlock-form" hx-post="/accounts/{{ a.id }}/unlock" hx-target="find .result" hx-swap="innerHTML"
+              hx-on::after-request="if (event.detail.successful) { this.querySelector('button').hidden = true; this.closest('tr').querySelector('.lock-badge').hidden = true; this.closest('tr').dataset.locked = 'no'; }">
+          <div class="form-error" role="alert" aria-live="assertive" hidden></div>
+          <button type="submit" class="secondary small">解除鎖定</button>
+          <div class="result" aria-live="polite"></div>
+        </form>
+        {% endif %}
+      </td>
     </tr>
-  {% endfor %}
+{% endmacro %}
+
+<table aria-label="員工帳戶">
+  <thead><tr><th>顯示名稱</th><th>區域</th><th>大表</th><th>狀態</th></tr></thead>
+  <tbody>
+  {% for a in accounts %}{{ account_row(a) }}{% endfor %}
   </tbody>
 </table>
+
+{% if administrators %}
+<h2>管理員</h2>
+<p class="sub">只有 OWNER 看得到管理員帳戶。</p>
+<table aria-label="管理員帳戶">
+  <thead><tr><th>顯示名稱</th><th>區域</th><th>大表</th><th>狀態</th></tr></thead>
+  <tbody>
+  {% for a in administrators %}{{ account_row(a) }}{% endfor %}
+  </tbody>
+</table>
+{% endif %}
 
 <section class="card">
   <h2>新增員工帳戶</h2>
